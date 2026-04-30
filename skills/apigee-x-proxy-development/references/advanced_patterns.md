@@ -246,18 +246,30 @@ apiproxy/proxies/
 
 ## Google Authentication from Proxies
 
-Access Google Cloud services (Cloud Run, Cloud Functions, BigQuery, Secret Manager) using service account auth.
+Apigee X can authenticate to Google Cloud services using the `<Authentication>` element. Tokens are generated automatically from the proxy's service account — no manual token management, KVM lookups, or ServiceCallout-based token exchange needed.
 
-### Access Token (for Google APIs)
+### GoogleAccessToken vs GoogleIDToken
 
+| Element | Token Type | Use When | Example Target |
+|---|---|---|---|
+| `<GoogleAccessToken>` | OAuth 2.0 Access Token | Calling Google Cloud APIs | BigQuery, Secret Manager, Cloud Storage, Cloud Logging |
+| `<GoogleIDToken>` | OpenID Connect ID Token | Calling services that verify caller identity | Cloud Run, Cloud Functions, GKE services with IAP |
+
+**Key difference:** Access Token = "I have permission to do X." ID Token = "I am service account X" (proof of identity).
+
+### Where Authentication Can Be Placed
+
+The `<Authentication>` element works in three locations:
+
+**1. TargetEndpoint HTTPTargetConnection** (most common):
 ```xml
-<TargetEndpoint name="cloud-run-target">
+<TargetEndpoint name="bigquery-target">
   <HTTPTargetConnection>
-    <URL>https://my-service-xyz.run.app/api</URL>
+    <URL>https://bigquery.googleapis.com/bigquery/v2/projects/my-project/queries</URL>
     <Authentication>
       <GoogleAccessToken>
         <Scopes>
-          <Scope>https://www.googleapis.com/auth/cloud-platform</Scope>
+          <Scope>https://www.googleapis.com/auth/bigquery</Scope>
         </Scopes>
       </GoogleAccessToken>
     </Authentication>
@@ -265,24 +277,106 @@ Access Google Cloud services (Cloud Run, Cloud Functions, BigQuery, Secret Manag
 </TargetEndpoint>
 ```
 
-### ID Token (for Cloud Run / Cloud Functions)
-
+**2. ServiceCallout HTTPTargetConnection** (for mid-flow Google API calls):
 ```xml
-<TargetEndpoint name="cloud-function-target">
+<ServiceCallout name="SC-CallCloudFunction">
+  <Request variable="functionRequest"/>
+  <Response>functionResponse</Response>
   <HTTPTargetConnection>
-    <URL>https://my-function-xyz.cloudfunctions.net/process</URL>
+    <URL>https://my-function-abc.cloudfunctions.net/process</URL>
     <Authentication>
       <GoogleIDToken>
-        <Audience>https://my-function-xyz.cloudfunctions.net</Audience>
+        <Audience>https://my-function-abc.cloudfunctions.net</Audience>
       </GoogleIDToken>
     </Authentication>
   </HTTPTargetConnection>
-</TargetEndpoint>
+</ServiceCallout>
 ```
 
-- Apigee automatically generates and caches tokens using the proxy's service account
-- No manual token management needed
-- Use `GoogleAccessToken` for Google APIs; use `GoogleIDToken` for Cloud Run and Cloud Functions
+**3. AssignMessage Set > Authentication** (for custom request construction):
+```xml
+<AssignMessage name="AM-AddGoogleAuth">
+  <Set>
+    <Authentication>
+      <GoogleAccessToken>
+        <Scopes>
+          <Scope>https://www.googleapis.com/auth/cloud-platform</Scope>
+        </Scopes>
+      </GoogleAccessToken>
+    </Authentication>
+  </Set>
+</AssignMessage>
+```
+
+### GoogleIDToken with Dynamic Audience
+
+For multi-environment deployments where Cloud Run URLs differ per environment:
+```xml
+<!-- Dynamic audience from flow variable -->
+<GoogleIDToken>
+  <Audience ref="propertyset.env-config.cloud-run-url"/>
+</GoogleIDToken>
+
+<!-- Or auto-use the target URL as audience -->
+<GoogleIDToken>
+  <Audience useTargetUrl="true"/>
+</GoogleIDToken>
+```
+`useTargetUrl="true"` uses the HTTPTargetConnection URL (minus query params) as the audience automatically.
+
+### Multiple Scopes
+```xml
+<GoogleAccessToken>
+  <Scopes>
+    <Scope>https://www.googleapis.com/auth/bigquery</Scope>
+    <Scope>https://www.googleapis.com/auth/cloud-platform</Scope>
+  </Scopes>
+</GoogleAccessToken>
+```
+
+### Service Account Configuration
+
+The proxy must have a service account assigned at deployment time:
+```bash
+# apigeecli
+apigeecli apis deploy -n my-proxy -e prod -s my-sa@my-project.iam.gserviceaccount.com -o my-org -t $TOKEN
+
+# REST API includes serviceAccount in the deployment request body
+```
+
+**Required IAM roles:**
+- The deploying user needs `iam.serviceAccounts.actAs` on the proxy service account
+- The Apigee platform service account needs `iam.serviceAccountTokenCreator` on the proxy service account (to impersonate it)
+- The proxy service account needs permissions for the target service (e.g., `roles/run.invoker` for Cloud Run, `roles/bigquery.dataViewer` for BigQuery)
+
+### Token Caching
+
+Apigee caches generated tokens internally at the message processor level:
+- Tokens are cached for the remainder of their validity period
+- Cache key: service account + scopes/audience + target URL
+- Tokens are automatically refreshed before expiry
+- No manual cache invalidation — relies on token TTL
+- No need to cache tokens in KVM or flow variables
+
+### Common Error Scenarios
+
+| Error | Cause | Fix |
+|---|---|---|
+| 403 on deployment | Missing `iam.serviceAccounts.actAs` on the deploying user | Grant the IAM role to the deploying identity |
+| 403 at runtime | Proxy SA lacks permissions on the target service | Grant appropriate role (e.g., `roles/run.invoker`) |
+| 500 at runtime | Apigee platform SA can't impersonate proxy SA | Grant `iam.serviceAccountTokenCreator` to Apigee SA |
+| Token generation fails | Malformed audience or unresolvable `ref` variable | Check PropertySet/variable values; use debug session |
+
+### Common Scopes Reference
+
+| Google Service | Scope |
+|---|---|
+| Cloud Platform (broad) | `https://www.googleapis.com/auth/cloud-platform` |
+| BigQuery | `https://www.googleapis.com/auth/bigquery` |
+| Cloud Storage | `https://www.googleapis.com/auth/devstorage.read_write` |
+| Cloud Logging | `https://www.googleapis.com/auth/logging.write` |
+| Secret Manager | `https://www.googleapis.com/auth/cloud-platform` |
+| Pub/Sub | `https://www.googleapis.com/auth/pubsub` |
 
 ## mTLS Southbound (Backend mTLS)
 
