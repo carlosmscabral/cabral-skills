@@ -77,6 +77,22 @@
 </ServiceCallout>
 ```
 
+### Using waitForComplete() Excessively in JavaScript
+
+- **Problem**: `httpClient.send()` followed by `waitForComplete()` blocks the thread
+- **Impact**: Degrades proxy performance and can cause timeouts under load
+- **Fix**: Use ServiceCallout policy for synchronous HTTP calls instead of JavaScript httpClient
+
+### Accessing Payload with Streaming Enabled
+
+- **Problem**: Policies that access `request.content` or `response.content` while streaming is enabled
+- **Impact**: Silently buffers the entire payload, defeating streaming. Causes OutOfMemory for large payloads.
+- **Fix**: Either disable streaming OR remove payload-accessing policies (JSONThreatProtection, ExtractVariables on body, JavaScript reading content)
+
+### API Proxy Bundle Size Limit
+
+- **Note**: API proxy bundles cannot exceed 15 MB. Keep bundles lean — avoid bundling large resource files.
+
 ## Architecture Anti-patterns
 
 ### Invoking Management API from Proxies

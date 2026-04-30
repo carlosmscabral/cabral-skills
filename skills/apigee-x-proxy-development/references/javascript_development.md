@@ -10,6 +10,8 @@
 
 JavaScript files are stored in the `apiproxy/resources/jsc/` directory. The ResourceURL format is `jsc://filename.js`. Use IncludeURL to load shared libraries before the main script executes.
 
+Add `timeLimit` attribute to prevent runaway scripts: `<Javascript name="JS-Transform" timeLimit="200">`. Default timeout varies; always set explicitly in production.
+
 ```xml
 <Javascript name="JS-ProcessOrder">
   <IncludeURL>jsc://utils.js</IncludeURL>
@@ -231,6 +233,16 @@ if (exchange.isSuccess()) {
 
 `httpClient.send()` is non-blocking until `waitForComplete()` is called. Use this for calls that cannot be expressed as ServiceCallout policies.
 
+Convenience method for simple GET requests:
+
+```javascript
+var exchange = httpClient.get("https://api.example.com/data");
+exchange.waitForComplete();
+if (exchange.isSuccess()) {
+  var resp = exchange.getResponse();
+}
+```
+
 ### Parallel HTTP Calls with httpClient
 
 ```javascript
@@ -261,19 +273,23 @@ context.setVariable("response.header.Content-Type", "application/json");
 
 ## crypto Object
 
-The built-in `crypto` object provides hashing and encoding operations.
+The built-in `crypto` object provides hashing operations via an object-based API. Each method returns a hash object supporting `.update()` and `.digest()` / `.digest64()`.
 
 ```javascript
-// SHA-256 hash
-var hash = crypto.SHA256(context.getVariable("request.content"));
-context.setVariable("custom.contentHash", hash);
-
+// SHA-256 hash (hex output)
+var hash = crypto.getSHA256().update(context.getVariable("request.content")).digest();
+// SHA-256 hash (base64 output)
+var hash64 = crypto.getSHA256().update("data").digest64();
+// SHA-1 hash
+var sha1 = crypto.getSHA1().update("data").digest();
 // MD5 hash
-var md5 = crypto.MD5(context.getVariable("request.content"));
+var md5 = crypto.getMD5().update("data").digest();
 
-// Base64 encode/decode
-var encoded = crypto.base64(someString);
+// Chain multiple updates before final digest
+var combined = crypto.getSHA256().update("part1").update("part2").digest();
 ```
+
+Note: There is no `crypto.SHA256()`, `crypto.MD5()`, or `crypto.base64()` function. Always use the `get*()` methods. For base64 output, use `.digest64()` on the hash object.
 
 ## print() for Debug Logging
 

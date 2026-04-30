@@ -136,6 +136,8 @@ Quota policy:
 
 - `EnforceOnly`: only check quota, don't count (counting happens separately when backend fails)
 
+`EnforceOnly=true` means the policy checks the quota counter WITHOUT incrementing it (read-only). The actual counter increment happens in the SECOND Quota policy (`Q-CB-Increment`) placed in the TargetEndpoint response flow, which only fires on 5xx responses. This is a two-policy pattern: one to CHECK (read), one to COUNT (write).
+
 ### Incrementing on Backend Failure
 
 In TargetEndpoint PostFlow response:
@@ -360,7 +362,9 @@ Enforce token-based quotas instead of (or alongside) request-count quotas:
 
 ### SanitizeUserPrompt (Model Armor)
 
-Filters prompt injection, jailbreak attempts, and harmful content before reaching the LLM:
+Filters prompt injection, jailbreak attempts, and harmful content before reaching the LLM.
+
+**Prerequisite:** Model Armor templates must be created in Vertex AI before referencing them in this policy. Requires Vertex AI API enabled and appropriate IAM permissions on the Apigee service account.
 
 ```xml
 <SanitizeUserPrompt name="SUP-FilterPrompt">
