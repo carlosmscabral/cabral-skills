@@ -349,6 +349,8 @@ Supported algorithm options: `RS256`, `RS384`, `RS512`, `PS256`, `PS384`, `PS512
 - Elliptic curve algorithms (`ES*`) use `<PrivateKey>` and `<PublicKey>` similarly.
 - HMAC algorithms (`HS*`) use `<SecretKey>` for both signing and verification.
 
+Additional elements: `<Id>` (JWT ID/jti claim, auto-generates UUID if omitted), `<NotBefore>` (nbf claim, e.g., `<NotBefore>0s</NotBefore>`), `<AdditionalHeaders>` (custom JWT header claims, not payload). Claim `type` attribute supports: `string`, `number`, `boolean`, `map`. Set `array="true"` on `<Claim>` for array values.
+
 ### VerifyJWT
 
 ```xml
@@ -367,6 +369,8 @@ Supported algorithm options: `RS256`, `RS384`, `RS512`, `PS256`, `PS384`, `PS512
 ```
 
 Auto-populated variables after verification: `jwt.{policy-name}.decoded.claim.{name}`, `jwt.{policy-name}.decoded.header.{name}`, `jwt.{policy-name}.valid`, `jwt.{policy-name}.expiry`.
+
+`<TimeAllowance>` adds a grace period (in seconds) for exp/nbf validation (e.g., `<TimeAllowance>60s</TimeAllowance>` allows 60s clock skew). When using `<JWKS uri="..."/>`, Apigee caches the JWKS for 300 seconds — key rotation takes up to 5 minutes to take effect.
 
 ### DecodeJWT
 
@@ -395,6 +399,8 @@ Computes or verifies an HMAC (Hash-based Message Authentication Code) for messag
 ```
 
 When `<VerificationValue>` is provided, the policy computes the HMAC and compares it to the supplied value. A mismatch raises a fault. Omit `<VerificationValue>` to compute only and store the result in the output variable.
+
+Encoding attributes: `<SecretKey encoding="utf8|hex|base16|base64">`, `<Output encoding="hex|base16|base64|base64url">` (default: base64), `<VerificationValue encoding="hex|base16|base64|base64url">`. Encoding mismatch between signing and verification is a common source of silent failures.
 
 ## CORS Policy
 
@@ -460,6 +466,8 @@ Controls access based on client IP address. Useful for restricting traffic to kn
 
 Rules are evaluated in order. When `noRuleMatchAction` is `DENY`, any IP not matching an ALLOW rule is rejected.
 
+Supports both IPv4 and IPv6 addresses. Add `<ValidateBasedOn>` to control which IP is checked when `X-Forwarded-For` contains multiple IPs: `FIRST` (leftmost/client), `LAST` (rightmost/nearest proxy), or default checks all.
+
 ## VerifyIAM Policy
 
 Authorizes requests using Google Cloud IAM credentials. This policy verifies that the caller has the required IAM permission on a specified resource, integrating Apigee authorization with Google Cloud's IAM system.
@@ -489,6 +497,8 @@ Validates JSON payloads against structural constraints to prevent attacks using 
 
 Each element acts as a threshold. If any limit is exceeded, the policy raises a fault. Omitting an element means no limit is enforced for that dimension.
 
+**Important:** This policy only executes when the request `Content-Type` is `application/json`. Requests with other content types (or no content type) bypass threat protection entirely.
+
 ## XMLThreatProtection
 
 Validates XML payloads against structural constraints to prevent XML-based attacks such as entity expansion or deeply nested elements.
@@ -511,6 +521,8 @@ Validates XML payloads against structural constraints to prevent XML-based attac
   <Source>request</Source>
 </XMLThreatProtection>
 ```
+
+**Important:** This policy only executes when the request `Content-Type` is `application/xml`, `text/xml`, or `application/*+xml`. Other content types bypass validation.
 
 ## OASValidation
 
@@ -567,6 +579,8 @@ Parses and validates GraphQL queries against a schema, enforcing depth and compl
 ```
 
 `MaxDepth` prevents deeply nested queries that could overload backend resolvers. `MaxCount` limits the number of fields or fragments in a single query. The schema file is stored in `apiproxy/resources/graphql/`.
+
+Additional elements: `<MaxPayloadSizeInBytes>` (limit payload size), `<Source>` (`request`/`response`/`message`). `<OperationType>` values: `query`, `mutation`, `subscription`. `<Action>` values: `parse` (syntax only), `parse-verify` (validate against schema). Schema file location: `apiproxy/resources/graphql/`.
 
 ## API Products, Apps, and Developers
 

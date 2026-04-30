@@ -30,6 +30,8 @@ Rate syntax uses `Xpm` (per minute) or `Xps` (per second).
 | `<Identifier>` | Applies the rate limit per unique value (e.g., per client IP, per API key) |
 | `<UseEffectiveCount>` | When `true`, distributes rate counting across all Apigee instances. Required for accurate enforcement in multi-instance environments |
 
+**Critical:** When `UseEffectiveCount` is `false` (default), each Apigee runtime instance enforces the rate independently. With 3 instances, the effective rate is 3x the configured value. Always set `UseEffectiveCount` to `true` in production for accurate distributed rate limiting.
+
 ### Dynamic Rate from a Variable
 
 You can drive the rate from a KVM entry, API product attribute, or any flow variable:
@@ -82,7 +84,25 @@ Quota enforces consumption limits over extended time periods -- for example, 100
 | `<TimeUnit>` | `minute`, `hour`, `day`, `week`, or `month` |
 | `<Distributed>` | Share quota counter across all Apigee instances |
 | `<Synchronous>` | Synchronize counter updates in real time (use with `Distributed`) |
+
+**Gotcha:** `Distributed=true` with `Synchronous=false` uses eventual consistency — quota reads may be stale across nodes. Set `Synchronous=true` for accurate enforcement (at slight latency cost). Quota counters reset at the start of each period (e.g., daily quota resets at midnight UTC), not 24 hours from first request.
 | `<Identifier>` | Apply separate counters per unique value |
+
+### Weighted Quota (MessageWeight)
+
+Charge different costs per request using `<MessageWeight>`:
+```xml
+<Quota name="Q-WeightedQuota">
+  <Allow count="1000"/>
+  <Interval>1</Interval>
+  <TimeUnit>day</TimeUnit>
+  <Distributed>true</Distributed>
+  <Synchronous>true</Synchronous>
+  <Identifier ref="request.header.x-api-key"/>
+  <MessageWeight ref="custom.request.cost"/>
+</Quota>
+```
+Each request consumes `custom.request.cost` units from the quota (default weight: 1). Use for tiered pricing where premium operations cost more quota units than simple reads.
 
 ### Dynamic Quota from API Product
 
