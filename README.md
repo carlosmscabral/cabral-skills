@@ -54,4 +54,4 @@ Skills use progressive disclosure: only the name and description are loaded at s
 
 ## License
 
-See individual skill directories for licensing information.
+Apache License 2.0 — see [LICENSE](LICENSE) for details.
