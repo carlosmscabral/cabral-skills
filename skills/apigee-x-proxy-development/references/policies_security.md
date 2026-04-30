@@ -218,7 +218,33 @@ Handles Cross-Origin Resource Sharing headers for browser-based API consumers.
 </CORS>
 ```
 
-`GeneratePreflightResponse` set to `true` automatically handles OPTIONS preflight requests and returns appropriate CORS headers without forwarding to the target. Place this policy in the PreFlow Request to ensure it runs before authentication or other policies that would reject an OPTIONS request lacking credentials.
+| Element | Description | Default |
+|---|---|---|
+| `<AllowOrigins>` | Origins allowed. Comma-separated URLs, `*` for all, or flow variable like `{request.header.origin}`. Max ~50 values recommended. | Required |
+| `<AllowMethods>` | HTTP methods allowed. Comma-separated or `*` for all. | `GET, POST, HEAD, OPTIONS` |
+| `<AllowHeaders>` | Headers the client may send. Comma-separated. | None |
+| `<ExposeHeaders>` | Headers the browser may access in the response. `*` for all. | Not set |
+| `<MaxAge>` | Preflight cache duration in seconds. `-1` disables caching (forces preflight on every call). | `1800` |
+| `<AllowCredentials>` | Whether the browser should send credentials (cookies, auth). | `false` |
+| `<GeneratePreflightResponse>` | Auto-handle OPTIONS preflight. If `false`, sets flow variables instead. | `true` |
+
+**OPTIONS preflight behavior:** When an OPTIONS request is received, the CORS policy **skips all proxy request flows** and transfers directly to the Proxy Response PreFlow. No need to create a separate condition to handle OPTIONS — the policy does it automatically.
+
+**AllowOrigins options:**
+```xml
+<!-- Single URL -->
+<AllowOrigins>https://www.example.com</AllowOrigins>
+<!-- Multiple URLs (comma-separated) -->
+<AllowOrigins>https://app.example.com, https://admin.example.com</AllowOrigins>
+<!-- Dynamic from request header (recommended) -->
+<AllowOrigins>{request.header.origin}</AllowOrigins>
+<!-- Wildcard (CAUTION: disables same-origin protection) -->
+<AllowOrigins>*</AllowOrigins>
+```
+
+**Security warning:** Setting `AllowOrigins` to `*` disables same-origin protection for your API. Use specific origins or `{request.header.origin}` in production.
+
+Place the CORS policy in PreFlow Request so it runs before authentication policies that would reject an unauthenticated OPTIONS preflight.
 
 ## AccessControl Policy
 
@@ -295,6 +321,7 @@ Validates XML payloads against structural constraints to prevent XML-based attac
 
 Validates requests and responses against an OpenAPI 3.0 specification bundled with the proxy.
 
+### Basic Usage
 ```xml
 <OASValidation name="OAS-ValidateRequest">
   <OASResource>oas://my-spec.yaml</OASResource>
@@ -305,7 +332,30 @@ Validates requests and responses against an OpenAPI 3.0 specification bundled wi
 </OASValidation>
 ```
 
-The OpenAPI spec file must be stored in the `apiproxy/resources/oas/` directory of the proxy bundle. The policy validates path, parameters, headers, and optionally the message body against the specification. Invalid requests are rejected with a descriptive fault.
+### Strict Validation (reject unspecified parameters)
+```xml
+<OASValidation name="OAS-StrictValidation">
+  <OASResource>oas://my-spec.yaml</OASResource>
+  <Options>
+    <ValidateMessageBody>true</ValidateMessageBody>
+    <AllowUnspecifiedParameters>
+      <Header>false</Header>
+      <Query>false</Query>
+      <Cookie>false</Cookie>
+    </AllowUnspecifiedParameters>
+  </Options>
+  <Source>request</Source>
+</OASValidation>
+```
+
+| Element | Description | Default |
+|---|---|---|
+| `<OASResource>` | Path to the OpenAPI spec: `oas://filename.yaml` or `oas://filename.json`. File stored in `apiproxy/resources/oas/`. | Required |
+| `<ValidateMessageBody>` | Validate body against the spec's request body schema. Only works when `Content-Type` is `application/json`; other content types skip body validation automatically. | `false` |
+| `<AllowUnspecifiedParameters>` | Control behavior for params not defined in the spec. Child elements: `<Header>`, `<Query>`, `<Cookie>` (each `true`/`false`). | All `true` (allow extra params) |
+| `<Source>` | Which message to validate: `request`, `response`, or `message` (auto-detects based on flow phase). | `request` |
+
+**Important:** Body validation only applies to `application/json` content. Non-JSON bodies pass validation automatically without being checked.
 
 ## GraphQL Policy
 
