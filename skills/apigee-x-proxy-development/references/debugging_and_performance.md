@@ -260,8 +260,28 @@ If any of these execute while streaming is enabled, Apigee silently buffers the 
 | Cache entry max size | 256 KB |
 | With streaming enabled | Effectively unlimited (requires sufficient memory) |
 
-### Timeout Configuration
+### Timeout Configuration -- Deep Dive
 
+Apigee X has three layers of timeout that interact:
+
+**1. Ingress timeout (300 seconds, NOT configurable)**
+The internal load balancer sends a 300-second hard timeout to the Message Processor on every request. This is the absolute maximum for any proxy execution.
+
+**2. `api.timeout` (ProxyEndpoint property, optional)**
+The overall proxy execution budget in milliseconds. Set on HTTPProxyConnection:
+```xml
+<ProxyEndpoint name="default">
+  <HTTPProxyConnection>
+    <BasePath>/v1/api</BasePath>
+    <Properties>
+      <Property name="api.timeout">180000</Property>
+    </Properties>
+  </HTTPProxyConnection>
+</ProxyEndpoint>
+```
+If set, the Message Processor uses the **lesser of** `api.timeout` and the ingress timeout (300s). If not set, the ingress timeout applies.
+
+**3. Target-level timeouts (TargetEndpoint properties)**
 ```xml
 <TargetEndpoint name="default">
   <HTTPTargetConnection>
@@ -281,9 +301,36 @@ If any of these execute while streaming is enabled, Apigee silently buffers the 
 | `io.timeout.millis` | 55000 | Data read/write timeout after connection established |
 | `keepalive.timeout.millis` | 60000 | Idle connection timeout before close |
 
-Interaction with `api.timeout`: total proxy time is bounded by `api.timeout` (if set). The actual I/O timeout used is `min(api.timeout - elapsed, io.timeout.millis)`.
+**How they interact at runtime:**
 
-Property values MUST be literals. Variable substitution is not supported for these properties.
+After each policy executes (and before the Message Processor sends the request to the backend), the MP calculates:
+1. `remaining = api.timeout - elapsed_time_since_request_start`
+2. If `remaining <= 0` → immediately return **504 Gateway Timeout**
+3. Otherwise, set `effective_io_timeout = min(remaining, io.timeout.millis)`
+4. Use `effective_io_timeout` when waiting for the backend response
+
+This means `io.timeout.millis` is a ceiling, NOT a guarantee — if the proxy has already consumed most of `api.timeout` running policies, the backend gets less time.
+
+**Timeout error codes:**
+- Connection timeout → `messaging.adaptors.http.flow.GatewayTimeout` (504)
+- I/O timeout → `messaging.adaptors.http.flow.GatewayTimeout` (504)
+- api.timeout exceeded → `messaging.adaptors.http.flow.GatewayTimeout` (504)
+
+### Additional Endpoint Properties
+
+Properties not covered above but important for production proxies:
+
+| Property | Location | Default | Description |
+|---|---|---|---|
+| `success.codes` | TargetEndpoint | 1xx,2xx,3xx | Override which HTTP codes are treated as success. Example: `2XX,1XX,505` treats 1xx, 2xx, and 505 as success. Setting this REPLACES the defaults. |
+| `compression.algorithm` | Both | N/A (honor received) | Force compression: `gzip`, `deflate`, or `none`. By default, Apigee preserves the compression of received messages. |
+| `request.payload.parse.limit` | ProxyEndpoint | 10M | Max payload size processed in request flow (10M-30M). Exceeding returns 413. |
+| `X-Forwarded-For` | ProxyEndpoint | false | When true, adds the virtual host IP to the X-Forwarded-For header on outbound requests. |
+| `HTTPHeader.allowDuplicates` | ProxyEndpoint | N/A | Comma-separated list of headers that may appear multiple times (e.g., `Content-Type,Authorization`). |
+| `response.retain.headers` | TargetEndpoint | all | Specific headers to retain from backend response. Overrides `response.retain.headers.enabled`. |
+| `retain.queryparams` | TargetEndpoint | all | Specific query params to forward to backend. Overrides `retain.queryparams.enabled`. |
+
+Property values MUST be literals. Variable substitution is not supported.
 
 ### Policy Performance Tiers
 
