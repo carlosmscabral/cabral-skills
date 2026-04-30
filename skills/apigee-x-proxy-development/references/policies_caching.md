@@ -42,9 +42,11 @@ ResponseCache handles both cache lookup and cache population in a single policy.
 | `<ExpirySettings>` | Controls how long entries remain in cache |
 | `<TimeoutInSec>` | TTL in seconds |
 | `<UseResponseCacheHeaders>` | When `true`, honors `Cache-Control` and `Expires` headers from the backend |
-| `<ExcludeErrorResponse>` | When `true`, prevents caching of error responses (4xx/5xx) |
+| `<ExcludeErrorResponse>` | When `true`, prevents caching of error responses (4xx/5xx). When `true`, only responses with status codes 200-205 are cached. All other status codes (3xx, 4xx, 5xx) are excluded. |
 | `<SkipCacheLookup>` | Condition to bypass cache lookup on request |
 | `<SkipCachePopulation>` | Condition to bypass cache storage on response |
+
+Additional elements: `<UseAcceptHeader>true</UseAcceptHeader>` appends Accept header value to cache key for content negotiation (JSON vs XML responses). `<CacheResource>` specifies a named cache (omit to use the default shared cache).
 
 ### Honoring Backend Cache-Control Headers
 

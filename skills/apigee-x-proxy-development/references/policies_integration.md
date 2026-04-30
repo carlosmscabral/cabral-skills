@@ -64,6 +64,22 @@ context.setVariable("response.content", JSON.stringify(aggregate));
 context.setVariable("response.header.Content-Type", "application/json");
 ```
 
+### ServiceCallout to Internal Proxy (LocalTargetConnection)
+
+Call another proxy in the same environment without network overhead:
+```xml
+<ServiceCallout name="SC-InternalProxy">
+  <Request variable="internalRequest"/>
+  <Response>internalResponse</Response>
+  <LocalTargetConnection>
+    <APIProxy>internal-service-proxy</APIProxy>
+    <ProxyEndpoint>default</ProxyEndpoint>
+  </LocalTargetConnection>
+  <Timeout>10000</Timeout>
+</ServiceCallout>
+```
+Uses the same LocalTargetConnection pattern as proxy chaining but within a ServiceCallout (request stays within Apigee, no external network hop).
+
 ## FlowCallout Policy
 
 Invoke a shared flow from within a proxy. The shared flow must be deployed before the consuming proxy. See `shared_flows.md` for creating shared flows.
@@ -113,6 +129,8 @@ Read, write, and delete persistent key-value data. KVMs provide runtime-mutable 
 - `assignTo`: flow variable to store the retrieved value. Use `private.` prefix for sensitive data so values are masked in trace sessions
 - `index`: 1-based index for multi-valued keys (default: 1)
 - `ExpiryTimeInSecs`: how long to cache KVM values in memory. This is NOT an entry TTL -- KVM entries never expire. It controls how often the runtime re-reads from the backing store
+
+**Gotcha:** KVM PUT operations only refresh the cache on the runtime node handling that request. Other nodes continue serving their cached values until ExpiryTimeInSecs elapses. There is no way to manually flush KVM caches across all nodes.
 
 ### PUT Operation
 ```xml
@@ -358,6 +376,8 @@ Log structured data to Google Cloud Logging (preferred for Apigee X). Place in P
   </CloudLogging>
 </MessageLogging>
 ```
+
+**Constraints:** Cannot use both `<CloudLogging>` and `<Syslog>` in the same policy instance -- choose one per policy. The Apigee service account needs `roles/logging.logWriter` (or `logging.logEntries.create` permission) for CloudLogging to work.
 
 ## PublishMessage Policy
 

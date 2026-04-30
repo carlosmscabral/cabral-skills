@@ -136,6 +136,8 @@ Extracts data from messages and stores it in flow variables. Supports JSONPath, 
 
 Creates variables: `extracted.userId`, `extracted.email`, `extracted.orderCount`. The prefix is prepended to each variable name.
 
+The `type` attribute on `<Variable>` controls output type: `string` (default), `integer`, `boolean`, `long`, `double`. Type mismatch between extracted value and declared type causes a policy fault.
+
 ### XPath Extraction
 
 ```xml
@@ -238,6 +240,8 @@ Converts XML payloads to JSON format.
 
 The source Content-Type must be `application/xml` or `text/xml`. The policy automatically sets the output Content-Type to `application/json`. `RecognizeNumber` and `RecognizeBoolean` control whether string values that look like numbers or booleans are converted to their native JSON types.
 
+**Important:** Only executes when `Content-Type` is `application/xml` or `text/xml`. Other content types silently skip conversion. Additional options: `<RecognizeNull>` (convert empty XML to null), `<TreatAsArray>` (ensure consistent array formatting), `<Format>` (predefined templates: `yahoo`, `google`, `badgerFish`, `xml.com`).
+
 ## JSONtoXML Policy
 
 Converts JSON payloads to XML format.
@@ -255,6 +259,8 @@ Converts JSON payloads to XML format.
 ```
 
 The source Content-Type must be `application/json`. The output Content-Type is set to `application/xml`. The `NullValue` option defines the string representation used for null JSON values in the XML output.
+
+**Important:** Only executes when `Content-Type` is `application/json`. Other content types silently skip conversion. Additional options: `<AttributePrefix>` (convert JSON properties to XML attributes), `<ArrayItemElementName>` (name array elements), `<OmitXmlDeclaration>` (remove XML declaration header).
 
 ## Common Mediation Patterns
 
