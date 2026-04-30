@@ -51,6 +51,10 @@ Reference named target servers through `<LoadBalancer>` inside `<HTTPTargetConne
 
 **Important**: `<LoadBalancer>` and `<URL>` are mutually exclusive in `<HTTPTargetConnection>`.
 
+`<Path>` supports message templates for variable substitution: `<Path>{mypath}</Path>`.
+
+If SSLInfo is defined on both the TargetServer (via API) and the TargetEndpoint XML, the **TargetServer SSLInfo takes precedence**.
+
 ---
 
 ## Load Balancing Algorithms
@@ -114,17 +118,37 @@ Best for long-lived connections or variable response times.
 </LoadBalancer>
 ```
 
-- Tracks consecutive I/O failures per server
-- When a server reaches MaxFailures consecutive failures, it is removed from rotation
-- **Without HealthMonitor**: server never auto-recovers (needs proxy redeploy)
-- **With HealthMonitor**: server auto-recovers when health check passes
-- **Default MaxFailures=0**: never remove server from rotation
+- Tracks failure count per server (failures from both API calls and health checks count)
+- When a server reaches MaxFailures failures, it is removed from rotation
+- **Without HealthMonitor**: Apigee auto-checks every 5 minutes and returns the server to rotation when it responds normally. No proxy redeploy needed.
+- **With HealthMonitor**: server auto-recovers when health check passes (much faster recovery at IntervalInSec frequency)
+- **Default MaxFailures=0**: never remove server from rotation; always try to connect
+- Failure counts are **per-load-balancer** — if two target endpoints use the same servers, their failure counts are independent
+
+### ServerUnhealthyResponse
+
+By default, only I/O errors (connection failures, timeouts) count as failures. To also count specific HTTP status codes as failures, add `<ServerUnhealthyResponse>`:
+```xml
+<LoadBalancer>
+  <Server name="target1"/>
+  <Server name="target2"/>
+  <MaxFailures>5</MaxFailures>
+  <ServerUnhealthyResponse>
+    <ResponseCode>404</ResponseCode>
+    <ResponseCode>500</ResponseCode>
+    <ResponseCode>502</ResponseCode>
+    <ResponseCode>503</ResponseCode>
+  </ServerUnhealthyResponse>
+</LoadBalancer>
+```
+With this config, a 500 response from the backend increments the failure count just like a connection timeout would.
 
 ### RetryEnabled
 
-- When `true`: on I/O failure, automatically retry on next server
-- Only retries on I/O exceptions and timeouts, NOT HTTP error codes (4xx/5xx)
+- When `true` (default): on failure, automatically retry on the next server
+- Retries on I/O exceptions, timeouts, AND responses matching `<ServerUnhealthyResponse>` codes
 - Requires minimum 2 servers in LoadBalancer
+- Set to `false` to disable: `<RetryEnabled>false</RetryEnabled>`
 
 ### IsFallback Servers
 
@@ -149,8 +173,7 @@ Best for long-lived connections or variable response times.
 
 ## Health Monitors
 
-Periodic checks against target servers that enable automatic recovery of servers
-removed from rotation by MaxFailures.
+Periodic checks against target servers that enable automatic recovery of servers removed from rotation by MaxFailures. Health monitors must be configured **per-proxy** — if multiple proxies call the same target servers, each proxy needs its own HealthMonitor configuration. You must set `MaxFailures > 0` for health monitoring to function.
 
 ### HTTPMonitor -- Complete Configuration
 
