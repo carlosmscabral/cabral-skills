@@ -101,6 +101,92 @@ Use `<AssignVariable>` to set flow variables for use by downstream policies.
 
 `<Ref>` attempts to read the referenced variable first. If the variable is null or unresolved, the policy falls back to the literal `<Value>`. This pattern is useful for setting defaults.
 
+### AssignVariable — All Value Sources
+
+`<AssignVariable>` supports five value sources, evaluated in this precedence order:
+
+1. **`<ResourceURL>`** — load content from a resource file (XSL, XSD, JavaScript, OpenAPI spec)
+2. **`<Template>`** — message template with function calls and variable interpolation
+3. **`<Ref>`** — value of another flow variable
+4. **`<Value>`** — literal string (fallback when `<Ref>` is null)
+5. **`<PropertySetRef>`** — value from a property set name/key pair
+
+```xml
+<!-- Template: concatenate variables with functions -->
+<AssignVariable>
+  <Name>custom.correlationId</Name>
+  <Template>{system.uuid}-{messageid}</Template>
+</AssignVariable>
+
+<!-- PropertySetRef: dynamic property set access -->
+<AssignVariable>
+  <Name>config.backendUrl</Name>
+  <PropertySetRef>propertyset.app-config.backend.url</PropertySetRef>
+</AssignVariable>
+
+<!-- Disable path suffix forwarding to target -->
+<AssignVariable>
+  <Name>target.copy.pathsuffix</Name>
+  <Value>false</Value>
+</AssignVariable>
+```
+
+### JSON Payload with Custom Delimiters
+
+For JSON payloads, curly braces conflict with JSON syntax. Use `variablePrefix` and `variableSuffix` to specify alternative delimiters:
+```xml
+<Set>
+  <Payload contentType="application/json" variablePrefix="@" variableSuffix="#">
+    {"user": "@request.header.user-agent#", "ip": "@client.ip#"}
+  </Payload>
+</Set>
+```
+Alternatively, you can still use curly braces — Apigee resolves `{variable}` inside JSON payloads.
+
+### Set > Authentication (Google Cloud Auth)
+
+Attach Google authentication to outbound requests directly in AssignMessage:
+```xml
+<Set>
+  <Authentication>
+    <GoogleAccessToken>
+      <Scopes>
+        <Scope>https://www.googleapis.com/auth/cloud-platform</Scope>
+      </Scopes>
+    </GoogleAccessToken>
+  </Authentication>
+</Set>
+```
+Use `<GoogleIDToken>` with `<Audience>` for Cloud Run/Cloud Functions. Apigee auto-generates and caches tokens.
+
+### FormParams Requirements
+
+`<FormParams>` (in Add or Set) only works when:
+- HTTP verb is POST
+- `Content-Type` is `application/x-www-form-urlencoded` (Apigee sets this automatically when FormParams are added)
+- Request body must exist (even if empty — use `-d ""` in curl)
+
+### Best Practice: Strip API Key After Verification
+
+Remove the API key from the request before forwarding to the backend to prevent leaking credentials:
+```xml
+<AssignMessage name="AM-StripApiKey">
+  <Remove>
+    <QueryParams>
+      <QueryParam name="apikey"/>
+    </QueryParams>
+    <Headers>
+      <Header name="x-api-key"/>
+    </Headers>
+  </Remove>
+  <AssignTo>request</AssignTo>
+</AssignMessage>
+```
+
+### Important: Remove Erases Permanently
+
+Values removed by `<Remove>` cannot be accessed by downstream policies. If you need the value later, save it to a flow variable with `<AssignVariable>` BEFORE removing it.
+
 ### AssignTo Explained
 
 The `<AssignTo>` element controls which message the policy modifies:
