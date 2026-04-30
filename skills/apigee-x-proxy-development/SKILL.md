@@ -114,8 +114,8 @@ Reference: [proxy_bundle_anatomy.md](./references/proxy_bundle_anatomy.md), [end
 1. Map API operations to conditional flows using verb + path conditions
 2. Place security policies in PreFlow (execute for every request)
 3. Place business logic in conditional flows (execute per operation)
-4. Place logging and response headers in PostFlow
-5. Use PostClientFlow for async logging (MessageLogging, FlowCallout only)
+4. Place response headers and caching in PostFlow
+5. Place MessageLogging in PostClientFlow (guarantees execution even on fault — PostFlow is skipped if proxy errors before reaching it)
 
 Reference: [flows_and_execution.md](./references/flows_and_execution.md), [flow_variables_and_conditions.md](./references/flow_variables_and_conditions.md)
 

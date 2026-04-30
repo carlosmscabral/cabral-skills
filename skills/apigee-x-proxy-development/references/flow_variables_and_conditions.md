@@ -24,7 +24,11 @@ Available during the **request phase** (ProxyEndpoint request flow and TargetEnd
 | `request.header.{name}` | String | Read/Write | Value of a named request header. Case-insensitive name lookup |
 | `request.header.{name}.values.count` | Integer | Read | Number of values for a multi-valued header |
 | `request.formparam.{name}` | String | Read/Write | Value of a form parameter (application/x-www-form-urlencoded body) |
-| `request.content` | String | Read | Full request body as a string |
+| `request.headers.count` | Integer | Read | Total number of request headers |
+| `request.headers.names` | Collection | Read | List of all request header names |
+| `request.formparams.count` | Integer | Read | Total number of form parameters |
+| `request.formparams.names` | Collection | Read | List of all form parameter names |
+| `request.content` | String | Read | Full request body as a string. **Empty when streaming is enabled** |
 | `request.content.length` | Integer | Read | Length of the request body in bytes |
 | `request.version` | String | Read | HTTP version, e.g. `1.1` |
 | `request.scheme` | String | Read | Protocol scheme: `http` or `https` |
@@ -56,7 +60,10 @@ The `message.*` variables are aliases that point to different underlying message
 | Proxy response flow | `response.*` |
 | Error flow | `error.*` |
 
-This makes `message.*` useful for policies that must work identically in both request and response phases, or when you need cross-phase access. For example, a policy attached to the response flow can read `message.content` to get the response body, while the same policy attached to the request flow reads the request body.
+**Key use cases for `message.*`:**
+- **Error flow:** In FaultRules, `request.*` and `response.*` are out of scope. Use `message.*` to access the error message object. `AssignMessage` auto-switches context to the error message in fault flows.
+- **PostClientFlow logging:** Use `message.*` in MessageLogging to seamlessly log response data in both success and error scenarios.
+- **Shared policies:** A single AssignMessage or JavaScript policy can work in both request and response flows by referencing `message.*` instead of hard-coding `request.*` or `response.*`.
 
 | Variable | Description |
 |---|---|
@@ -421,13 +428,15 @@ The `=` and `!=` operators do not need escaping. The `~`, `MatchesPath`, `and`, 
 
 ### Operator Precedence
 
-Operators are evaluated in this order (highest to lowest):
+**Warning: Apigee's precedence differs from most programming languages.** The `||` (OR) operator has HIGHER precedence than `&&` (AND):
 
-1. `!` (NOT)
-2. `and` (AND)
-3. `or` (OR)
+1. `!` (NOT) — highest
+2. `||` / `or` (OR)
+3. `&&` / `and` (AND) — lowest
 
-**Best practice:** Always use parentheses to make precedence explicit, especially with mixed `and`/`or`:
+This means `A && B || C && D` is evaluated as `A && (B || C) && D`, NOT `(A && B) || (C && D)`.
+
+**Best practice:** ALWAYS use parentheses to make precedence explicit. Never rely on default precedence with mixed `and`/`or`:
 
 ```xml
 <!-- Ambiguous without parentheses -->

@@ -51,6 +51,11 @@ The ProxyEndpoint defines how clients connect to the API proxy. It lives in `api
 </ProxyEndpoint>
 ```
 
+**BasePath rules:**
+- Must be unique per environment — two proxies in the same environment cannot share a base path
+- Limit: 3,000 base paths per environment or environment group
+- By default, all data in the request is passed unchanged from ProxyEndpoint to TargetEndpoint
+
 ### ProxyEndpoint Properties
 
 | Property | Description | Default |
@@ -149,7 +154,7 @@ Always use `ref://` references rather than hardcoded keystore names so certifica
 
 ## RouteRules
 
-RouteRules appear at the bottom of the ProxyEndpoint and determine which TargetEndpoint handles each request. They are evaluated **top-to-bottom; the first match wins**.
+RouteRules appear at the bottom of the ProxyEndpoint and determine which TargetEndpoint handles each request. They are evaluated **top-to-bottom; the first match wins**. RouteRules are evaluated **after** all policies in the ProxyEndpoint request pipeline (PreFlow, conditional flows, and PostFlow) have executed.
 
 ### Conditional Routing Examples
 
