@@ -313,20 +313,22 @@ if (segments.length > 1) context.setVariable("custom.resource_type", segments[1]
 
 | Operator | Alternate Forms | Description | Example |
 |---|---|---|---|
-| `=` | `Equals`, `Is` | Equals | `request.verb = "GET"` |
-| `!=` | `NotEquals`, `IsNot` | Not equals | `request.verb != "OPTIONS"` |
+| `=` | `Equals`, `Is` | Equals (case sensitive) | `request.verb = "GET"` |
+| `!=` | `NotEquals`, `IsNot` | Not equals (case sensitive) | `request.verb != "OPTIONS"` |
+| `:=` | `EqualsCaseInsensitive` | Equals (case insensitive) | `request.header.Accept := "application/json"` |
 | `>` | `GreaterThan` | Greater than | `response.status.code > 399` |
 | `>=` | `GreaterThanOrEquals` | Greater than or equals | `response.status.code >= 400` |
-| `<` | `LessThan` | Less than | `response.status.code < 300` |
-| `<=` | `LessThanOrEquals` | Less than or equals | `request.content.length <= 1048576` |
+| `<` | `LesserThan` | Less than (use `&lt;` in XML) | `response.status.code &lt; 300` |
+| `<=` | `LesserThanOrEquals` | Less than or equals (use `&lt;=` in XML) | `request.content.length &lt;= 1048576` |
 
 #### String and Pattern Operators
 
 | Operator | Alternate Forms | Description | Example |
 |---|---|---|---|
-| `~` | `JavaRegex`, `Matches` | Java regex match | `request.path ~ "/api/v[0-9]+/.*"` |
-| `!~` | -- | Negated regex match | `request.path !~ ".*\\.xml$"` |
-| `~/` | `MatchesPath` | Path pattern match with wildcards | `proxy.pathsuffix MatchesPath "/users/*/orders"` |
+| `~` | `Matches`, `Like` | Glob-style pattern match with `*` wildcard (case sensitive) | `request.path ~ "/api/*/users"` |
+| `~~` | `JavaRegex` | Java regex match (case sensitive) | `request.path ~~ "/api/v[0-9]+/.*"` |
+| `~/` | `MatchesPath`, `LikePath` | Path expression match with `*` and `**` wildcards (case sensitive) | `proxy.pathsuffix MatchesPath "/users/*/orders"` |
+| `=\|` | `StartsWith` | Matches the first characters of a string (case sensitive) | `request.path =\| "/api/v2"` |
 
 #### Logical Operators
 
@@ -335,6 +337,11 @@ if (segments.length > 1) context.setVariable("custom.resource_type", segments[1]
 | `and` | `AND`, `&&` | Logical AND |
 | `or` | `OR`, `\|\|` | Logical OR |
 | `!` | `Not`, `not` | Logical NOT (prefix) |
+
+**Common confusion: `~` vs `~~` vs `~/`**
+- `~` (`Matches`/`Like`): glob-style matching using `*` as wildcard. NOT regex. Example: `request.path ~ "/api/*/users"` where `*` matches any characters.
+- `~~` (`JavaRegex`): full Java regex. Example: `request.path ~~ "/api/v[0-9]+/users"` where `[0-9]+` is a regex character class.
+- `~/` (`MatchesPath`): path-segment-aware matching. `*` matches one segment, `**` matches one or more segments. Example: `proxy.pathsuffix MatchesPath "/users/*/orders/**"`.
 
 #### Null Checks
 
@@ -362,12 +369,14 @@ The `MatchesPath` (or `~/`) operator supports two wildcard types for matching UR
 | `/users/*/orders` | `/users/123/orders` | `/users/orders`, `/users/123/orders/456` |
 | `/v1/*/items/*` | `/v1/catalog/items/789` | `/v1/a/b/items/789` |
 
-**Double asterisk `**` -- matches zero or more path segments:**
+**Double asterisk `**` -- matches one or more path segments:**
 
 | Pattern | Matches | Does NOT Match |
 |---|---|---|
-| `/users/**` | `/users`, `/users/123`, `/users/123/orders`, `/users/123/orders/456` | `/user/123` |
-| `/api/**/status` | `/api/status`, `/api/v1/status`, `/api/v1/health/status` | `/api/v1/status/detail` |
+| `/users/**` | `/users/123`, `/users/123/orders`, `/users/123/orders/456` | `/user/123`, `/users` (zero segments) |
+| `/api/**/status` | `/api/v1/status`, `/api/v1/health/status` | `/api/v1/status/detail` |
+
+Note: `**` requires at least one path segment after the prefix. `/users/**` does NOT match `/users` alone (zero trailing segments). Use a separate condition or `OR` to handle the base path: `(proxy.pathsuffix MatchesPath "/users/**") or (proxy.pathsuffix = "/users")`.
 
 **Combining both wildcards:**
 
