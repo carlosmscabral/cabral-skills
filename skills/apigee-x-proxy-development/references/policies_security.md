@@ -28,7 +28,7 @@ Place this policy early in the PreFlow Request to reject unauthenticated request
 
 ## OAuthV2
 
-Supports standard OAuth 2.0 grant types: `client_credentials`, `authorization_code`, `password`, `implicit`. Each grant type requires a different configuration of the OAuthV2 policy.
+The most complex Apigee policy. Supports OAuth 2.0 grant types (`client_credentials`, `authorization_code`, `password`, `implicit`) through 7 operations. Always set `<RFCCompliantRequestResponse>true</RFCCompliantRequestResponse>` for standards-compliant token responses.
 
 ### GenerateAccessToken (client_credentials)
 
@@ -36,13 +36,27 @@ Supports standard OAuth 2.0 grant types: `client_credentials`, `authorization_co
 <OAuthV2 name="OAuth-GenerateToken">
   <Operation>GenerateAccessToken</Operation>
   <ExpiresIn>3600000</ExpiresIn>
+  <RefreshTokenExpiresIn>86400000</RefreshTokenExpiresIn>
   <SupportedGrantTypes>
     <GrantType>client_credentials</GrantType>
   </SupportedGrantTypes>
+  <GrantType>request.formparam.grant_type</GrantType>
   <GenerateResponse enabled="true"/>
   <RFCCompliantRequestResponse>true</RFCCompliantRequestResponse>
+  <Attributes>
+    <Attribute name="tenant_id" ref="custom.tenant" display="false"/>
+  </Attributes>
 </OAuthV2>
 ```
+
+Key elements:
+- `<ExpiresIn>`: access token lifetime in milliseconds
+- `<RefreshTokenExpiresIn>`: refresh token lifetime (separate from access token)
+- `<GrantType>`: where to find the grant_type parameter (default: `request.formparam.grant_type`)
+- `<ClientId>` / `<ClientSecret>`: where to find credentials (default: `request.formparam.client_id` / `request.formparam.client_secret`, or from `Authorization: Basic` header)
+- `<GenerateResponse enabled="true"/>`: auto-generate JSON response. When `false`, no response body is sent — token values are available only via flow variables (use for custom response formatting)
+- `<RFCCompliantRequestResponse>true</RFCCompliantRequestResponse>`: enforce RFC 6749 compliance. Default `false` may omit `token_type` and other required fields.
+- `<Attributes>`: attach up to 18 custom key-value pairs to the token. `display="false"` hides from response but value is still stored.
 
 ### VerifyAccessToken
 
@@ -52,46 +66,227 @@ Supports standard OAuth 2.0 grant types: `client_credentials`, `authorization_co
 </OAuthV2>
 ```
 
-### Token Endpoint Proxy Pattern
+By default, expects `Authorization: Bearer {token}` header. To customize:
+```xml
+<OAuthV2 name="OAuth-VerifyCustomLocation">
+  <Operation>VerifyAccessToken</Operation>
+  <AccessToken>request.header.X-Custom-Token</AccessToken>
+  <AccessTokenPrefix>Token</AccessTokenPrefix>
+</OAuthV2>
+```
 
-Create a dedicated conditional flow in your proxy to handle token generation requests. The condition isolates token operations from normal API traffic:
+### GenerateAuthorizationCode
+
+Step 1 of the authorization code grant — generates a short-lived code the client exchanges for a token:
+```xml
+<OAuthV2 name="OAuth-GenerateAuthCode">
+  <Operation>GenerateAuthorizationCode</Operation>
+  <ExpiresIn>600000</ExpiresIn>
+  <GenerateResponse enabled="true"/>
+</OAuthV2>
+```
+
+Step 2 — exchange code for token (in the `/token` endpoint flow):
+```xml
+<OAuthV2 name="OAuth-ExchangeCode">
+  <Operation>GenerateAccessToken</Operation>
+  <SupportedGrantTypes>
+    <GrantType>authorization_code</GrantType>
+  </SupportedGrantTypes>
+  <Code>request.formparam.code</Code>
+  <GenerateResponse enabled="true"/>
+  <RFCCompliantRequestResponse>true</RFCCompliantRequestResponse>
+</OAuthV2>
+```
+
+Custom attributes on the authorization code are **automatically inherited** by the generated access token.
+
+### RefreshAccessToken
 
 ```xml
-<Flow name="GenerateToken">
+<OAuthV2 name="OAuth-RefreshToken">
+  <Operation>RefreshAccessToken</Operation>
+  <ExpiresIn>3600000</ExpiresIn>
+  <RefreshTokenExpiresIn>86400000</RefreshTokenExpiresIn>
+  <RefreshToken>request.formparam.refresh_token</RefreshToken>
+  <GenerateResponse enabled="true"/>
+  <RFCCompliantRequestResponse>true</RFCCompliantRequestResponse>
+</OAuthV2>
+```
+
+**Gotcha:** Custom attributes with `display="false"` on the original token are NOT preserved on refresh — they become visible in the refresh response. Use `GetOAuthV2Info` to retrieve and re-apply them.
+
+### InvalidateToken (Revoke)
+
+```xml
+<OAuthV2 name="OAuth-RevokeToken">
+  <Operation>InvalidateToken</Operation>
+  <Tokens>
+    <Token type="accesstoken" cascade="true">request.formparam.token</Token>
+  </Tokens>
+</OAuthV2>
+```
+
+- `type`: `accesstoken` or `refreshtoken`
+- `cascade="true"`: revokes both access AND refresh tokens together
+- `cascade="false"`: revokes only the specified token type
+
+### Password Grant
+
+Only for highly trusted first-party apps where the client collects user credentials directly:
+```xml
+<OAuthV2 name="OAuth-PasswordGrant">
+  <Operation>GenerateAccessToken</Operation>
+  <SupportedGrantTypes>
+    <GrantType>password</GrantType>
+  </SupportedGrantTypes>
+  <UserName>request.formparam.username</UserName>
+  <PassWord>request.formparam.password</PassWord>
+  <GenerateResponse enabled="true"/>
+  <RFCCompliantRequestResponse>true</RFCCompliantRequestResponse>
+</OAuthV2>
+```
+
+Apigee does NOT validate the username/password — you must validate credentials yourself (via ServiceCallout to an identity provider) BEFORE this policy executes. The policy only generates the token.
+
+### Implicit Grant
+
+For browser-based SPAs that cannot securely store a client secret:
+```xml
+<OAuthV2 name="OAuth-ImplicitGrant">
+  <Operation>GenerateAccessTokenImplicitGrant</Operation>
+  <ExpiresIn>600000</ExpiresIn>
+  <GenerateResponse enabled="true"/>
+</OAuthV2>
+```
+
+Implicit grants **cannot issue refresh tokens**. Use very short expiration times.
+
+### Token Endpoint Proxy Pattern
+
+Create conditional flows to isolate OAuth operations from resource API traffic:
+```xml
+<Flow name="token">
   <Condition>(proxy.pathsuffix MatchesPath "/token") and (request.verb = "POST")</Condition>
   <Request>
-    <Step>
-      <Name>OAuth-GenerateToken</Name>
-    </Step>
+    <Step><Name>OAuth-GenerateToken</Name></Step>
+  </Request>
+</Flow>
+<Flow name="refresh">
+  <Condition>(proxy.pathsuffix MatchesPath "/token") and (request.verb = "POST") and (request.formparam.grant_type = "refresh_token")</Condition>
+  <Request>
+    <Step><Name>OAuth-RefreshToken</Name></Step>
+  </Request>
+</Flow>
+<Flow name="revoke">
+  <Condition>(proxy.pathsuffix MatchesPath "/revoke") and (request.verb = "POST")</Condition>
+  <Request>
+    <Step><Name>OAuth-RevokeToken</Name></Step>
   </Request>
 </Flow>
 ```
 
-### Auto-populated Variables
+Use null RouteRules for token/revoke flows (no backend call needed).
 
-After `VerifyAccessToken` succeeds, the following variables become available: `oauthv2accesstoken.{policy-name}.access_token`, `oauthv2accesstoken.{policy-name}.scope`, `apiproduct.name`, `developer.email`, `developer.app.name`.
+### Custom Token Attributes
 
-### Authorization Code Grant Flow
-
-The authorization code grant is a multi-step process:
-
-1. Client redirects user to the `/authorize` endpoint on the proxy.
-2. Proxy authenticates the user (often via identity provider) and presents a consent screen.
-3. Upon consent, proxy generates an authorization code using `<Operation>GenerateAuthorizationCode</Operation>` and redirects back to the client callback URL.
-4. Client exchanges the authorization code for an access token by calling the `/token` endpoint with the code and `grant_type=authorization_code`.
-
-### Scope Validation
-
-Scopes are defined on API products. When verifying tokens, you can enforce required scopes:
-
+Attach metadata to tokens for downstream authorization decisions:
 ```xml
-<OAuthV2 name="OAuth-VerifyWithScope">
-  <Operation>VerifyAccessToken</Operation>
-  <Scope>read write</Scope>
+<Attributes>
+  <Attribute name="tenant_id" ref="custom.tenant" display="false"/>
+  <Attribute name="user_role" ref="custom.role" display="true"/>
+  <Attribute name="region" ref="request.header.X-Region" display="true"/>
+</Attributes>
+```
+
+- Up to 18 custom attributes per token
+- `ref`: flow variable to read the value from
+- `display="true"` (default): attribute appears in the token response JSON
+- `display="false"`: hidden from response but stored (accessible after VerifyAccessToken)
+- After verification, access as: `oauthv2accesstoken.{policy-name}.{attribute-name}`
+- Auth code attributes are inherited by the generated access token
+
+### Third-Party OAuth Integration
+
+Accept tokens from external OAuth providers (Okta, Auth0, custom):
+```xml
+<OAuthV2 name="OAuth-ExternalToken">
+  <Operation>GenerateAccessToken</Operation>
+  <ExternalAuthorization>true</ExternalAuthorization>
+  <ExternalAccessToken>request.header.external_access_token</ExternalAccessToken>
+  <StoreToken>true</StoreToken>
+  <ExpiresIn>3600000</ExpiresIn>
+  <GenerateResponse enabled="true"/>
 </OAuthV2>
 ```
 
-The token must contain all specified scopes for the request to proceed.
+- `<ExternalAuthorization>true</ExternalAuthorization>`: bypass Apigee's internal credential validation
+- `<ExternalAccessToken>`: location of the externally-generated token (max 2 KB)
+- `<StoreToken>true</StoreToken>`: persist the external token in Apigee's token store
+- Validate the external token yourself (e.g., via ServiceCallout) BEFORE this policy
+
+### GetOAuthV2Info and SetOAuthV2Info
+
+Retrieve or update token metadata at runtime:
+```xml
+<!-- Get token info (read custom attributes) -->
+<GetOAuthV2Info name="GetTokenInfo">
+  <AccessToken ref="request.header.Authorization"/>
+</GetOAuthV2Info>
+
+<!-- Set/update custom attributes on existing token -->
+<SetOAuthV2Info name="UpdateTokenAttrs">
+  <AccessToken ref="request.header.Authorization"/>
+  <Attributes>
+    <Attribute name="last_accessed" display="false">{system.timestamp}</Attribute>
+  </Attributes>
+</SetOAuthV2Info>
+```
+
+### Auto-populated Variables
+
+After `VerifyAccessToken` succeeds:
+
+| Variable | Description |
+|---|---|
+| `oauthv2accesstoken.{policy}.access_token` | The access token value |
+| `oauthv2accesstoken.{policy}.scope` | Granted scopes (space-separated) |
+| `oauthv2accesstoken.{policy}.token_type` | Token type (Bearer) |
+| `oauthv2accesstoken.{policy}.expires_in` | Remaining lifetime in seconds |
+| `oauthv2accesstoken.{policy}.status` | Token status (approved/revoked/expired) |
+| `oauthv2accesstoken.{policy}.client_id` | Client ID that obtained the token |
+| `oauthv2accesstoken.{policy}.developer.email` | Developer email |
+| `oauthv2accesstoken.{policy}.developer.app.name` | App name |
+| `oauthv2accesstoken.{policy}.{custom-attr}` | Custom attribute values |
+| `apiproduct.name` | API product name |
+
+### Scope Validation
+
+Scopes are defined on API products and validated during token verification:
+```xml
+<OAuthV2 name="OAuth-VerifyWithScope">
+  <Operation>VerifyAccessToken</Operation>
+  <Scope>read write admin</Scope>
+</OAuthV2>
+```
+
+**Important: Scope check is logical OR** — the token needs ANY ONE of the listed scopes, not all of them. To enforce AND (require multiple scopes), use separate VerifyAccessToken policies:
+```xml
+<Step><Name>OAuth-RequireRead</Name></Step>   <!-- Scope: read -->
+<Step><Name>OAuth-RequireWrite</Name></Step>  <!-- Scope: write -->
+```
+
+If `<Scope>` is omitted or empty, no scope validation is performed.
+
+### OAuth Gotchas
+
+**180-second cache:** Apigee caches OAuth entities (tokens, apps, products) for a minimum of 180 seconds. `ExpiresIn` values below 180000ms cannot be reliably enforced. Revoked tokens may continue to work for up to 3 minutes.
+
+**JWT vs opaque tokens:** Apigee can issue JWT-format tokens (RFC 9068). JWT tokens are validated by signature and expiry — they **cannot be revoked** once issued. Use opaque tokens when revocation capability is required.
+
+**GenerateResponse=false:** When disabled, no response body is returned. Token values are only available as flow variables (`oauthv2accesstoken.{policy}.access_token`, etc.). Use AssignMessage to craft a custom response.
+
+**Token transmission:** Clients send tokens via `Authorization: Bearer {token}` header by default. The VerifyAccessToken policy strips the "Bearer " prefix automatically.
 
 ## BasicAuthentication Policy
 
