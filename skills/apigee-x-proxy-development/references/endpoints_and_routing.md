@@ -145,12 +145,43 @@ Use `<LoadBalancer>` instead of `<URL>` to distribute traffic. `<Algorithm>` acc
 | Element | Description |
 |---------|-------------|
 | `<Enabled>` | Enable TLS. Must be `true` for HTTPS targets. |
-| `<ClientAuthEnabled>` | Enable mTLS. The proxy presents a client certificate. |
+| `<ClientAuthEnabled>` | Enable mTLS. The proxy presents a client certificate to the backend. |
 | `<KeyStore>` | Reference to keystore with client cert. Use `ref://` prefix. |
 | `<KeyAlias>` | Alias of the key entry within the keystore. |
 | `<TrustStore>` | Reference to truststore with backend CA cert. Use `ref://` prefix. |
+| `<Enforce>` | When `true`, enforces strict hostname validation against CN in the backend certificate. Default: Apigee does NOT validate hostnames. |
+| `<CommonName>` | Expected Common Name in the backend cert. Supports wildcards (e.g., `*.example.com`). |
+| `<IgnoreValidationErrors>` | When `true`, ignores ALL certificate validation errors (self-signed, expired, wrong CN). **NOT recommended for production.** |
 
 Always use `ref://` references rather than hardcoded keystore names so certificates can be rotated without redeploying the proxy.
+
+### Handling Self-Signed or No-Certificate Backends
+
+**Development/testing with self-signed certificates:**
+```xml
+<SSLInfo>
+  <Enabled>true</Enabled>
+  <IgnoreValidationErrors>true</IgnoreValidationErrors>
+</SSLInfo>
+```
+This bypasses ALL certificate validation — self-signed, expired, wrong hostname, untrusted CA. Use ONLY in dev/test environments.
+
+**Production with internal CA:**
+```xml
+<SSLInfo>
+  <Enabled>true</Enabled>
+  <TrustStore>ref://internalCATrustStore</TrustStore>
+  <Enforce>true</Enforce>
+  <CommonName>api.internal.example.com</CommonName>
+</SSLInfo>
+```
+Upload your internal CA certificate to a truststore, then reference it. `Enforce` + `CommonName` ensures hostname validation.
+
+**Production best practices:**
+- Never use `<IgnoreValidationErrors>true</IgnoreValidationErrors>` in production
+- Always set `<Enforce>true</Enforce>` for hostname validation
+- Use `<TrustStore>` with your CA cert rather than disabling validation
+- TLS 1.2+ required (Apigee X does not support TLS 1.0 or 1.1)
 
 ## RouteRules
 
