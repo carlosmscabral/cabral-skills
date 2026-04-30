@@ -93,6 +93,8 @@ sharedflowbundle/
 - If you update a shared flow, redeploy it — consuming proxies pick up changes automatically (no proxy redeployment needed)
 - If the shared flow is not deployed, FlowCallout raises a fault at runtime
 
+**Runtime behavior if shared flow is missing:** If the referenced shared flow is not deployed, the API proxy deployment still succeeds. However, at runtime the FlowCallout policy will fail with HTTP 500. Always verify shared flow deployments after proxy deployment.
+
 ## Common Shared Flow Patterns
 
 ### Authentication/Authorization

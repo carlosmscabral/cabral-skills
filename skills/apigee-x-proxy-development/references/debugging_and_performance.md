@@ -7,7 +7,7 @@
 Debug sessions capture request/response data as it flows through the proxy pipeline. They record variables, headers, payloads, and policy execution details at each flow phase. This is the primary tool for understanding what happens inside a proxy at runtime.
 
 Key characteristics:
-- Default timeout: 10 minutes (600 seconds)
+- Default: 5 minutes (300 seconds), max 10 minutes (600 seconds)
 - Maximum transactions per session: 15
 - Available via the Apigee UI or REST API
 - Sessions are scoped to a specific proxy revision in a specific environment
@@ -25,7 +25,7 @@ curl -X POST \
 ```
 
 Parameters:
-- `timeout`: session duration in seconds (default 600 = 10 minutes)
+- `timeout`: session duration in seconds (default 300 = 5 minutes, max 600 = 10 minutes)
 - `count`: max transactions to capture (default 10, max 15)
 - `tracesize`: max bytes captured from payload (0-5120, default 5120)
 
@@ -134,6 +134,29 @@ context.setVariable("exposed_secret", secret);  // now visible in debug
 var secret = context.getVariable("private.api_secret");
 context.setVariable("private.derived_key", computeKey(secret));
 ```
+
+### Data Masking Configuration
+
+Beyond the `private.` prefix (which hides variables completely), Apigee supports configuration-based data masking that replaces sensitive values with asterisks in debug sessions.
+
+Configure masking at the environment or proxy level via the API:
+
+```bash
+curl -X POST "https://apigee.googleapis.com/v1/organizations/{org}/environments/{env}/debugmask" \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{
+    "requestJSONPaths": ["$.creditCard", "$.ssn"],
+    "responseJSONPaths": ["$.secret"],
+    "requestXPaths": ["/request/password"],
+    "faultJSONPaths": ["$.internalError"]
+  }'
+```
+
+**Key distinction:**
+- `private.` prefix: variable is **hidden entirely** from debug sessions (not visible at all)
+- Data masking config: value is **replaced with asterisks** (`*****`) but the variable name remains visible
+
+Masking occurs at the Apigee gateway before data reaches the management plane -- sensitive data never leaves the runtime.
 
 ### Debug Best Practices
 

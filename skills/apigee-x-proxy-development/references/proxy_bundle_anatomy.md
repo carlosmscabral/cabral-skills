@@ -85,6 +85,8 @@ Policy files follow the pattern `[Abbreviation]-[Purpose].xml`, consistent with 
 | XTP         | XMLThreatProtection      | XTP-ValidateSOAP.xml          |
 | OAS         | OASValidation            | OAS-ValidateRequest.xml       |
 
+These naming conventions are recommended practice, not enforced by Apigee. Any valid filename works, but consistent naming improves team collaboration and proxy readability.
+
 ## Resources Directory
 
 The `resources/` directory holds code and configuration files referenced by policies.

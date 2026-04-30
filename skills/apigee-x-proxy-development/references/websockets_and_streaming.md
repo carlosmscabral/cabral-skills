@@ -178,6 +178,8 @@ Key differences from WebSocket:
 - Policies can still execute on the initial request.
 - EventFlow (newer feature) enables processing of individual SSE events.
 
+**Billing note:** Proxies deployed with an EventFlow configuration are billed as **Extensible** proxies (higher tier). EventFlow policies execute on each SSE event, not just once per request.
+
 ### SSE Limitations
 
 - Each response event is limited to 10 MB.
