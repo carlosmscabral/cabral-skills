@@ -15,7 +15,11 @@ Policy fails → Skip remaining steps → Evaluate FaultRules →
 
 ## FaultRules
 
-FaultRules are defined in ProxyEndpoint and/or TargetEndpoint. Each FaultRule has a Condition that determines when it fires. FaultRules are evaluated in **reverse order** (last in XML is first evaluated). Only the **first** matching FaultRule executes.
+FaultRules are defined in ProxyEndpoint and/or TargetEndpoint. Each FaultRule has a Condition that determines when it fires. Only the **first** matching FaultRule executes.
+
+**Critical: Evaluation order differs by endpoint:**
+- **ProxyEndpoint: Bottom to top** -- the last FaultRule in XML is evaluated first
+- **TargetEndpoint: Top to bottom** -- the first FaultRule in XML is evaluated first
 
 ```xml
 <ProxyEndpoint name="default">
@@ -98,9 +102,27 @@ Use RaiseFault to explicitly trigger a fault from any flow and enter the error f
 
 Use RaiseFault in conditional Steps to validate input and raise a fault on failure.
 
+### RaiseFault + FaultRule Interaction
+
+When RaiseFault triggers an error AND a FaultRule also executes:
+- **FaultRule response wins** for status code and payload (it runs after RaiseFault)
+- If the FaultRule does NOT set status code or payload, the RaiseFault values are used
+- **Custom headers from BOTH** are included in the response (duplicate names create multi-value headers)
+
+This means RaiseFault sets initial error state, but FaultRules can override it.
+
 ## continueOnError Attribute
 
-When set to `true` on a policy, flow execution continues even if the policy fails. The fault is not raised, but error variables are still populated. Use this for optional enrichment (e.g., ServiceCallout) or best-effort logging. Never use `continueOnError="true"` on security policies -- a failed auth check would silently pass.
+When set to `true` on a policy, flow execution continues even if the policy fails. The proxy does NOT enter the error state, so **FaultRules will NOT be triggered** even if their conditions match. The `{policy}.failed` variable is set to `true`, but no fault is raised. Use this for optional enrichment (e.g., ServiceCallout) or best-effort operations. Never use `continueOnError="true"` on security policies -- a failed auth check would silently pass.
+
+To detect the failure when `continueOnError="true"`, check the `{policy}.failed` variable:
+```xml
+<Step><Name>SC-OptionalCallout</Name></Step>
+<Step>
+  <Condition>servicecallout.SC-OptionalCallout.failed = true</Condition>
+  <Name>AM-LogCalloutFailure</Name>
+</Step>
+```
 
 ```xml
 <!-- SAFE: optional enrichment -->
@@ -128,11 +150,18 @@ When set to `true` on a policy, flow execution continues even if the policy fail
 
 ## ProxyEndpoint vs TargetEndpoint Fault Handling
 
-**TargetEndpoint FaultRules** catch faults from TargetEndpoint policies and backend errors such as timeouts and connection failures.
+**Where an error occurs determines which FaultRules are checked.** Apigee looks for FaultRules ONLY in the endpoint where the error happened:
 
-**ProxyEndpoint FaultRules** catch faults from ProxyEndpoint policies and any unhandled TargetEndpoint faults that bubble up.
+- **Error in TargetEndpoint** (e.g., backend timeout, target policy failure): Only TargetEndpoint FaultRules are checked. ProxyEndpoint FaultRules are NOT executed.
+- **Error in ProxyEndpoint** (e.g., auth failure, proxy policy error): Only ProxyEndpoint FaultRules are checked. TargetEndpoint FaultRules are NOT executed.
 
-Best practice: handle backend-specific errors in TargetEndpoint, handle client-facing errors in ProxyEndpoint.
+This means if you define FaultRules only in ProxyEndpoint, backend errors (503, timeouts) will NOT be caught by them. You must define FaultRules in both endpoints if you want to handle errors from both.
+
+**Evaluation order reminder:**
+- ProxyEndpoint FaultRules: bottom to top (last in XML first)
+- TargetEndpoint FaultRules: top to bottom (first in XML first)
+
+Best practice: define FaultRules in both ProxyEndpoint and TargetEndpoint with a shared error formatting pattern (via shared flow or consistent AssignMessage policies).
 
 ## Building Consistent Error Responses
 

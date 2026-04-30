@@ -348,10 +348,15 @@ When a policy raises a fault (or a fault is raised explicitly via RaiseFault), t
 
 ### Evaluation Order
 
-FaultRules are evaluated in **reverse XML order** -- the last `<FaultRule>` in the XML document is evaluated **first**. The first FaultRule whose `<Condition>` matches is executed. Only one FaultRule executes (unless DefaultFaultRule with AlwaysEnforce is configured).
+**Evaluation order differs by endpoint type:**
+- **ProxyEndpoint: Bottom to top** -- last FaultRule in XML is evaluated first
+- **TargetEndpoint: Top to bottom** -- first FaultRule in XML is evaluated first
+
+The first FaultRule whose `<Condition>` matches is executed. Only one FaultRule executes (unless DefaultFaultRule with AlwaysEnforce is also configured).
 
 ```xml
-<!-- Evaluated THIRD (last in evaluation order) -->
+<!-- ProxyEndpoint example: evaluated BOTTOM TO TOP -->
+<!-- Evaluated THIRD -->
 <FaultRule name="AuthenticationFault">
   <Condition>(fault.name = "InvalidApiKey")</Condition>
   <Step><Name>AM-AuthErrorResponse</Name></Step>
@@ -361,7 +366,7 @@ FaultRules are evaluated in **reverse XML order** -- the last `<FaultRule>` in t
   <Condition>(fault.name = "QuotaViolation")</Condition>
   <Step><Name>AM-QuotaErrorResponse</Name></Step>
 </FaultRule>
-<!-- Evaluated FIRST (last in XML = first evaluated) -->
+<!-- Evaluated FIRST (bottom-to-top in ProxyEndpoint) -->
 <FaultRule name="ThreatFault">
   <Condition>(fault.name Matches "Body*")</Condition>
   <Step><Name>AM-ThreatErrorResponse</Name></Step>
