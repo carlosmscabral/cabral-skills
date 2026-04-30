@@ -1,0 +1,7 @@
+# analyze_lambda.py dependencies
+# Install with: pip install -r requirements.txt
+#
+# PyYAML: enables structured YAML parsing of SAM (template.yaml) and
+# Serverless Framework (serverless.yml) IaC files.
+# Without it, the script falls back to regex-based IaC detection (less accurate).
+PyYAML>=6.0

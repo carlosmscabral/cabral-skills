@@ -1,0 +1,126 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: |
+  E-Commerce Order Processing Backend
+  Example multi-function monorepo demonstrating a typical customer estate for fleet migration analysis.
+
+Globals:
+  Function:
+    Runtime: python3.12
+    MemorySize: 256
+    Timeout: 30
+    Environment:
+      Variables:
+        ORDERS_TABLE: !Ref OrdersTable
+        ORDER_EVENTS_TOPIC: !Ref OrderEventsTopic
+        ENVIRONMENT: production
+
+Resources:
+  # ── DynamoDB shared table ───────────────────────────────────────────────────
+  OrdersTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: orders
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: orderId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: orderId
+          KeyType: HASH
+
+  # ── SNS shared topic ────────────────────────────────────────────────────────
+  OrderEventsTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: order-events
+
+  # ── S3 bucket for reports ───────────────────────────────────────────────────
+  ReportsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: ecommerce-reports
+
+  # ── Lambda Functions ─────────────────────────────────────────────────────────
+
+  CreateOrder:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: functions/create_order/handler.handler
+      Description: "Creates a new order, writes to DynamoDB, publishes to SNS order-events topic."
+      Events:
+        ApiCreate:
+          Type: Api
+          Properties:
+            Path: /orders
+            Method: post
+      Policies:
+        - DynamoDBWritePolicy:
+            TableName: !Ref OrdersTable
+        - SNSPublishMessagePolicy:
+            TopicName: !GetAtt OrderEventsTopic.TopicName
+
+  GetOrderStatus:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: functions/get_order_status/handler.handler
+      Description: "Returns current status of an order from DynamoDB."
+      Events:
+        ApiGet:
+          Type: Api
+          Properties:
+            Path: /orders/{orderId}
+            Method: get
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref OrdersTable
+
+  ProcessPayment:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: functions/process_payment/handler.handler
+      Description: "Subscribes to order-events SNS; calls external payment gateway API."
+      MemorySize: 512
+      Timeout: 60
+      Events:
+        OrderEvent:
+          Type: SNS
+          Properties:
+            Topic: !Ref OrderEventsTopic
+      Environment:
+        Variables:
+          PAYMENT_GATEWAY_URL: https://payments.example.com/v1/charge
+          PAYMENT_API_KEY: "{{resolve:secretsmanager:payment-api-key}}"
+
+  SendNotification:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: functions/send_notification/handler.handler
+      Description: "Subscribes to order-events SNS; sends order confirmation email via SES."
+      Events:
+        OrderEvent:
+          Type: SNS
+          Properties:
+            Topic: !Ref OrderEventsTopic
+      Policies:
+        - SESCrudPolicy:
+            IdentityName: orders@example.com
+
+  NightlyReconcile:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: functions/nightly_reconcile/handler.handler
+      Description: "Cron job: reads all orders from DynamoDB, writes reconciliation report to S3."
+      MemorySize: 1024
+      Timeout: 900
+      Events:
+        ScheduledRun:
+          Type: Schedule
+          Properties:
+            Schedule: cron(0 2 * * ? *)
+            Description: "Run nightly at 02:00 UTC"
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref OrdersTable
+        - S3WritePolicy:
+            BucketName: !Ref ReportsBucket

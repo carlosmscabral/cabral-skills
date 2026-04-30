@@ -1,0 +1,21 @@
+service: php-bref-api
+
+provider:
+  name: aws
+  region: us-east-1
+  runtime: provided.al2
+  environment:
+    BUCKET_NAME: my-app-uploads
+    SNS_TOPIC_ARN: arn:aws:sns:us-east-1:123456789012:app-notifications
+
+plugins:
+  - ./vendor/bref/bref
+
+functions:
+  api:
+    handler: handler.php
+    description: ''
+    layers:
+      - ${bref:layer.php-82}
+    events:
+      - httpApi: '*'

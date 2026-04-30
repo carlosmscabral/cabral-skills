@@ -6,7 +6,9 @@ A collection of AI coding agent skills following the [Agent Skills](https://agen
 
 | Skill | Description |
 |---|---|
-| [apigee-x-proxy-development](skills/apigee-x-proxy-development/) | Comprehensive Apigee X API proxy development — 44+ policies, flows, endpoints, fault handling, JavaScript, shared flows, caching patterns, load balancing, WebSocket/SSE, multi-tenant isolation, and more (8,300+ lines of reference documentation) |
+| [apigee-x-proxy-development](skills/apigee-x-proxy-development/) | Comprehensive Apigee X API proxy development — 44+ policies, flows, endpoints, fault handling, JavaScript, shared flows, caching patterns, load balancing, WebSocket/SSE, multi-tenant isolation, and more (8,800+ lines of reference documentation) |
+| [aws-lambda-to-cloud-run-migration](skills/aws-lambda-to-cloud-run-migration/) | Migrates AWS Lambda functions to Google Cloud Run — analyzes AWS lock-ins (SNS, SQS, SDKs, IAM), build/trigger mechanisms, and service integrations to provide migration reports, containerization guidance, and GCP service mapping |
+| [aws-lambda-fleet-to-cloud-run](skills/aws-lambda-fleet-to-cloud-run/) | Fleet-level migration of 10-100+ AWS Lambda functions to Cloud Run — discovery, grouping strategy (1:1 vs consolidation), dependency-graph-based wave sequencing, and consolidated migration program documents |
 
 ## Installation
 
@@ -44,6 +46,8 @@ Each skill follows the [Agent Skills specification](https://agentskills.io/speci
 skill-name/
   SKILL.md              # Metadata + instructions (loaded on activation)
   references/           # Detailed reference documentation (loaded on demand)
+  examples/             # Optional: runnable code examples
+  scripts/              # Optional: executable utility scripts
 ```
 
 Skills use progressive disclosure: only the name and description are loaded at startup (~100 tokens). The full SKILL.md body loads when the skill activates. Reference files load only when needed during task execution.

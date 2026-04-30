@@ -1,0 +1,65 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Orders API — Python Lambda backed by DynamoDB and SNS
+
+Globals:
+  Function:
+    Runtime: python3.11
+    Timeout: 30
+    MemorySize: 256
+    Environment:
+      Variables:
+        ORDERS_TABLE: !Ref OrdersTable
+        SNS_TOPIC_ARN: !Ref OrderEventsTopic
+        INTERNAL_API_URL: https://internal.example.com/enrich
+        CLIENT_ID: my-client-id
+        CLIENT_SECRET: my-super-secret-value   # ← lock-in: hardcoded secret
+
+Resources:
+
+  # Lambda Function
+  OrdersFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: handler.lambda_handler
+      CodeUri: .
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref OrdersTable
+        - SNSPublishMessagePolicy:
+            TopicName: !GetAtt OrderEventsTopic.TopicName
+      Events:
+        GetOrder:
+          Type: Api
+          Properties:
+            Path: /orders
+            Method: GET
+        CreateOrder:
+          Type: Api
+          Properties:
+            Path: /orders
+            Method: POST
+
+  # DynamoDB Table
+  OrdersTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: orders
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: order_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: order_id
+          KeyType: HASH
+
+  # SNS Topic
+  OrderEventsTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: order-events
+
+Outputs:
+  ApiEndpoint:
+    Description: API Gateway endpoint URL
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/orders"

@@ -1,0 +1,50 @@
+service: notification-and-reporting-service
+
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: python3.11
+  region: us-east-1
+  memorySize: 512
+  timeout: 60
+  environment:
+    REPORT_BUCKET: ${self:service}-reports-${sls:stage}
+    REPORT_EMAIL_FROM: reports@example.com
+    REPORT_EMAIL_TO: team@example.com
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - s3:PutObject
+            - s3:GetObject
+          Resource: arn:aws:s3:::${self:service}-reports-${sls:stage}/*
+        - Effect: Allow
+          Action:
+            - ses:SendEmail
+          Resource: "*"
+
+functions:
+  # Function 1: Event-driven — triggered by SNS
+  # GCP Migration: Cloud Run Service + Pub/Sub Push Subscription
+  process_notification:
+    handler: handler.process_notification
+    events:
+      - sns: notification-events
+
+  # Function 2: Scheduled job — triggered by EventBridge cron
+  # GCP Migration: Cloud Run Job + Cloud Scheduler HTTP trigger
+  daily_report:
+    handler: handler.daily_report
+    events:
+      - schedule:
+          rate: cron(0 6 * * ? *)   # 06:00 UTC daily
+          enabled: true
+
+resources:
+  Resources:
+    ReportBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:service}-reports-${sls:stage}

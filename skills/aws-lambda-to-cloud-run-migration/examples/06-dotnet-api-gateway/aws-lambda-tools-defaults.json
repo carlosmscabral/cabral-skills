@@ -1,0 +1,16 @@
+{
+  "Information": [
+    "This file is used to store the default values for the dotnet lambda CLI tool.",
+    "It is used for 'dotnet lambda deploy-function' and 'dotnet lambda package' commands.",
+    "MIGRATION NOTE: This file has no GCP equivalent — it is replaced by a Dockerfile + gcloud run deploy."
+  ],
+  "profile": "default",
+  "region": "us-east-1",
+  "configuration": "Release",
+  "function-runtime": "dotnet8",
+  "function-memory-size": 512,
+  "function-timeout": 30,
+  "function-handler": "OrdersApi::OrdersApi.Function::FunctionHandler",
+  "function-name": "orders-api",
+  "environment-variables": "ORDERS_TABLE=orders;SNS_TOPIC_ARN=arn:aws:sns:us-east-1:123456789012:order-events"
+}

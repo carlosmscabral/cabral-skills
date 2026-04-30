@@ -1,0 +1,13 @@
+{
+  "name": "nodejs-document-service",
+  "version": "1.0.0",
+  "description": "Node.js Lambda — document upload/download via S3 + SQS processing queue",
+  "main": "handler.js",
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.400.0",
+    "@aws-sdk/client-sqs": "^3.400.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

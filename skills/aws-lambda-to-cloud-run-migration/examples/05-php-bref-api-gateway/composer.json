@@ -1,0 +1,10 @@
+{
+    "name": "aws-lambda-cloud-run/php-example",
+    "description": "Example PHP Bref Lambda for testing migration tool",
+    "require": {
+        "php": ">=8.2",
+        "bref/bref": "^2.1",
+        "aws/aws-sdk-php": "^3.280",
+        "guzzlehttp/guzzle": "^7.8"
+    }
+}
