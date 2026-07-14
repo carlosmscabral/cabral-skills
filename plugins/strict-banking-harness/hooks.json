@@ -1,0 +1,16 @@
+{
+  "network-downloader-gate": {
+    "enabled": true,
+    "preToolUse": [
+      {
+        "matcher": "run_command",
+        "hooks": [
+          {
+            "command": ".agents/plugins/strict-banking-harness/scripts/command-blocker.sh",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

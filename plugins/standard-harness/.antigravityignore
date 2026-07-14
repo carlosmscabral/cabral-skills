@@ -1,0 +1,55 @@
+# Antigravity Ignore Template
+# Prevents coding agents from bloating their context windows with heavy/sensitive files.
+
+# Virtual Environments & Packages
+node_modules/
+.venv/
+venv/
+env/
+ENV/
+pycache/
+__pycache__/
+*.pyc
+
+# IDEs & System Files
+.vscode/
+.idea/
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# Build & Dist
+dist/
+build/
+out/
+target/
+.next/
+.nuxt/
+
+# Version Control
+.git/
+
+# Databases, Cache & Temporary files
+*.db
+*.sqlite
+*.sqlite3
+*.log
+tmp/
+temp/
+.sass-cache/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Regulated Secrets & Credentials (Strict Banking Compliance)
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+*.p12
+*.pfx
+secrets/
+credentials/

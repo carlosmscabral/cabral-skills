@@ -1,0 +1,16 @@
+{
+  "test-preparer": {
+    "enabled": true,
+    "preToolUse": [
+      {
+        "matcher": "run_command",
+        "hooks": [
+          {
+            "command": ".agents/plugins/standard-harness/scripts/pre-test.sh",
+            "timeout": 15
+          }
+        ]
+      }
+    ]
+  }
+}

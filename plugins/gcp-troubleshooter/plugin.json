@@ -1,0 +1,6 @@
+{
+  "name": "gcp-troubleshooter",
+  "description": "Production-grade troubleshooting and diagnostics for GCP deployments. Includes universal pre-deployment IAM audits, dynamic file-matched diagnostic rules, and advanced JIT troubleshooting skills for IAM and networking.",
+  "version": "1.0.0",
+  "skills": ["gcp-iam-troubleshooter", "gcp-network-troubleshooter"]
+}
