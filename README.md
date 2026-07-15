@@ -79,7 +79,7 @@ Skills use progressive disclosure: only the name and description are loaded at s
 
 ## Harness plugins
 
-The `plugins/` directory holds Antigravity harness customization plugins. Each plugin bundles its own harness assets — `rules/`, `hooks.json`, `agents/`, `scripts/`, `mcp_config.json`, `.antigravityignore` — but **does not vendor skill bodies**. Instead, its `plugin.json` declares the skills it uses:
+The `plugins/` directory holds Antigravity **plugins** — capability bundles installed with `agy plugin install`. Each plugin carries only the components Antigravity registers on install: `skills/`, `agents/`, `hooks.json`, `mcp_config.json`, `commands/` (plus `scripts/` referenced by its hooks). It **does not vendor skill bodies** and **does not carry `rules/`** (rules are workspace policy, not a plugin component). Instead, its `plugin.json` declares the skills it uses:
 
 ```jsonc
 {
@@ -89,7 +89,7 @@ The `plugins/` directory holds Antigravity harness customization plugins. Each p
 }
 ```
 
-Plugins are consumed by the [Dynamic Harness Configurator (DHC)](https://github.com/carlosmscabral/antigravity-dynamic-harness-configuration), **pinned to a git tag** of this repo. The DHC installer downloads this repo at the pinned tag once, then the configurator agent materializes each promoted plugin's declared skills from `skills/` into the active plugin — a pure local copy, so it works even under the air-gapped strict-banking posture.
+Plugins are consumed by the [Dynamic Harness Configurator (DHC)](https://github.com/carlosmscabral/antigravity-dynamic-harness-configuration), **pinned to a git tag** of this repo. The DHC downloads this repo at the pinned tag once, materializes each selected plugin's declared skills from `skills/` into the plugin bundle, then runs `agy plugin install` — a pure local operation, so it works even under the air-gapped strict-banking posture. (Rules are authored separately by the configurator into the workspace's `.agents/rules/`.)
 
 Consumption is dual and independent:
 

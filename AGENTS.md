@@ -8,7 +8,7 @@ canonical contributor guide; `CLAUDE.md` is a symlink to it.
 `cabral-skills` is the **single source of truth** for two kinds of artifact:
 
 - **Skills** (`skills/<name>/`) — standalone, reusable [Agent Skills](https://agentskills.io). Each is self-contained.
-- **Plugins** (`plugins/<name>/`) — Antigravity harness customization bundles. A plugin holds its own `rules/`, `hooks.json`, `agents/`, `scripts/`, `mcp_config.json`, `.antigravityignore`, and a `plugin.json` that **references** skills by name. Plugins **do not** contain skill bodies.
+- **Plugins** (`plugins/<name>/`) — Antigravity plugins, i.e. **capability bundles** installed with `agy plugin install`. A plugin carries only the components Antigravity registers on install: `skills/`, `agents/`, `hooks.json`, `mcp_config.json` (`mcpServers`), `commands/` — plus `scripts/` referenced by its hooks, and a `plugin.json` that **references** skills by name. Plugins **do not** contain skill bodies, and **do not** carry `rules/` (rules are workspace policy, not a plugin component — see below).
 
 This repo is **consumer-agnostic and standalone**. It does not depend on, and does not need
 to know about, any particular consumer. Skills and plugins can be installed by hand (see
@@ -46,11 +46,15 @@ When you **add or change** a skill:
 
 ## Working on a plugin
 
+A plugin is exactly what `agy plugin install` registers. Its components (confirmed by
+`agy plugin validate <dir>`) are: **skills, agents, hooks, mcpServers, commands**. That's the
+whole surface — anything else in the dir is ignored by the installer.
+
 When you **add or change** a plugin:
 
-1. Edit under `plugins/<name>/`. Its `rules/`, `hooks.json`, `agents/`, `scripts/`,
-   `mcp_config.json` stay **inside the plugin** — they are plugin-specific and not shared.
-2. `hooks.json` and rule prose reference scripts by the workspace-relative path
+1. Edit under `plugins/<name>/`. Its `hooks.json`, `agents/`, `scripts/`, `mcp_config.json`
+   stay **inside the plugin** — they are plugin-specific and not shared.
+2. `hooks.json` references scripts by the workspace-relative path
    `.agents/plugins/<name>/scripts/...`. Keep scripts in the plugin's `scripts/` dir so those
    paths resolve wherever the plugin is installed.
 3. To give a plugin a skill, add the skill's name to `plugin.json` `skills[]` — do **not**
@@ -59,9 +63,16 @@ When you **add or change** a plugin:
 4. Every `plugin.json` should carry `name`, `version`, and (if it uses any) `skills`.
 5. **Update the README** — the "Harness plugins" section and, if the plugin surfaces a new
    skill, the skills table.
-6. **Shared non-skill assets:** if a rule/agent/hook ever needs to be shared across plugins,
-   do **not** duplicate it — introduce a top-level `shared/` pool and reference it, mirroring
-   how skills work. (Not needed today; there is currently no cross-plugin duplication.)
+6. **No `rules/` in plugins.** Rules (`trigger: always_on` / `file_match(...)` markdown) are
+   **not** an `agy plugin install` component — Antigravity loads them only from a workspace
+   `.agents/rules/` dir. They are *workspace policy*, not portable capability, so they don't
+   belong in a reusable plugin. If a behavior feels like a rule, express it as a **skill**
+   (model-invoked guidance) or a **hook** (hard enforcement); leave genuine project policy for
+   the consumer to author into `.agents/rules/` (the DHC configurator does this from its
+   interview).
+7. **Shared non-skill assets:** if an agent/hook ever needs to be shared across plugins, do
+   **not** duplicate it — introduce a top-level `shared/` pool and reference it, mirroring how
+   skills work. (Not needed today; there is currently no cross-plugin duplication.)
 
 ## Vendored skills (google/agents-cli)
 
@@ -120,13 +131,15 @@ You never need DHC to use anything here.
 - **A skill, via the skills manager:** `npx skills add carlosmscabral/cabral-skills --skill <name>`
   (or omit `--skill` for all). Reads `skills/` only; `plugins/` is ignored.
 - **A skill, by hand:** `cp -r skills/<name>/ /your/agent/skills/dir/`.
-- **A plugin, by hand:** because plugins don't vendor skill bodies, do the copy the automated
-  consumers do:
-  1. `cp -r plugins/<name>/ <workspace>/.agents/plugins/<name>/`
-  2. for each entry in that plugin's `plugin.json` `skills[]`:
-     `cp -r skills/<skill>/ <workspace>/.agents/plugins/<name>/skills/<skill>/`
-  3. wire the plugin's `hooks.json` / rules into your Antigravity workspace as usual. The
-     plugin must sit at `.agents/plugins/<name>/` for its hardcoded script paths to resolve.
+- **A plugin, by hand:** plugins install with Antigravity's native plugin manager. Because
+  plugins don't vendor skill bodies, first materialize the referenced skills into a staging
+  copy of the plugin, then install it:
+  1. copy the plugin to a staging dir, then for each entry in its `plugin.json` `skills[]`:
+     `cp -r skills/<skill>/ <staging>/<name>/skills/<skill>/`
+  2. `agy plugin install <staging>/<name>` (registers skills/agents/hooks/mcpServers/commands),
+     then `agy plugin enable <name>`. Verify with `agy plugin list`.
+  3. Plugins do **not** carry rules — if you want project rules, author them into your
+     workspace `.agents/rules/` yourself. (This is exactly what the DHC configurator automates.)
 
 ## Validation checklist
 
