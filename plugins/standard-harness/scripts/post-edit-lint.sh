@@ -8,11 +8,6 @@
 # Non-blocking by design: always exits 0 so the agent can read any stdout feedback and keep
 # going. It does NOT gate command execution (that is a security concern; see strict-banking).
 
-# Observability via agy's OWN hook logs (not a growing file): one line to stderr, which
-# agy captures (command_hook_executor). Confirms the hook fired and shows the TargetFile
-# value it received (reveals if the runtime doesn't populate $TargetFile).
-echo "[standard-harness] post-edit hook fired; TargetFile='${TargetFile:-<unset>}'" >&2
-
 f="${TargetFile:-}"
 [ -n "$f" ] && [ -f "$f" ] || exit 0
 
