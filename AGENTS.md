@@ -74,7 +74,13 @@ When you **add or change** a plugin:
    **not** duplicate it — introduce a top-level `shared/` pool and reference it, mirroring how
    skills work. (Not needed today; there is currently no cross-plugin duplication.)
 
-## Vendored skills (google/agents-cli)
+## Vendored upstreams
+
+Two third-party upstreams are vendored + pinned in [`vendored.json`](vendored.json), each with a
+sync script; a scheduled GitHub Action (`.github/workflows/check-vendored-upstreams.yml`) watches
+both and opens an issue when either publishes a newer release (it never auto-syncs — determinism).
+
+### google/agents-cli (skills)
 
 The `google-agents-cli-*` skills (except `google-agents-cli-adk-frontend`, which is authored
 here) are **third-party, vendored from [google/agents-cli](https://github.com/google/agents-cli)**
@@ -98,10 +104,23 @@ scripts/vendor-agents-cli.sh <upstream-tag>   # e.g. v1.2.0
 This downloads `google/agents-cli` at that tag, replaces the vendored skill dirs, and rewrites
 `vendored.json`. Then: review the diff, update the README if descriptions changed, run the
 [validation checklist](#validation-checklist), and cut a new cabral-skills release tag (a sync
-is at least a **minor** bump). A scheduled GitHub Action
-(`.github/workflows/check-agents-cli-upstream.yml`) watches upstream and opens an issue when a
-newer release exists — that is your signal to run the sync; it never syncs automatically
-(determinism is the point).
+is at least a **minor** bump).
+
+### obra/superpowers (methodology, vendored whole)
+
+The `obra/superpowers` spec-driven methodology (MIT) is vendored **whole** under
+`vendored/superpowers/` (all 14 skills + a pre-built Antigravity `bootstrap-rule.md`), pinned in
+`vendored.json`. It is **not** a `skills/` entry and **not** `npx`-installed — it's an
+**all-or-nothing methodology** the DHC activates via a toggle (materializing all skills to
+`.agents/skills/` and `bootstrap-rule.md` to `.agents/rules/superpowers.md`).
+
+- **Never hand-edit** `vendored/superpowers/**` — re-run `scripts/vendor-superpowers.sh <tag>`.
+- The sync script regenerates `bootstrap-rule.md` (always-on rule) from upstream
+  `using-superpowers/SKILL.md`; do not edit it by hand.
+- Sync + release like agents-cli:
+  ```bash
+  scripts/vendor-superpowers.sh <upstream-tag>   # e.g. v6.1.1
+  ```
 
 ## Releasing (the contract with all consumers)
 

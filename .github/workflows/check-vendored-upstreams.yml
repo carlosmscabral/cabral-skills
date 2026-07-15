@@ -1,8 +1,8 @@
-name: Check agents-cli upstream
+name: Check vendored upstreams
 
-# Alerts (does NOT auto-sync) when google/agents-cli publishes a release newer than
-# the tag pinned in vendored.json. Syncing stays a deliberate, pinned action —
-# run scripts/vendor-agents-cli.sh <tag> and cut a release. See AGENTS.md.
+# Alerts (does NOT auto-sync) when a vendored upstream publishes a release newer than the tag
+# pinned in vendored.json. Syncing stays a deliberate, pinned action — run the per-source sync
+# script and cut a release. See AGENTS.md. Covers every entry in the matrix below.
 
 on:
   schedule:
@@ -14,8 +14,18 @@ permissions:
   issues: write
 
 jobs:
-  check-upstream:
+  check:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - key: google-agents-cli
+            repo: google/agents-cli
+            script: scripts/vendor-agents-cli.sh
+          - key: superpowers
+            repo: obra/superpowers
+            script: scripts/vendor-superpowers.sh
     steps:
       - uses: actions/checkout@v4
 
@@ -23,54 +33,54 @@ jobs:
         id: cmp
         env:
           GH_TOKEN: ${{ github.token }}
+          KEY: ${{ matrix.key }}
+          UPSTREAM: ${{ matrix.repo }}
         run: |
           set -euo pipefail
-          UPSTREAM="google/agents-cli"
-          PINNED=$(python3 -c "import json;print(json.load(open('vendored.json'))['google-agents-cli']['tag'])")
-          # Prefer the published latest release; fall back to newest semver tag.
+          PINNED=$(python3 -c "import json;print(json.load(open('vendored.json'))['$KEY']['tag'])")
           LATEST=$(gh api "repos/${UPSTREAM}/releases/latest" --jq '.tag_name' 2>/dev/null || true)
           if [ -z "${LATEST:-}" ] || [ "${LATEST}" = "null" ]; then
             LATEST=$(gh api "repos/${UPSTREAM}/tags" --jq '.[].name' | sort -V | tail -n1)
           fi
-          echo "pinned=$PINNED"  >> "$GITHUB_OUTPUT"
-          echo "latest=$LATEST"  >> "$GITHUB_OUTPUT"
-          # newer = latest differs from pinned AND sorts above it
+          echo "pinned=$PINNED" >> "$GITHUB_OUTPUT"
+          echo "latest=$LATEST" >> "$GITHUB_OUTPUT"
           NEWER=$(printf '%s\n%s\n' "$PINNED" "$LATEST" | sort -V | tail -n1)
           if [ "$LATEST" != "$PINNED" ] && [ "$NEWER" = "$LATEST" ]; then
             echo "outdated=true" >> "$GITHUB_OUTPUT"
           else
             echo "outdated=false" >> "$GITHUB_OUTPUT"
           fi
-          echo "Pinned: $PINNED | Latest: $LATEST | Outdated: $([ "$LATEST" != "$PINNED" ] && [ "$NEWER" = "$LATEST" ] && echo yes || echo no)"
+          echo "$UPSTREAM  pinned=$PINNED latest=$LATEST"
 
       - name: Open or update tracking issue
         if: steps.cmp.outputs.outdated == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
+          UPSTREAM: ${{ matrix.repo }}
+          SCRIPT: ${{ matrix.script }}
           PINNED: ${{ steps.cmp.outputs.pinned }}
           LATEST: ${{ steps.cmp.outputs.latest }}
         run: |
           set -euo pipefail
-          TITLE="chore: vendored google/agents-cli is behind upstream"
+          TITLE="chore: vendored ${UPSTREAM} is behind upstream"
           BODY=$(cat <<EOF
-          A newer **google/agents-cli** release is available.
+          A newer **${UPSTREAM}** release is available.
 
           - Pinned in \`vendored.json\`: \`$PINNED\`
           - Latest upstream: \`$LATEST\`
 
           To adopt it:
           \`\`\`bash
-          scripts/vendor-agents-cli.sh $LATEST
+          ${SCRIPT} $LATEST
           \`\`\`
-          Then review the diff, update the README if needed, run the validation checklist, and cut a new cabral-skills release tag. (See AGENTS.md.)
+          Then review the diff, update docs if needed, run the validation checklist, and cut a new cabral-skills release tag. (See AGENTS.md.)
 
-          _Filed automatically by the check-agents-cli-upstream workflow._
+          _Filed automatically by the check-vendored-upstreams workflow._
           EOF
           )
           EXISTING=$(gh issue list --state open --search "$TITLE in:title" --json number --jq '.[0].number' || true)
           if [ -n "${EXISTING:-}" ]; then
-            gh issue edit "$EXISTING" --body "$BODY"
-            echo "Updated existing issue #$EXISTING"
+            gh issue edit "$EXISTING" --body "$BODY"; echo "Updated issue #$EXISTING"
           else
             gh issue create --title "$TITLE" --body "$BODY"
           fi
