@@ -1,7 +1,7 @@
 {
   "name": "adk-developer",
-  "description": "Customization plugin for high-fidelity Google Agent Development Kit (ADK) development and Cloud deployment, enforcing pre-flight schema validations and documentation grounding.",
-  "version": "1.0.0",
+  "description": "Self-contained Google Agent Development Kit (ADK) plugin — bundles the authored adk-frontend skill plus the vendored google/agents-cli skills, an ADK rules file, and the adk-docs MCP server.",
+  "version": "2.0.0",
   "skills": [
     "google-agents-cli-workflow",
     "google-agents-cli-scaffold",

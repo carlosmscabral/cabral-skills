@@ -15,29 +15,5 @@
       "google-agents-cli-scaffold",
       "google-agents-cli-workflow"
     ]
-  },
-  "superpowers": {
-    "repo": "obra/superpowers",
-    "tag": "v6.1.1",
-    "commit": "c984ea2e7aeffdcc865784fd6c5e3ab75da0209a",
-    "license": "MIT",
-    "synced": "2026-07-15",
-    "note": "Third-party vendored methodology. Do not hand-edit vendored/superpowers/; re-run scripts/vendor-superpowers.sh.",
-    "skills": [
-      "brainstorming",
-      "dispatching-parallel-agents",
-      "executing-plans",
-      "finishing-a-development-branch",
-      "receiving-code-review",
-      "requesting-code-review",
-      "subagent-driven-development",
-      "systematic-debugging",
-      "test-driven-development",
-      "using-git-worktrees",
-      "using-superpowers",
-      "verification-before-completion",
-      "writing-plans",
-      "writing-skills"
-    ]
   }
 }
