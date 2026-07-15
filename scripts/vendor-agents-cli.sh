@@ -2,7 +2,7 @@
 # Vendor the Google agents-cli skills into cabral-skills at a PINNED upstream tag.
 #
 # Upstream: https://github.com/google/agents-cli  (Apache-2.0)
-# These skills are THIRD-PARTY and vendored — do not hand-edit skills/google-agents-cli-*;
+# These skills are THIRD-PARTY and vendored into plugins/adk-developer/skills/ — do not hand-edit them;
 # re-run this script against a newer tag to update, then review the diff and re-tag/release.
 #
 # Usage:
@@ -44,14 +44,16 @@ if [ -z "$SRC" ] || [ ! -d "$SRC/skills" ]; then
   exit 1
 fi
 
-echo "[vendor] Copying ${#SKILLS[@]} skills into skills/ ..."
+DEST_SKILLS="$ROOT/plugins/adk-developer/skills"
+mkdir -p "$DEST_SKILLS"
+echo "[vendor] Copying ${#SKILLS[@]} skills into plugins/adk-developer/skills/ ..."
 for s in "${SKILLS[@]}"; do
   if [ ! -d "$SRC/skills/$s" ]; then
     echo "[vendor] ERROR: upstream skill '$s' not found at ${TAG}." >&2
     exit 1
   fi
-  rm -rf "${ROOT:?}/skills/$s"
-  cp -R "$SRC/skills/$s" "$ROOT/skills/$s"
+  rm -rf "${DEST_SKILLS:?}/$s"
+  cp -R "$SRC/skills/$s" "$DEST_SKILLS/$s"
   echo "         - $s"
 done
 

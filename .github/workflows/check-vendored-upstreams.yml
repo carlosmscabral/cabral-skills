@@ -23,9 +23,6 @@ jobs:
           - key: google-agents-cli
             repo: google/agents-cli
             script: scripts/vendor-agents-cli.sh
-          - key: superpowers
-            repo: obra/superpowers
-            script: scripts/vendor-superpowers.sh
     steps:
       - uses: actions/checkout@v4
 
