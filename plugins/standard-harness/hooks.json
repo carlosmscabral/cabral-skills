@@ -1,13 +1,13 @@
 {
-  "test-preparer": {
+  "standard-harness-post-edit-linter": {
     "enabled": true,
-    "preToolUse": [
+    "postToolUse": [
       {
-        "matcher": "run_command",
+        "matcher": "write_to_file|replace_file_content|multi_replace_file_content",
         "hooks": [
           {
-            "command": ".agents/plugins/standard-harness/scripts/pre-test.sh",
-            "timeout": 15
+            "command": ".agents/plugins/standard-harness/scripts/post-edit-lint.sh",
+            "timeout": 30
           }
         ]
       }
