@@ -64,16 +64,22 @@ To blend in an external upstream you want to track:
 > [`SOURCES.md`](SOURCES.md) and `agy plugin install`/`npx skills add` it from upstream. Vendor
 > only when you need to **pin** it or **blend** it into a plugin alongside your own material.
 
-### Rules ship in the plugin but apply per-project
-`agy plugin install` registers a plugin's skills/agents/hooks/MCP/commands but **not** its
-`rules/` — Antigravity loads rules only from a workspace `.agents/rules/`. So author rules under
-`plugins/<name>/rules/` as source, and **copy them into each project** at setup:
+### Rules are a bundled plugin component
+Per the Antigravity plugin schema, `rules/*.md` are a first-class bundled component (always-on,
+Priority 0). When a plugin is discovered as a **workspace-local** plugin under
+`.agents/plugins/<name>/`, its rules load automatically along with skills/agents/hooks/MCP. So
+author rules under `plugins/<name>/rules/` — they travel with the plugin; no manual copy needed for
+the workspace-local path.
+
+**Open caveat (see [ROADMAP.md](ROADMAP.md)):** whether a **globally**-installed plugin
+(`agy plugin install`) also surfaces its bundled rules is still being verified. Until confirmed, if
+a global install doesn't apply the rule, copy it into the project as a fallback:
 
 ```bash
 mkdir -p .agents/rules && cp /path/to/plugins/<name>/rules/*.md .agents/rules/
 ```
 
-(Optionally ship a tiny `apply-rules.sh` in the plugin to do this.)
+(Optionally ship a tiny `apply-rules.sh` in the plugin for that fallback.)
 
 ### plugin.json
 Carry `name`, `version`, `description`, and a `skills[]` array listing the bundled skill dir names
@@ -107,8 +113,10 @@ rewrites `vendored.json`. Then: review the diff, update the README if descriptio
 
 - **A standalone skill:** `npx skills add carlosmscabral/cabral-skills --skill <name>` (or omit
   `--skill` for all four). Reads `skills/` only.
-- **The ADK plugin:** `agy plugin install plugins/adk-developer`, then copy its `rules/*.md` into
-  the project's `.agents/rules/` (see README "Develop ADK in a project").
+- **The ADK plugin:** global via a remote **subfolder** URL
+  (`agy plugin install https://github.com/carlosmscabral/cabral-skills/tree/main/plugins/adk-developer`)
+  or workspace-local by copying/symlinking it into `.agents/plugins/` (auto-discovered). See README
+  "Develop ADK in a project"; note the rules caveat above.
 - **External stuff:** see [SOURCES.md](SOURCES.md).
 
 ## Releasing

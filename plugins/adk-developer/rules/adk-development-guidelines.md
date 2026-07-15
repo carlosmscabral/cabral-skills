@@ -4,15 +4,16 @@ description: Guidelines for high-fidelity Google ADK development, grounded in th
 ---
 # Google ADK Development Guidelines
 
-You are in a workspace configured with the **adk-developer** plugin. Its skills are installed
-under `.agents/skills/` (this plugin bundles them). Follow these guidelines during any Agent
-Development Kit (ADK) work.
+You are in a workspace configured with the **adk-developer** plugin, which bundles the ADK skills
+listed below. Follow these guidelines during any Agent Development Kit (ADK) work.
 
-> **Applying these rules:** `agy plugin install` registers the plugin's skills/mcp but NOT its
-> `rules/`. Copy this file into the project so it loads: `cp <plugin>/rules/*.md .agents/rules/`.
+> **How this loads:** rules are a bundled plugin component (always-on, Priority 0). Placed as a
+> workspace-local plugin under `.agents/plugins/adk-developer/`, this file loads automatically. For
+> a global `agy plugin install`, if the rule doesn't apply, copy it as a fallback:
+> `cp <plugin>/rules/*.md .agents/rules/`.
 
 ### 1. Use the bundled agents-cli skills first
-Before running commands, consult the relevant skill (read its `.agents/skills/<name>/SKILL.md`):
+Before running commands, consult the relevant bundled skill (read its `skills/<name>/SKILL.md`):
 - `google-agents-cli-workflow` — the end-to-end ADK development lifecycle and command flow.
 - `google-agents-cli-scaffold` — creating/structuring agent projects.
 - `google-agents-cli-adk-code` — ADK agent/tool/callback code patterns.

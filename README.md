@@ -47,19 +47,37 @@ material with kept-updated upstream skills, all bundled inside the plugin so
 
 ### Develop ADK in a project
 
+Two ways, both work — pick by scope.
+
+**Global (all projects) — remote one-liner.** `agy plugin install` supports a remote repo
+**subfolder**, so no local clone is needed:
+
 ```bash
-# 1. install the plugin (skills + MCP) — global to agy, all projects
-agy plugin install /path/to/cabral-skills/plugins/adk-developer
-
-# 2. apply the ADK rules into THIS project ('agy plugin install' ignores plugin rules/)
-mkdir -p .agents/rules
-cp /path/to/cabral-skills/plugins/adk-developer/rules/*.md .agents/rules/
-
-# 3. (optional) add the frontend skill standalone elsewhere, or extra skills — see SOURCES.md
+agy plugin install https://github.com/carlosmscabral/cabral-skills/tree/main/plugins/adk-developer
+# toggle later: agy plugin enable|disable adk-developer
 ```
 
-Step 2 is required because the installer registers a plugin's skills/agents/hooks/MCP but **not**
-its `rules/` — rules load only from a workspace `.agents/rules/`.
+This installs the plugin's skills + MCP (and its bundled always-on rule) globally to
+`~/.gemini/config/plugins/`. Whether the bundled rule also applies for a *global* install is still
+being confirmed (see [ROADMAP.md](ROADMAP.md)); if it doesn't surface, use the rules fallback below.
+
+**Workspace-local (one project) — auto-discovered.** Copy/clone/symlink the plugin into the
+project's `.agents/plugins/`; Antigravity auto-discovers `**/.agents/plugins/*/plugin.json` on
+interactive startup and loads **all** components (skills, MCP, and the bundled rule), scoped to that
+project:
+
+```bash
+git clone --depth 1 https://github.com/carlosmscabral/cabral-skills /tmp/cs
+mkdir -p .agents/plugins
+cp -r /tmp/cs/plugins/adk-developer .agents/plugins/adk-developer
+# disable without deleting: rename .agents/plugins/adk-developer/plugin.json -> plugin.json.disabled
+```
+
+**Rules fallback** (only if a global install doesn't surface the bundled rule):
+
+```bash
+mkdir -p .agents/rules && cp <plugin>/rules/*.md .agents/rules/
+```
 
 ## External sources
 
