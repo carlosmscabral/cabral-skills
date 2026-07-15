@@ -8,6 +8,11 @@
 # Non-blocking by design: always exits 0 so the agent can read any stdout feedback and keep
 # going. It does NOT gate command execution (that is a security concern; see strict-banking).
 
+# Observability: record EVERY invocation (fires regardless of installed formatters)
+# so you can confirm the hook is triggering — `tail .agents/hook-audit.log`.
+ts="$(date '+%Y-%m-%dT%H:%M:%S%z' 2>/dev/null || echo now)"
+echo "$ts standard-harness postToolUse TargetFile=${TargetFile:-?}" >> .agents/hook-audit.log 2>/dev/null || true
+
 f="${TargetFile:-}"
 [ -n "$f" ] && [ -f "$f" ] || exit 0
 
