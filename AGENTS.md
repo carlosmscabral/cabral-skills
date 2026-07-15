@@ -63,6 +63,35 @@ When you **add or change** a plugin:
    do **not** duplicate it — introduce a top-level `shared/` pool and reference it, mirroring
    how skills work. (Not needed today; there is currently no cross-plugin duplication.)
 
+## Vendored skills (google/agents-cli)
+
+The `google-agents-cli-*` skills (except `google-agents-cli-adk-frontend`, which is authored
+here) are **third-party, vendored from [google/agents-cli](https://github.com/google/agents-cli)**
+(Apache-2.0), pinned to an upstream tag. They are redistributed as normal top-level skills so
+they are `npx`-installable and referenceable by the `adk-developer` plugin.
+
+**Rules for vendored skills:**
+
+- **Never hand-edit** `skills/google-agents-cli-{workflow,scaffold,adk-code,eval,deploy,publish,observability}/`.
+  Local edits are lost on the next sync. Fix bugs upstream, or (if urgent) fork upstream and
+  point the sync at your fork.
+- The exact upstream `repo` / `tag` / `commit` / `license` is recorded in [`vendored.json`](vendored.json).
+- Provenance/attribution for Apache-2.0 is carried by `vendored.json`; keep it accurate.
+
+**To sync to a newer upstream release:**
+
+```bash
+scripts/vendor-agents-cli.sh <upstream-tag>   # e.g. v1.2.0
+```
+
+This downloads `google/agents-cli` at that tag, replaces the vendored skill dirs, and rewrites
+`vendored.json`. Then: review the diff, update the README if descriptions changed, run the
+[validation checklist](#validation-checklist), and cut a new cabral-skills release tag (a sync
+is at least a **minor** bump). A scheduled GitHub Action
+(`.github/workflows/check-agents-cli-upstream.yml`) watches upstream and opens an issue when a
+newer release exists — that is your signal to run the sync; it never syncs automatically
+(determinism is the point).
+
 ## Releasing (the contract with all consumers)
 
 Consumers pin a **git tag** of this repo; that tag is the entire public contract. So:

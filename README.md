@@ -21,6 +21,20 @@ This repository is the **single source of truth** for both:
 | [gcp-network-troubleshooter](skills/gcp-network-troubleshooter/) | Advanced diagnostics for private VPC connectivity, serverless network bridges, and firewall blocks |
 | [google-agents-cli-adk-frontend](skills/google-agents-cli-adk-frontend/) | Client-side integration for ADK agents — schemas, parsing pathways, headers, and FastAPI proxy gotchas for connecting frontends to Vertex AI Reasoning Engine / GCP Agent Runtime |
 
+### Vendored skills
+
+These are **third-party skills vendored from [google/agents-cli](https://github.com/google/agents-cli)** (Apache-2.0), pinned to an upstream tag. **Do not hand-edit them** — they are refreshed with `scripts/vendor-agents-cli.sh`. Exact upstream repo/tag/commit are recorded in [`vendored.json`](vendored.json). See [AGENTS.md](AGENTS.md#vendored-skills-googleagents-cli) for the sync process.
+
+| Skill | Description |
+|---|---|
+| [google-agents-cli-workflow](skills/google-agents-cli-workflow/) | Entrypoint for the ADK development lifecycle — develop, run, debug, test, deploy, publish, and monitor agents, with coding guidelines |
+| [google-agents-cli-scaffold](skills/google-agents-cli-scaffold/) | Create/enhance/upgrade ADK agent projects — `agents-cli scaffold` commands, templates, deployment and CI/CD wiring |
+| [google-agents-cli-adk-code](skills/google-agents-cli-adk-code/) | ADK Python API patterns — agent types, tool definitions, callbacks, orchestration, and state management |
+| [google-agents-cli-eval](skills/google-agents-cli-eval/) | ADK evaluation methodology — eval metrics, dataset schema, LLM-as-judge scoring, and common failure causes |
+| [google-agents-cli-deploy](skills/google-agents-cli-deploy/) | Deploy ADK agents to Agent Runtime, Cloud Run, or GKE — workflows, service accounts, secrets, CI/CD, rollback |
+| [google-agents-cli-publish](skills/google-agents-cli-publish/) | Publish/register agents with Gemini Enterprise and the Agent Registry via `agents-cli publish` |
+| [google-agents-cli-observability](skills/google-agents-cli-observability/) | Monitor deployed ADK agents — Cloud Trace, prompt/response logging, and BigQuery Agent Analytics |
+
 ## Installation
 
 ### Using [npx skills](https://github.com/vercel-labs/skills) (recommended)

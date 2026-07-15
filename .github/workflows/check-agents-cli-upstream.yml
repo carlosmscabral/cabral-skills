@@ -1,0 +1,76 @@
+name: Check agents-cli upstream
+
+# Alerts (does NOT auto-sync) when google/agents-cli publishes a release newer than
+# the tag pinned in vendored.json. Syncing stays a deliberate, pinned action —
+# run scripts/vendor-agents-cli.sh <tag> and cut a release. See AGENTS.md.
+
+on:
+  schedule:
+    - cron: "17 6 * * 1"   # Mondays, 06:17 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check-upstream:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compare pinned vs latest upstream
+        id: cmp
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          UPSTREAM="google/agents-cli"
+          PINNED=$(python3 -c "import json;print(json.load(open('vendored.json'))['google-agents-cli']['tag'])")
+          # Prefer the published latest release; fall back to newest semver tag.
+          LATEST=$(gh api "repos/${UPSTREAM}/releases/latest" --jq '.tag_name' 2>/dev/null || true)
+          if [ -z "${LATEST:-}" ] || [ "${LATEST}" = "null" ]; then
+            LATEST=$(gh api "repos/${UPSTREAM}/tags" --jq '.[].name' | sort -V | tail -n1)
+          fi
+          echo "pinned=$PINNED"  >> "$GITHUB_OUTPUT"
+          echo "latest=$LATEST"  >> "$GITHUB_OUTPUT"
+          # newer = latest differs from pinned AND sorts above it
+          NEWER=$(printf '%s\n%s\n' "$PINNED" "$LATEST" | sort -V | tail -n1)
+          if [ "$LATEST" != "$PINNED" ] && [ "$NEWER" = "$LATEST" ]; then
+            echo "outdated=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "outdated=false" >> "$GITHUB_OUTPUT"
+          fi
+          echo "Pinned: $PINNED | Latest: $LATEST | Outdated: $([ "$LATEST" != "$PINNED" ] && [ "$NEWER" = "$LATEST" ] && echo yes || echo no)"
+
+      - name: Open or update tracking issue
+        if: steps.cmp.outputs.outdated == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PINNED: ${{ steps.cmp.outputs.pinned }}
+          LATEST: ${{ steps.cmp.outputs.latest }}
+        run: |
+          set -euo pipefail
+          TITLE="chore: vendored google/agents-cli is behind upstream"
+          BODY=$(cat <<EOF
+          A newer **google/agents-cli** release is available.
+
+          - Pinned in \`vendored.json\`: \`$PINNED\`
+          - Latest upstream: \`$LATEST\`
+
+          To adopt it:
+          \`\`\`bash
+          scripts/vendor-agents-cli.sh $LATEST
+          \`\`\`
+          Then review the diff, update the README if needed, run the validation checklist, and cut a new cabral-skills release tag. (See AGENTS.md.)
+
+          _Filed automatically by the check-agents-cli-upstream workflow._
+          EOF
+          )
+          EXISTING=$(gh issue list --state open --search "$TITLE in:title" --json number --jq '.[0].number' || true)
+          if [ -n "${EXISTING:-}" ]; then
+            gh issue edit "$EXISTING" --body "$BODY"
+            echo "Updated existing issue #$EXISTING"
+          else
+            gh issue create --title "$TITLE" --body "$BODY"
+          fi
