@@ -88,7 +88,7 @@ a value in prose — a pair becomes strikethrough. Use `≈`.)
 
 ```bash
 # from the repo root; validates all Mermaid blocks, exit!=0 on any failure
-skills/visual-docs/validate-diagrams.sh skills/visual-docs/examples/ skills/visual-docs/references/
+skills/visual-docs/scripts/validate-diagrams.sh skills/visual-docs/examples/ skills/visual-docs/references/
 ```
 
 Backends (auto-detected, in order): local **`mmdc`** → **`npx` mmdc** → **Kroki HTTP**

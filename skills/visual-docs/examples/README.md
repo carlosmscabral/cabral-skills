@@ -16,7 +16,7 @@ Mermaid compiles. Use them as templates.
 From the repo root:
 
 ```bash
-skills/visual-docs/validate-diagrams.sh skills/visual-docs/examples/ skills/visual-docs/references/
+skills/visual-docs/scripts/validate-diagrams.sh skills/visual-docs/examples/ skills/visual-docs/references/
 # expect a final line like:  diagrams: N   failed: 0
 ```
 

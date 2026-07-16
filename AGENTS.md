@@ -95,7 +95,7 @@ release (never auto-syncs).
 
 The `google-agents-cli-{workflow,scaffold,adk-code,eval,deploy,publish,observability}` skills are
 vendored from [google/agents-cli](https://github.com/google/agents-cli) (Apache-2.0), pinned to an
-upstream tag. (`google-agents-cli-adk-frontend` in the same dir is **authored** — not vendored,
+upstream tag. (`google-agents-cli-adk-frontend` and `google-agents-cli-adk-auth` in the same dir are **authored** — not vendored,
 safe to edit.)
 
 **To sync to a newer upstream release:**

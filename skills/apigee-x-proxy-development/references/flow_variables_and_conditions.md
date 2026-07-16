@@ -778,4 +778,4 @@ Example: `{jsonPath("$.user.name", response.content)}`
 
 ---
 
-See also: [Flows and Execution](flows_and_execution.md) | [Policies Reference](policies_reference.md) | [Error Handling](error_handling.md) | [Target Endpoint Configuration](target_endpoint_configuration.md)
+See also: [Flows and Execution](flows_and_execution.md) | [Mediation Policies](policies_mediation.md) | [Fault Handling](fault_handling.md) | [Endpoints and Routing](endpoints_and_routing.md)

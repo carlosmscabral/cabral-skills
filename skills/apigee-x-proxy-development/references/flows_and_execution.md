@@ -519,4 +519,4 @@ This example demonstrates all flow types, FaultRules, DefaultFaultRule, PostClie
 
 ---
 
-See also: [Flow Variables and Conditions](flow_variables_and_conditions.md) | [Policies Reference](policies_reference.md) | [Error Handling](error_handling.md) | [Shared Flows](shared_flows.md)
+See also: [Flow Variables and Conditions](flow_variables_and_conditions.md) | [Mediation Policies](policies_mediation.md) | [Fault Handling](fault_handling.md) | [Shared Flows](shared_flows.md)

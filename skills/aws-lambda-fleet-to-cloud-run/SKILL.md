@@ -76,7 +76,7 @@ Load the following resources as needed during the workflow:
 For each wave:
 1. **If consolidating multiple Lambdas:** Load `references/consolidation_patterns.md` and apply the Router or Handler-as-Module pattern to produce a single containerized service.
 2. **For each function in the wave:** Invoke the `aws-lambda-to-cloud-run-migration` skill workflow:
-   - Run `scripts/analyze_lambda.py <function_dir>` for per-function depth.
+   - Run `aws-lambda-to-cloud-run-migration/scripts/analyze_lambda.py <function_dir>` (from the prerequisite per-function skill) for per-function depth.
    - Apply containerization, SDK refactoring, IaC translation as directed by that skill.
 3. **Cross-wave bridge:** While migrating a wave, consult `references/dependency_graph.md` §4 to keep already-migrated services and not-yet-migrated Lambdas talking to each other.
 4. After each wave completes, update the Migration Program Document (see §Final Deliverable).
