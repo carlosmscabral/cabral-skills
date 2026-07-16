@@ -69,13 +69,19 @@ Content-Type: application/json
 
 {
   "app_name": "app",
+  "user_id": "default-web-user",
   "session_id": "session-123",
   "new_message": {
     "role": "user",
     "parts": [{"text": "Hello, Agent!"}]
-  }
+  },
+  "streaming": true
 }
 ```
+
+> [!IMPORTANT]
+> **Strict Gateway Validation Requirements**:
+> For the live GCP Agent Runtime predictor endpoints, you **MUST** include `"user_id"` and `"streaming": true` in the JSON request payload. Omitting `"user_id"` or `"streaming"` will result in an immediate `400 Bad Request` or validation error from the Vertex AI API Gateway.
 
 ---
 
@@ -169,6 +175,7 @@ async def chat_proxy(request: Request):
 | **Auth Pipeline** | None | `Authorization: Bearer <OAuth_Token>` |
 | **Session URL** | `/apps/app/users/{user_id}/sessions` | `/apps/{gcp_numeric_engine_id}/users/{user_id}/sessions` |
 | **Create Payload** | `{"session_id": "custom", "state": {}}` | `{}` (Empty JSON. Retrieve dynamic 64-bit ID from response) |
+| **Stream JSON Payload** | `app_name`, `session_id`, `new_message` | **Required**: `app_name`, `user_id`, `session_id`, `new_message`, `streaming: true` |
 | **Allowed ID Syntax** | Any alphanumeric + special | Lowercase, numbers, and hyphens (`-`) only. **No underscores (`_`)!** |
 | **FastAPI Decorators** | Standard | Must use `@app.post(..., response_model=None)` for streams |
 | **Stream Chunk Parsing** | Direct text access | Deep path recursion: `chunk.content.parts[i].text` |
