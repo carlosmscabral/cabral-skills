@@ -72,11 +72,11 @@ flowchart TD
 To implement this flow perfectly, read the detailed reference materials and use our proven code samples:
 
 1. **GCP Console & Auth Provider Setup**
-   * [OAuth Client Setup and Provider Config](file:///Users/carloscabral/.gemini/config/plugins/adk-developer/skills/google-agents-cli-adk-auth/references/oauth_client_setup.md)
+   * [OAuth Client Setup and Provider Config](references/oauth_client_setup.md)
 2. **Interception (Standard FastAPI Middleware Proxy)**
-   * Read [Stateless Consent Nonce Management](file:///Users/carloscabral/.gemini/config/plugins/adk-developer/skills/google-agents-cli-adk-auth/references/stateless_consent_nonce.md) to understand why cookies/sessions are required on Cloud Run.
-   * Review [examples/proxy_interceptor.py](file:///Users/carloscabral/.gemini/config/plugins/adk-developer/skills/google-agents-cli-adk-auth/examples/proxy_interceptor.py) to implement `/api/chat` interception.
+   * Read [Stateless Consent Nonce Management](references/stateless_consent_nonce.md) to understand why cookies/sessions are required on Cloud Run.
+   * Review [examples/proxy_interceptor.py](examples/proxy_interceptor.py) to implement `/api/chat` interception.
 3. **Resumption Payload Structure**
-   * Review [examples/stream_resumption.py](file:///Users/carloscabral/.gemini/config/plugins/adk-developer/skills/google-agents-cli-adk-auth/examples/stream_resumption.py) to see the exact payload expected by `/run_sse` to bypass popups.
+   * Review [examples/stream_resumption.py](examples/stream_resumption.py) to see the exact payload expected by `/run_sse` to bypass popups.
 4. **Active Debugging & Troubleshooting**
-   * Refer to the [Troubleshooting Matrix](file:///Users/carloscabral/.gemini/config/plugins/adk-developer/skills/google-agents-cli-adk-auth/references/troubleshooting.md) for 403, 404, and 400 errors.
+   * Refer to the [Troubleshooting Matrix](references/troubleshooting.md) for 403, 404, and 400 errors.
