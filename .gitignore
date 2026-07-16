@@ -3,3 +3,16 @@
 
 # MCP config (local dev tools)
 .mcp.json
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+env/
+.pytest_cache/
+.coverage
+htmlcov/
+
