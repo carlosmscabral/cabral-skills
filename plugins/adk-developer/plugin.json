@@ -1,12 +1,13 @@
 {
   "name": "adk-developer",
-  "description": "Self-contained Google Agent Development Kit (ADK) plugin — bundles the authored adk-frontend skill plus the vendored google/agents-cli skills, an ADK rules file, and the adk-docs MCP server.",
-  "version": "2.0.0",
+  "description": "Self-contained Google Agent Development Kit (ADK) plugin — bundles the authored adk-frontend and adk-auth skills plus the vendored google/agents-cli skills, an ADK rules file, and the adk-docs MCP server.",
+  "version": "2.1.0",
   "skills": [
     "google-agents-cli-workflow",
     "google-agents-cli-scaffold",
     "google-agents-cli-adk-code",
     "google-agents-cli-adk-frontend",
+    "google-agents-cli-adk-auth",
     "google-agents-cli-eval",
     "google-agents-cli-deploy",
     "google-agents-cli-publish",

@@ -25,8 +25,7 @@ Before running commands, consult the relevant bundled skill (read its `skills/<n
 ### 2. Documentation grounding
 Ground decisions on the bundled skills first, then official ADK/GCP docs. If the `adk-docs-mcp`
 server (from this plugin's `mcp_config.json`) is available, use its read-only tools to fetch
-real-time classes, schemas, and SDK specs. Consider also searching for examples under python samples that are related to the agent in scope to find best-practices. If still unclear/unsure, ground you implemnetation/decisions on the
-ADK Code itself (you should have it locally as a lib). 
+real-time classes, schemas, and SDK specs. Consider also searching for examples under python samples that are related to the agent in scope to find best-practices. If still unclear/unsure, ground you implementation/decisions on the ADK Code itself (you should have it locally as a lib). 
 
 ### 3. Pre-flight validation before deploy
 Before any long-running Cloud Run / Agent Runtime deployment, validate locally: parse and assert

@@ -39,7 +39,7 @@ A **self-contained** Antigravity plugin for Google Agent Development Kit work. I
 material with kept-updated upstream skills, all bundled inside the plugin so
 `agy plugin install plugins/adk-developer` works directly:
 
-- **Authored:** `google-agents-cli-adk-frontend` skill + `rules/adk-development-guidelines.md`.
+- **Authored:** `google-agents-cli-adk-frontend` and `google-agents-cli-adk-auth` skills + `rules/adk-development-guidelines.md`.
 - **Vendored (synced from [google/agents-cli](https://github.com/google/agents-cli), Apache-2.0):**
   `google-agents-cli-{workflow,scaffold,adk-code,eval,deploy,publish,observability}` — pinned in
   [`vendored.json`](vendored.json), refreshed via `scripts/vendor-agents-cli.sh`.
