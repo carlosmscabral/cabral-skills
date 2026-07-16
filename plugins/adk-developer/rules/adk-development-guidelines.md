@@ -7,14 +7,12 @@ description: Guidelines for high-fidelity Google ADK development, grounded in th
 You are in a workspace configured with the **adk-developer** plugin, which bundles the ADK skills
 listed below. Follow these guidelines during any Agent Development Kit (ADK) work.
 
-> **How this loads:** rules are a bundled plugin component (always-on, Priority 0). Placed as a
-> workspace-local plugin under `.agents/plugins/adk-developer/`, this file loads automatically. For
-> a global `agy plugin install`, if the rule doesn't apply, copy it as a fallback:
-> `cp <plugin>/rules/*.md .agents/rules/`.
+### 0. Shallow Copy of Python ADK Samples
+ALWAYS start cloning a shallow copy of https://github.com/google/adk-samples/tree/main/python which includes proven ADK Agents in Python. Use a /tmp directory or a gitignored/antigravity ignored local folder. 
 
 ### 1. Use the bundled agents-cli skills first
 Before running commands, consult the relevant bundled skill (read its `skills/<name>/SKILL.md`):
-- `google-agents-cli-workflow` — the end-to-end ADK development lifecycle and command flow.
+- `google-agents-cli-workflow` — the end-to-end ADK development lifecycle and command flow. You must ALWAYS pre-load this tool as it guides on the usage of the rest.
 - `google-agents-cli-scaffold` — creating/structuring agent projects.
 - `google-agents-cli-adk-code` — ADK agent/tool/callback code patterns.
 - `google-agents-cli-adk-frontend` — connecting clients/frontends to the deployed agent.
@@ -23,16 +21,16 @@ Before running commands, consult the relevant bundled skill (read its `skills/<n
 - `google-agents-cli-publish` — publishing / registering the agent.
 - `google-agents-cli-observability` — tracing, logging, analytics.
 
-### 2. Pre-flight validation before deploy
+
+### 2. Documentation grounding
+Ground decisions on the bundled skills first, then official ADK/GCP docs. If the `adk-docs-mcp`
+server (from this plugin's `mcp_config.json`) is available, use its read-only tools to fetch
+real-time classes, schemas, and SDK specs. Consider also searching for examples under python samples that are related to the agent in scope to find best-practices. If still unclear/unsure, ground you implemnetation/decisions on the
+ADK Code itself (you should have it locally as a lib). 
+
+### 3. Pre-flight validation before deploy
 Before any long-running Cloud Run / Agent Runtime deployment, validate locally: parse and assert
 Pydantic models, agent manifests, and tool definitions with a fast local dry-run. Do not push to
 the cloud if local validation fails.
 
-### 3. Documentation grounding
-Ground decisions on the bundled skills first, then official ADK/GCP docs. If the `adk-docs-mcp`
-server (from this plugin's `mcp_config.json`) is available, use its read-only tools to fetch
-real-time classes, schemas, and SDK specs. Do not fetch source from the network otherwise.
 
-### 4. Secure end-user auth
-When propagating end-user identity to downstream APIs (e.g. BigQuery), assert the token matches
-the acting end user — never a broad service identity standing in for the user.
