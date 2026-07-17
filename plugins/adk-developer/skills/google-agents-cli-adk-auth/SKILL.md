@@ -17,6 +17,17 @@ This operational playbook serves as a specialized AI Skill for downstream coding
 
 ---
 
+## When to Use This Skill
+
+### Positive Triggers
+- Configuring 3-legged OAuth (3LO) for ADK agents.
+- Integrating GCP Agent Identity auth manager (`agentidentitycredentials.googleapis.com` / V2 API).
+- Intercepting `adk_request_credential` function calls in middle-tier API proxies.
+- Managing stateless consent nonces and OAuth callback finalization (`credentials:retrieve` / `credentials:finalize`).
+
+### Negative Triggers (When NOT to Use)
+- Standard REST SSE stream parsing, UI component rendering, or basic FastAPI proxy endpoint response models without OAuth interception -> Delegate to **`google-agents-cli-adk-frontend`**.
+
 ## 📅 Effective Date & Version Warning
 > [!IMPORTANT]
 > **Validation Date:** July 16, 2026

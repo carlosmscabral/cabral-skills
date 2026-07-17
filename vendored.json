@@ -4,7 +4,7 @@
     "tag": "v1.1.0",
     "commit": "1b3f26c9edbca97ca13402acc4152cec67912cb5",
     "license": "Apache-2.0",
-    "synced": "2026-07-14",
+    "synced": "2026-07-17",
     "note": "Third-party vendored skills. Do not hand-edit; re-run scripts/vendor-agents-cli.sh.",
     "skills": [
       "google-agents-cli-adk-code",
@@ -14,6 +14,15 @@
       "google-agents-cli-publish",
       "google-agents-cli-scaffold",
       "google-agents-cli-workflow"
-    ]
+    ],
+    "digests": {
+      "google-agents-cli-adk-code": "22b8bc79a1d6fcc6040a07fa017d5095bfd5b163a664e45e1b0ae36eae7d6589",
+      "google-agents-cli-deploy": "8ebd581c6042fac3f30a806b40c6d541b63e6d52e26ca8b7478fbbae59682c83",
+      "google-agents-cli-eval": "509a76afb6f9ff6e0f551f7874adbc995c1be5288f7539d2de0708b11befc558",
+      "google-agents-cli-observability": "d76d363dc9cb0095082e7083a6e41c0b99bfb6ec2e720f4ab7dbd2cadd1fc6c3",
+      "google-agents-cli-publish": "d16fcc1c23aa636008f7b6195f545ce13c2798a80280a9639b0985c7645d8cd3",
+      "google-agents-cli-scaffold": "3bc1f9176b00f4b2108e55717b5440ff56cade41a9ba3e4d4aaf771b3e2161e3",
+      "google-agents-cli-workflow": "cc7de8fb2d394b6528f2ef2c68bd3610b9f7343ad06292c613760fc679784b1a"
+    }
   }
 }

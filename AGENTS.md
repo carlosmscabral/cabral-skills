@@ -134,27 +134,14 @@ rewrites `vendored.json`. Then: review the diff, update the README if descriptio
 
 ## Validation checklist
 
-Confirm the plugin manifest matches disk and skill frontmatter is present:
+Run the repository validation CLI to verify manifest parity, frontmatter, script permissions, workspace hygiene, link integrity, vendor digests, and trigger overlaps:
 
 ```bash
-python3 - <<'PY'
-import json, glob, os, sys
-bad = 0
-# Plugins are self-contained: every skill in plugin.json must exist under the plugin's own skills/.
-for pj in glob.glob("plugins/*/plugin.json"):
-    d = os.path.dirname(pj)
-    m = json.load(open(pj))
-    for s in m.get("skills", []):
-        if not os.path.isdir(os.path.join(d, "skills", s)):
-            print(f"MISSING: {pj} lists {s} but {d}/skills/{s} is absent"); bad += 1
-    for req in ("name", "version"):
-        if req not in m:
-            print(f"FIELD: {pj} missing '{req}'"); bad += 1
-# Every SKILL.md (standalone + bundled) needs name/description frontmatter.
-for sk in glob.glob("skills/*/SKILL.md") + glob.glob("plugins/*/skills/*/SKILL.md"):
-    head = open(sk).read(400)
-    if "name:" not in head or "description:" not in head:
-        print(f"FRONTMATTER: {sk} missing name/description"); bad += 1
-print("OK" if not bad else f"{bad} problem(s)"); sys.exit(1 if bad else 0)
-PY
+python3 scripts/validate_repo.py
+```
+
+To auto-repair fixable issues (such as script permissions, vendor digests, or `__pycache` artifacts):
+
+```bash
+python3 scripts/validate_repo.py --fix
 ```

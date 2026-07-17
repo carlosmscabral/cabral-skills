@@ -14,6 +14,16 @@ This skill handles **fleet-level** migrations: multiple Lambda functions deploye
 
 ## When to Use Which Skill
 
+### Positive Triggers
+- Migrating large estates or monorepos containing 2+ AWS Lambda functions (10–100+ Lambdas).
+- Fleet discovery, inventory generation (`analyze_fleet.py`), and cross-function dependency graph analysis.
+- Grouping strategy (1:1 vs. domain consolidation into Cloud Run services) and migration wave sequencing.
+- Producing a consolidated Migration Program Document for an entire AWS Lambda fleet.
+
+### Negative Triggers (When NOT to Use)
+- Migrating a single AWS Lambda function in isolation -> Delegate to **`aws-lambda-to-cloud-run-migration`**.
+- Detailed per-function Dockerfile containerization, SDK refactoring, or Terraform IaC translation -> Delegate to **`aws-lambda-to-cloud-run-migration`** (called during wave execution).
+
 | Scenario | Use |
 |---|---|
 | Single Lambda function to migrate | `aws-lambda-to-cloud-run-migration` |

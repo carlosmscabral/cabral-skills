@@ -57,18 +57,53 @@ for s in "${SKILLS[@]}"; do
   echo "         - $s"
 done
 
+# Apply post-sync patches if scripts/patches/google-agents-cli/ exists
+PATCH_DIR="$ROOT/scripts/patches/google-agents-cli"
+if [ -d "$PATCH_DIR" ]; then
+  shopt -s nullglob
+  PATCHES=("$PATCH_DIR"/*.patch)
+  shopt -u nullglob
+  if [ ${#PATCHES[@]} -gt 0 ]; then
+    echo "[vendor] Applying ${#PATCHES[@]} patch(es) from scripts/patches/google-agents-cli/ ..."
+    for p in "${PATCHES[@]}"; do
+      echo "         - Applying $(basename "$p")"
+      patch -p1 --batch --no-backup-if-mismatch -d "$DEST_SKILLS" < "$p"
+    done
+  fi
+fi
+
 # Record exact commit for provenance (best-effort via gh; else leave the tag only).
 COMMIT="$(gh api "repos/${REPO}/git/ref/tags/${TAG}" --jq '.object.sha' 2>/dev/null || echo "")"
 
 echo "[vendor] Writing provenance manifest vendored.json ..."
-REPO="$REPO" TAG="$TAG" COMMIT="$COMMIT" LICENSE="$LICENSE" \
+PYTHONDONTWRITEBYTECODE=1 REPO="$REPO" TAG="$TAG" COMMIT="$COMMIT" LICENSE="$LICENSE" DEST_SKILLS="$DEST_SKILLS" ROOT="$ROOT" \
 SKILLS_JSON="$(printf '%s\n' "${SKILLS[@]}" | python3 -c 'import sys,json;print(json.dumps([l.strip() for l in sys.stdin if l.strip()]))')" \
-python3 - "$ROOT/vendored.json" <<'PY'
-import json, os, sys, datetime
+PYTHONDONTWRITEBYTECODE=1 python3 - "$ROOT/vendored.json" <<'PY'
+import datetime
+import json
+import os
+import sys
+
+# Import shared digest calculation function from validate_repo
+repo_root = os.environ["ROOT"]
+sys.path.insert(0, os.path.join(repo_root, "scripts"))
+from validate_repo import calculate_tree_digest
+
 path = sys.argv[1]
+dest_skills = os.environ["DEST_SKILLS"]
+skills = json.loads(os.environ["SKILLS_JSON"])
+
+digests = {}
+for s in skills:
+    skill_dir = os.path.join(dest_skills, s)
+    if os.path.exists(skill_dir):
+        digests[s] = calculate_tree_digest(skill_dir)
+
 data = {}
 if os.path.exists(path):
-    data = json.load(open(path))
+    with open(path, "r") as f:
+        data = json.load(f)
+
 data["google-agents-cli"] = {
     "repo": os.environ["REPO"],
     "tag": os.environ["TAG"],
@@ -76,8 +111,10 @@ data["google-agents-cli"] = {
     "license": os.environ["LICENSE"],
     "synced": datetime.date.today().isoformat(),
     "note": "Third-party vendored skills. Do not hand-edit; re-run scripts/vendor-agents-cli.sh.",
-    "skills": json.loads(os.environ["SKILLS_JSON"]),
+    "skills": skills,
+    "digests": digests,
 }
+
 with open(path, "w") as f:
     json.dump(data, f, indent=2)
     f.write("\n")

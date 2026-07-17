@@ -18,6 +18,17 @@ This reference guide serves as an operational AI Skill for downstream coding age
 
 ---
 
+## When to Use This Skill
+
+### Positive Triggers
+- Building frontend UI (CLI, Textual TUI, Web dashboards) for ADK agents.
+- REST SSE stream parsing (`/run_sse` chunk handling and nested schema extraction).
+- FastAPI response models / middle-tier proxy endpoint setup (`response_model=None`).
+- Client-side dynamic session creation and URL routing on Vertex AI Reasoning Engine / GCP Agent Runtime.
+
+### Negative Triggers (When NOT to Use)
+- Configuring 3-legged OAuth (3LO), consent nonces, or GCP Agent Identity auth managers (`adk_request_credential` interception) -> Delegate to **`google-agents-cli-adk-auth`**.
+
 ## 🧭 Architectural Architecture: The Passthrough Gateway
 
 When an ADK agent is deployed to Vertex AI, the platform exposes the FastAPI container behind a secure external gateway:

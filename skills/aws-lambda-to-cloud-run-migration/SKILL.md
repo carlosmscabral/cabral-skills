@@ -7,6 +7,17 @@ description: Migrates AWS Lambda functions to Google Cloud Run. Analyzes AWS loc
 
 This skill assists in the assessment, analysis, and migration of AWS Lambda functions to Google Cloud Run, following the [official Google Cloud migration framework](https://docs.cloud.google.com/architecture/migrate-aws-lambda-to-cloudrun).
 
+## When to Use This Skill
+
+### Positive Triggers
+- Migrating a single AWS Lambda function to Google Cloud Run.
+- Per-function AST analysis (`analyze_lambda.py`) for AWS SDK lock-ins (SNS, SQS, DynamoDB, S3).
+- Containerization (Dockerfile generation) and runtime conversion (Flask, Express, FastAPI, Go `net/http`, FrankenPHP).
+- Infrastructure as Code (IaC) translation (AWS SAM, Serverless Framework, CDK, or AWS `.tf` to GCP Terraform or `gcloud` scripts).
+
+### Negative Triggers (When NOT to Use)
+- Fleet discovery, multi-function monorepos (2+ Lambdas), domain consolidation strategy, or migration wave sequencing across multiple functions -> Delegate to **`aws-lambda-fleet-to-cloud-run`**.
+
 ## Available Resources
 
 Before starting or when you need specific details, load the following resources into context:
