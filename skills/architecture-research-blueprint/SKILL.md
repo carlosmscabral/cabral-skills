@@ -108,14 +108,17 @@ Publish the architecture as a high-grade, interactive single-page application ad
 3. **Zero-Defect Mermaid & Fullscreen Zoom & Pan Modal:**
    - Individual async `mermaid.render()` with `try/catch` isolation per diagram.
    - Built-in **Lightbox Modal** with Zoom In (+), Zoom Out (-), Reset (100%), Fit-to-Screen, Mouse Drag Pan, Wheel Zoom, and Keyboard navigation (<kbd>ESC</kbd>, <kbd>+</kbd>, <kbd>-</kbd>, <kbd>0</kbd>).
-   - Zero raw LaTeX residue (`$` replaced with clean Unicode `→`, `≤`, `O(N)`, and styled formula cards).
+   - **Automated Math Sanitization:** Run `scripts/sanitize_web_report.py` to convert all `$math$` / `$O(N)$` tokens to clean semantic HTML, backed by `autoCleanDomMath()` in `app.js`.
 
 ## Reference Guides & Examples
 
 ### Starter Kit & Templates
 - [`examples/web-report-starter/styles.css`](./examples/web-report-starter/styles.css) — Ready-to-use Google Cloud Clean Engineering stylesheet (Dark/Light theme, tokens, responsive layout, cards, badges, and zoom lightbox).
-- [`examples/web-report-starter/app.js`](./examples/web-report-starter/app.js) — Battle-tested JS engine with async Mermaid 10 rendering, full Zoom & Pan modal lightbox, and navigation tracking.
+- [`examples/web-report-starter/app.js`](./examples/web-report-starter/app.js) — Battle-tested JS engine with DOM math sanitizer, async Mermaid 10 rendering, full Zoom & Pan modal lightbox, and navigation tracking.
 - [`examples/web-report-starter/index.html`](./examples/web-report-starter/index.html) — Canonical HTML template demonstrating sticky sidebar, hero banner, diagram wrappers, and pedagogical callouts.
+
+### Scripts & Utilities
+- [`scripts/sanitize_web_report.py`](./scripts/sanitize_web_report.py) — CLI utility to scan and sanitize LaTeX math notations into clean HTML across all report files.
 
 ### Deep-Dive Standards
 - [`references/interactive-web-report-standards.md`](./references/interactive-web-report-standards.md) — Mandatory frontend, Mermaid, and typography quality rules.

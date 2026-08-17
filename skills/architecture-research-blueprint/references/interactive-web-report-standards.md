@@ -109,11 +109,35 @@ Every architectural report must equip diagrams with interactive zoom capabilitie
 
 ---
 
-## 4. Typography & Mathematical Representation
+## 4. Typography & Mathematical Representation Contract
 
-- **Rule:** Never leave raw LaTeX delimiters (`$...$`, `$\to$`, `$$...$$`) in HTML unless a client-side math library (KaTeX/MathJax) is actively loaded.
-- **Replacements:**
-  - `$\to$` $\rightarrow$ `→`
-  - `$O(N)$` $\rightarrow$ `O(N)`
-  - `$p99 \le 120\text{ms}$` $\rightarrow$ `p99 ≤ 120ms`
-  - FinOps allocation formulas $\rightarrow$ Stylized callout cards (`.pedagogy-box`) using `<code>` with clean variable annotations.
+Never transport raw LaTeX math notations (`$...$`, `$\to$`, `$$...$$`) directly into vanilla HTML files.
+
+### A. Two-Tier Defense-in-Depth Architecture
+
+To permanently prevent LaTeX residue in web reports, use a 2-tier defense:
+
+1. **Tier 1 (Build / Scaffolding Time):** Execute the sanitization script on all generated HTML files:
+   ```bash
+   python3 skills/architecture-research-blueprint/scripts/sanitize_web_report.py path/to/web_report/
+   ```
+2. **Tier 2 (Client-Side DOM Fallback):** The included `app.js` automatically runs `autoCleanDomMath()` on `DOMContentLoaded`, intercepting any residual `$math$` strings in text nodes and dynamically converting them to semantic HTML tags before display.
+
+### B. Canonical Translation Reference Table
+
+| Raw LaTeX in Markdown | Clean Semantic HTML / Unicode | Target Visual Display |
+|---|---|---|
+| `$\to$` or `\rightarrow` | `→` | Inline arrow `→` |
+| `$\leftarrow$` | `←` | Inline arrow `←` |
+| `$O(1)$`, `$O(N)$`, `$O(N \log N)$` | `<code>O(1)</code>`, `<code>O(N)</code>` | Monospace badge `O(1)` |
+| `$N$`, `$k$`, `$T$` (single vars) | `<em>N</em>`, `<em>k</em>`, `<em>T</em>` | Italic variable *N* |
+| `$p99 \le 120\text{ms}$` | `<code>p99 ≤ 120ms</code>` | Formatted constraint |
+| `\ge`, `\le`, `\approx`, `\neq` | `≥`, `≤`, `≈`, `≠` | Native Unicode symbols |
+| `\times`, `\cdot`, `\dots` | `×`, `·`, `…` | Native typography |
+| `$$\text{Formula...}$$` | `<div class="pedagogy-box"><div class="pedagogy-title">📐 Fórmula</div><div class="pedagogy-text"><code>...</code></div></div>` | Styled pedagogical card |
+
+### C. Automated Pre-Publish Checklist
+- [ ] Run `python3 .../sanitize_web_report.py web_report/` after consolidating HTML sections.
+- [ ] Verify that unescaped `$` only appears in currency notation (e.g. `$100/mês`) and not around code identifiers.
+- [ ] Ensure `app.js` contains `autoCleanDomMath()` for runtime safety.
+

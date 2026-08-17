@@ -1,6 +1,7 @@
 /**
  * Architecture Web Report - Google Cloud Clean Engineering JS Engine
  * Features:
+ * - Automatic Zero-Dependency DOM Math Sanitizer (converts residual $O(1)$, \to, etc. to clean HTML)
  * - Robust individual Mermaid 10 async rendering with try/catch & theme cache
  * - Fullscreen Lightbox Modal with Zoom In/Out/Reset/Fit, Mouse Pan Drag, Wheel Zoom & Shortcuts
  * - Theme Switcher (Dark/Light) with localStorage persistence
@@ -8,6 +9,99 @@
  */
 
 document.addEventListener('DOMContentLoaded', () => {
+  // ==========================================================================
+  // 0. Automatic Client-Side DOM Math Sanitizer (LaTeX Fallback Defense)
+  // ==========================================================================
+  function autoCleanDomMath() {
+    const mainContent = document.querySelector('.app-main');
+    if (!mainContent) return;
+
+    const symbolMap = [
+        [/\\to/g, '→'],
+        [/\\rightarrow/g, '→'],
+        [/\\leftarrow/g, '←'],
+        [/\\le\b/g, '≤'],
+        [/\\leq\b/g, '≤'],
+        [/\\ge\b/g, '≥'],
+        [/\\geq\b/g, '≥'],
+        [/\\approx\b/g, '≈'],
+        [/\\neq\b/g, '≠'],
+        [/\\times\b/g, '×'],
+        [/\\pm\b/g, '±'],
+        [/\\mu\b/g, 'µ'],
+        [/\\Delta\b/g, 'Δ'],
+        [/\\cdot\b/g, '·'],
+        [/\\dots\b/g, '…'],
+        [/\\in\b/g, '∈'],
+        [/\\infty\b/g, '∞'],
+        [/\\text\{([^}]+)\}/g, '$1'],
+        [/\\mathbf\{([^}]+)\}/g, '<strong>$1</strong>'],
+        [/\\mathit\{([^}]+)\}/g, '<em>$1</em>']
+    ];
+
+    function cleanText(text) {
+      let cleaned = text;
+      for (const [pattern, repl] of symbolMap) {
+        cleaned = cleaned.replace(pattern, repl);
+      }
+      return cleaned;
+    }
+
+    const walker = document.createTreeWalker(
+      mainContent,
+      NodeFilter.SHOW_TEXT,
+      {
+        acceptNode(node) {
+          const parent = node.parentElement;
+          if (!parent) return NodeFilter.FILTER_REJECT;
+          const tag = parent.tagName.toLowerCase();
+          if (['script', 'style', 'pre', 'code', 'svg'].includes(tag) || parent.classList.contains('mermaid')) {
+            return NodeFilter.FILTER_REJECT;
+          }
+          if (node.nodeValue && node.nodeValue.includes('$')) {
+            return NodeFilter.FILTER_ACCEPT;
+          }
+          return NodeFilter.FILTER_SKIP;
+        }
+      }
+    );
+
+    const nodesToProcess = [];
+    while (walker.nextNode()) {
+      nodesToProcess.push(walker.currentNode);
+    }
+
+    nodesToProcess.forEach(textNode => {
+      let val = textNode.nodeValue;
+      if (!val || !val.includes('$')) return;
+
+      // Regex matching $...$ while ignoring standard currency like $100 or $ 50
+      const mathRegex = /(?<!\\)\$([A-Za-z0-9_\\{}() \-\+=\/≤≥→·×\^]+?)\$(?!\d)/g;
+      if (!mathRegex.test(val)) return;
+
+      const span = document.createElement('span');
+      span.innerHTML = val.replace(mathRegex, (match, inner) => {
+        const trimmed = inner.trim();
+        const converted = cleanText(trimmed);
+
+        if (/^O\([^\)]+\)$/.test(converted)) {
+          return `<code>${converted}</code>`;
+        }
+        if (/^[A-Za-z]$/.test(converted)) {
+          return `<em>${converted}</em>`;
+        }
+        return `<code>${converted}</code>`;
+      });
+
+      if (textNode.parentNode) {
+        textNode.parentNode.replaceChild(span, textNode);
+      }
+    });
+  }
+
+  // Execute DOM math sanitizer immediately
+  autoCleanDomMath();
+
   // ==========================================================================
   // 1. Fullscreen Diagram Lightbox Modal (Zoom & Pan Engine)
   // ==========================================================================
