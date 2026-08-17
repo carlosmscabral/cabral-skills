@@ -110,9 +110,13 @@ Publish the architecture as a high-grade, interactive single-page application ad
    - Built-in **Lightbox Modal** with Zoom In (+), Zoom Out (-), Reset (100%), Fit-to-Screen, Mouse Drag Pan, Wheel Zoom, and Keyboard navigation (<kbd>ESC</kbd>, <kbd>+</kbd>, <kbd>-</kbd>, <kbd>0</kbd>).
    - Zero raw LaTeX residue (`$` replaced with clean Unicode `→`, `≤`, `O(N)`, and styled formula cards).
 
----
+## Reference Guides & Examples
 
-## Reference Guides
+### Starter Kit & Templates
+- [`examples/web-report-starter/styles.css`](./examples/web-report-starter/styles.css) — Ready-to-use Google Cloud Clean Engineering stylesheet (Dark/Light theme, tokens, responsive layout, cards, badges, and zoom lightbox).
+- [`examples/web-report-starter/app.js`](./examples/web-report-starter/app.js) — Battle-tested JS engine with async Mermaid 10 rendering, full Zoom & Pan modal lightbox, and navigation tracking.
+- [`examples/web-report-starter/index.html`](./examples/web-report-starter/index.html) — Canonical HTML template demonstrating sticky sidebar, hero banner, diagram wrappers, and pedagogical callouts.
 
+### Deep-Dive Standards
 - [`references/interactive-web-report-standards.md`](./references/interactive-web-report-standards.md) — Mandatory frontend, Mermaid, and typography quality rules.
 - [`references/review-pillars.md`](./references/review-pillars.md) — Deep-dive audit checklists for Security, Reliability, and FinOps reviewers.
