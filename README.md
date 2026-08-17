@@ -14,6 +14,7 @@ Self-contained, `npx`-installable skills:
 | Skill | Description |
 |---|---|
 | [apigee-x-proxy-development](skills/apigee-x-proxy-development/) | Comprehensive Apigee X API proxy development — 44+ policies, flows, endpoints, fault handling, JavaScript, shared flows, caching, load balancing, WebSocket/SSE, multi-tenant isolation, and more (8,800+ lines of reference documentation) |
+| [architecture-research-blueprint](skills/architecture-research-blueprint/) | End-to-end cloud and software architecture research — orchestrates parallel specialist subagents, independent adversarial reviews (Security, Reliability, FinOps), multi-tier executive consolidation, and interactive web reports with zero-defect Mermaid.js and Zoom/Pan lightboxes |
 | [aws-lambda-to-cloud-run-migration](skills/aws-lambda-to-cloud-run-migration/) | Migrates a single AWS Lambda function to Google Cloud Run — analyzes AWS lock-ins (SNS, SQS, SDKs, IAM), build/trigger mechanisms, and service integrations into a migration report with containerization and GCP service mapping |
 | [aws-lambda-fleet-to-cloud-run](skills/aws-lambda-fleet-to-cloud-run/) | Fleet-level migration of 10–100+ Lambda functions — discovery, grouping (1:1 vs consolidation), dependency-graph wave sequencing, and a consolidated migration program |
 | [visual-docs](skills/visual-docs/) | Didactic visual documentation — flow/sequence/state diagrams, ASCII packet walks, annotated code, with a compile-to-validate step so every diagram actually renders |
@@ -21,7 +22,7 @@ Self-contained, `npx`-installable skills:
 ### Install
 
 ```bash
-# all four
+# all skills
 npx skills add carlosmscabral/cabral-skills
 
 # just one
