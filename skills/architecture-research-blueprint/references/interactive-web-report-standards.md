@@ -140,4 +140,3 @@ To permanently prevent LaTeX residue in web reports, use a 2-tier defense:
 - [ ] Run `python3 .../sanitize_web_report.py web_report/` after consolidating HTML sections.
 - [ ] Verify that unescaped `$` only appears in currency notation (e.g. `$100/mês`) and not around code identifiers.
 - [ ] Ensure `app.js` contains `autoCleanDomMath()` for runtime safety.
-
