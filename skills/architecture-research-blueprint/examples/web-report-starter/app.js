@@ -6,6 +6,7 @@
  * - Fullscreen Lightbox Modal with Zoom In/Out/Reset/Fit, Mouse Pan Drag, Wheel Zoom & Shortcuts
  * - Theme Switcher (Dark/Light) with localStorage persistence
  * - Sticky Navigation tracking via IntersectionObserver
+ * - Interactive Decision Wizard & Sizing/TCO Calculator engines
  */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -75,13 +76,18 @@ document.addEventListener('DOMContentLoaded', () => {
       let val = textNode.nodeValue;
       if (!val || !val.includes('$')) return;
 
-      // Regex matching $...$ while ignoring standard currency like $100 or $ 50
+      // Match $...$ where it's not preceded by a backslash
       const mathRegex = /(?<!\\)\$([A-Za-z0-9_\\{}() \-\+=\/≤≥→·×\^]+?)\$(?!\d)/g;
       if (!mathRegex.test(val)) return;
 
       const span = document.createElement('span');
       span.innerHTML = val.replace(mathRegex, (match, inner) => {
         const trimmed = inner.trim();
+        // If it's a currency expression like "10 to $20", "$10 - $20", or "100/mo", preserve verbatim
+        if (/^\d+(?:,\d+)*(?:\.\d+)?(?:\s*(?:k|M|B|\/mo|\/month|\/hr|\/yr|USD|EUR|to\s+\$?\d+|-\s*\$?\d+))?$/i.test(trimmed)) {
+          return match;
+        }
+
         const converted = cleanText(trimmed);
 
         if (/^O\([^\)]+\)$/.test(converted)) {
@@ -122,25 +128,25 @@ document.addEventListener('DOMContentLoaded', () => {
           <div class="modal-header">
             <div class="modal-title-group">
               <span class="modal-icon">🔍</span>
-              <h3 class="modal-title" id="modalTitle">Visualizador de Arquitetura em Alta Resolução</h3>
+              <h3 class="modal-title" id="modalTitle">High-Resolution Architecture Viewer</h3>
             </div>
             <div class="modal-actions">
               <div class="zoom-controls">
-                <button id="zoomOutBtn" class="btn-ctrl" title="Diminuir Zoom (-)" aria-label="Diminuir Zoom">
+                <button id="zoomOutBtn" class="btn-ctrl" title="Zoom Out (-)" aria-label="Zoom Out">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
                 </button>
                 <span id="zoomLevelIndicator" class="zoom-indicator">100%</span>
-                <button id="zoomInBtn" class="btn-ctrl" title="Aumentar Zoom (+)" aria-label="Aumentar Zoom">
+                <button id="zoomInBtn" class="btn-ctrl" title="Zoom In (+)" aria-label="Zoom In">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
                 </button>
-                <button id="zoomResetBtn" class="btn-ctrl" title="Redefinir Zoom (100%)" aria-label="Redefinir Zoom">
+                <button id="zoomResetBtn" class="btn-ctrl" title="Reset Zoom (100%)" aria-label="Reset Zoom">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
                 </button>
-                <button id="zoomFitBtn" class="btn-ctrl" title="Ajustar à Tela" aria-label="Ajustar à Tela">
+                <button id="zoomFitBtn" class="btn-ctrl" title="Fit to Screen" aria-label="Fit to Screen">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
                 </button>
               </div>
-              <button id="modalCloseBtn" class="btn-close" title="Fechar (ESC)" aria-label="Fechar">
+              <button id="modalCloseBtn" class="btn-close" title="Close (ESC)" aria-label="Close">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
             </div>
@@ -149,7 +155,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="pan-zoom-stage" id="panZoomStage">
               <div class="pan-zoom-content" id="panZoomContent"></div>
             </div>
-            <div class="modal-hint">💡 Dica: Arraste com o mouse para mover e use o Scroll para controlar o zoom.</div>
+            <div class="modal-hint">💡 Tip: Click and drag to pan; use scroll wheel or keys (+, -, 0, ESC) to zoom.</div>
           </div>
         </div>
       </div>
@@ -176,7 +182,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const content = document.getElementById('panZoomContent');
 
     if (titleEl) {
-      titleEl.textContent = title || 'Visualizador de Arquitetura';
+      titleEl.textContent = title || 'Architecture Diagram Viewer';
     }
 
     if (content && element) {
@@ -320,7 +326,7 @@ document.addEventListener('DOMContentLoaded', () => {
           await doRender();
         } else if (retries > 30) {
           clearInterval(interval);
-          console.error('Timeout ao carregar Mermaid.js da CDN.');
+          console.error('Timeout loading Mermaid.js from CDN.');
         }
       }, 150);
       return;
@@ -362,13 +368,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
           const zoomBadge = document.createElement('button');
           zoomBadge.className = 'diagram-zoom-badge';
-          zoomBadge.innerHTML = '🔍 Expandir / Zoom';
-          zoomBadge.setAttribute('title', 'Clique para abrir em tela cheia com zoom interativo');
+          zoomBadge.innerHTML = '🔍 Expand / Zoom';
+          zoomBadge.setAttribute('title', 'Click to open in high-resolution fullscreen modal');
           wrapper.appendChild(zoomBadge);
 
           const getDiagramTitle = () => {
             const card = wrapper.closest('.card') || wrapper.closest('.card-diagram') || wrapper.closest('.doc-section');
-            return card ? (card.querySelector('.card-title')?.innerText || card.querySelector('.section-tag')?.innerText || 'Diagrama de Arquitetura') : 'Diagrama de Arquitetura';
+            return card ? (card.querySelector('.card-title')?.innerText || card.querySelector('.section-tag')?.innerText || 'Architecture Diagram') : 'Architecture Diagram';
           };
 
           zoomBadge.onclick = (e) => {
@@ -383,11 +389,11 @@ document.addEventListener('DOMContentLoaded', () => {
           };
 
         } catch (err) {
-          console.error(`Erro no Diagrama #${i + 1}:`, err);
+          console.error(`Error in Diagram #${i + 1}:`, err);
           el.innerHTML = `
             <div style="background: #fce8e6; border: 1px solid #ea4335; border-radius: 8px; padding: 16px; margin: 12px 0;">
-              <div style="color: #c5221f; font-weight: 600;">⚠️ Erro de Renderização no Diagrama #${i + 1}</div>
-              <div style="color: #3c4043; font-size: 13px;">${err.message || 'Sintaxe inválida'}</div>
+              <div style="color: #c5221f; font-weight: 600;">⚠️ Rendering Error in Diagram #${i + 1}</div>
+              <div style="color: #3c4043; font-size: 13px;">${err.message || 'Invalid syntax'}</div>
             </div>
           `;
         }
@@ -395,7 +401,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       document.querySelectorAll('.app-main img').forEach((img) => {
         img.style.cursor = 'zoom-in';
-        img.onclick = () => openDiagramModal(img, img.alt || 'Imagem de Arquitetura');
+        img.onclick = () => openDiagramModal(img, img.alt || 'Architecture Image');
       });
     }
   }
@@ -441,4 +447,48 @@ document.addEventListener('DOMContentLoaded', () => {
   }, { root: null, rootMargin: '-20% 0px -70% 0px', threshold: 0 });
 
   sections.forEach((sec) => sectionObserver.observe(sec));
+
+  // ==========================================================================
+  // 5. Interactive Architecture Decision Wizard & Sizing Engine
+  // ==========================================================================
+  const wizardSelect = document.getElementById('wizardWorkloadType');
+  const wizardResult = document.getElementById('wizardResult');
+
+  if (wizardSelect && wizardResult) {
+    wizardSelect.addEventListener('change', () => {
+      const val = wizardSelect.value;
+      let title = 'Recommended Topology';
+      let desc = 'Select your workload profile to view architectural recommendations.';
+
+      if (val === 'agentic') {
+        title = '🤖 GenAI Agent Runtime on GKE Autopilot + gVisor';
+        desc = 'Requires sandboxed execution for dynamic tool calling, Vertex AI Context Caching, and low-latency Vector Search.';
+      } else if (val === 'microservices') {
+        title = '⚡ Cloud Run + Cloud Service Mesh';
+        desc = 'Ideal for stateless, auto-scaling event-driven services with Cloud Armor WAF and Memorystore caching.';
+      } else if (val === 'data-mesh') {
+        title = '📊 BigQuery Lakehouse + dbt & Cloud Composer';
+        desc = 'Optimized for high-throughput batch/stream analytics with Dataplex data governance and columnar partitioning.';
+      }
+
+      wizardResult.innerHTML = `
+        <div class="recommendation-title">${title}</div>
+        <div class="recommendation-desc">${desc}</div>
+      `;
+    });
+  }
+
+  const tcoSlider = document.getElementById('tcoVolumeSlider');
+  const tcoPrice = document.getElementById('tcoEstimatedPrice');
+  const tcoVolumeLabel = document.getElementById('tcoVolumeLabel');
+
+  if (tcoSlider && tcoPrice) {
+    tcoSlider.addEventListener('input', () => {
+      const reqPerSec = parseInt(tcoSlider.value, 10);
+      if (tcoVolumeLabel) tcoVolumeLabel.textContent = `${reqPerSec} req/sec`;
+      // Baseline equation: Base compute ($150) + $0.85 per RPS per month
+      const monthlyEst = Math.round(150 + (reqPerSec * 0.85 * 30));
+      tcoPrice.textContent = `$${monthlyEst.toLocaleString()}/mo`;
+    });
+  }
 });

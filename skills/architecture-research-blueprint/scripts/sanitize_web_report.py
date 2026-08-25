@@ -72,21 +72,27 @@ def sanitize_html_content(content: str) -> tuple[str, int]:
             # First handle block math: $$...$$
             def block_repl(m):
                 nonlocal total_replacements
-                total_replacements += 1
                 inner = m.group(1).strip()
                 cleaned = sanitize_math_expression(inner)
-                return f'<div class="pedagogy-box"><div class="pedagogy-title">📐 Fórmula</div><div class="pedagogy-text">{cleaned}</div></div>'
+                if cleaned == inner:
+                    return m.group(0)
+                total_replacements += 1
+                return f'<div class="pedagogy-box"><div class="pedagogy-title">📐 Formula</div><div class="pedagogy-text">{cleaned}</div></div>'
             
             part = re.sub(r'\$\$(.+?)\$\$', block_repl, part, flags=re.DOTALL)
             
             # Then handle inline math: $...$
             def inline_repl(m):
                 nonlocal total_replacements
-                total_replacements += 1
                 inner = m.group(1).strip()
-                return sanitize_math_expression(inner)
+                # If it's pure currency or price range (e.g. "10 to $20", "$10 - $20", or "100/mo"), preserve it
+                if re.match(r'^\d+(?:,\d+)*(?:\.\d+)?(?:\s*(?:k|M|B|/mo|/month|/hr|/yr|USD|EUR|to\s+\$?\d+|-\s*\$?\d+))?$', inner, re.IGNORECASE):
+                    return m.group(0)
+                cleaned = sanitize_math_expression(inner)
+                total_replacements += 1
+                return cleaned
             
-            # Match $...$ where it's not a standalone dollar currency (e.g. not $100/mês or $ 50)
+            # Match $...$ where it's not preceded by a backslash
             part = re.sub(r'(?<!\\)\$([A-Za-z0-9_\\{}() \-\+=\/≤≥→·×\^]+?)\$(?!\d)', inline_repl, part)
             
             new_parts.append(part)

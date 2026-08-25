@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR" data-theme="light">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -16,10 +16,10 @@
     <div class="header-container">
       <div class="brand">
         <span class="brand-title">Architecture Reference Blueprint</span>
-        <span class="brand-badge">Enterprise Edition</span>
+        <span class="brand-badge">Well-Architected Edition</span>
       </div>
       <div class="header-actions">
-        <button id="themeToggle" class="btn-icon" title="Alternar Tema Claro/Escuro" aria-label="Alternar Tema">
+        <button id="themeToggle" class="btn-icon" title="Toggle Light/Dark Theme" aria-label="Toggle Theme">
           <svg class="sun-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
           <svg class="moon-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
         </button>
@@ -31,10 +31,11 @@
     <!-- Sidebar Navigation -->
     <aside class="app-sidebar">
       <nav class="sidebar-nav">
-        <div class="nav-group-title">Navegação Principal</div>
-        <a href="#overview" class="nav-link active"><span class="nav-icon">🧭</span> Visão Geral</a>
-        <a href="#section1" class="nav-link"><span class="nav-icon">🏗️</span> Fundamentos & Modelos</a>
-        <a href="#section2" class="nav-link"><span class="nav-icon">🛡️</span> Segurança & Isolamento</a>
+        <div class="nav-group-title">Navigation</div>
+        <a href="#overview" class="nav-link active"><span class="nav-icon">🧭</span> Overview</a>
+        <a href="#section1" class="nav-link"><span class="nav-icon">🏗️</span> Canonical Topology</a>
+        <a href="#section2" class="nav-link"><span class="nav-icon">🛡️</span> Security & Zero-Trust</a>
+        <a href="#section3" class="nav-link"><span class="nav-icon">🎛️</span> Decision & TCO Engine</a>
       </nav>
     </aside>
 
@@ -44,30 +45,30 @@
       <section id="overview" class="doc-section">
         <div class="hero-card">
           <span class="hero-badge">Reference Blueprint</span>
-          <h1 class="hero-title">Guia de Arquitetura de Software & Cloud</h1>
+          <h1 class="hero-title">Software & Cloud Architecture Guide</h1>
           <p class="hero-subtitle">
-            Estrutura canônica de engenharia com diagramas Mermaid em alta definição, visualizador com Zoom & Pan em tela cheia e análise rigorosa de trade-offs.
+            Enterprise architecture blueprint featuring high-definition Mermaid diagrams, fullscreen Zoom & Pan lightbox exploration, and Well-Architected Framework trade-off evaluations.
           </p>
           <div class="hero-stats">
             <div class="stat-box">
               <span class="stat-number">100%</span>
-              <span class="stat-label">Grounding Validado</span>
+              <span class="stat-label">Verified Grounding</span>
             </div>
             <div class="stat-box">
-              <span class="stat-number">3 Pilares</span>
-              <span class="stat-label">Segurança, Confiabilidade, FinOps</span>
+              <span class="stat-number">6 Pillars</span>
+              <span class="stat-label">Well-Architected</span>
             </div>
           </div>
         </div>
       </section>
 
-      <!-- Section 1 -->
+      <!-- Section 1: Canonical Topology -->
       <section id="section1" class="doc-section">
         <div class="section-header">
-          <span class="section-tag">Módulo 01</span>
-          <h2 class="section-title">Topologia Canônica e Fluxo de Execução</h2>
+          <span class="section-tag">Module 01</span>
+          <h2 class="section-title">Canonical End-to-End System Flow</h2>
           <p class="section-desc">
-            Exemplo de diagrama vertical com nós ricos e visualizador interativo em tela cheia com zoom.
+            Top-down vertical architecture diagram with rich nodes and interactive fullscreen zoom/pan controls.
           </p>
         </div>
 
@@ -75,9 +76,9 @@
           <div class="card-header">
             <div class="card-title-group">
               <span class="card-icon">🚀</span>
-              <h3 class="card-title">Fluxo Evolutivo de Arquitetura</h3>
+              <h3 class="card-title">System Request & Data Lifecycle</h3>
             </div>
-            <span class="badge-accent">Alta Resolução</span>
+            <span class="badge-accent">High Resolution</span>
           </div>
 
           <div class="mermaid">
@@ -85,20 +86,100 @@ graph TD
     classDef step fill:#e8f0fe,stroke:#1a73e8,stroke-width:2px;
     classDef edgeNode fill:#fef7e0,stroke:#f9ab00,stroke-width:2px;
 
-    A["<strong>ETAPA 1: Borda e Ingress Anycast</strong><br/>• Terminação SSL Global com Cloud Load Balancing<br/>• Rate Limiting Dinâmico e Proteção WAF OWASP"]:::edgeNode
+    A["<strong>LAYER 1: Edge Ingress & Anycast Gateway</strong><br/>• Global SSL Termination via Cloud Load Balancing<br/>• Dynamic Rate Limiting, Cloud Armor WAF & API Gateway"]:::edgeNode
 
-    B["<strong>ETAPA 2: Camada de Computação e Orquestração</strong><br/>• Isolamento de Workloads via GKE Fleets ou Cloud Run<br/>• Menor privilégio com Workload Identity Federation"]:::step
+    B["<strong>LAYER 2: Compute & Workload Orchestration</strong><br/>• Scalable Services on GKE Autopilot / Cloud Run<br/>• Zero-Trust Service Mesh & Workload Identity Federation"]:::step
 
-    C["<strong>ETAPA 3: Persistência e Isolamento de Dados</strong><br/>• Row-Level Security (RLS) ou Schemas Dedicados<br/>• Criptografia CMEK / BYOK com Cloud KMS"]:::step
+    C["<strong>LAYER 3: Stateful Persistence & Cache</strong><br/>• Low-Latency OLTP (AlloyDB / Cloud Spanner / Cloud SQL)<br/>• Memorystore Redis Caching & Cloud KMS CMEK Encryption"]:::step
 
-    A -->|"Encaminhamento Seguro L7"| B
-    B -->|"Conexão Privada via Direct VPC / PSC"| C
+    A -->|"Secure L7 Forwarding"| B
+    B -->|"Private Service Connect (PSC)"| C
           </div>
 
           <div class="pedagogy-box success">
-            <div class="pedagogy-title">💡 Dica de Engenharia</div>
+            <div class="pedagogy-title">💡 Engineering Tip</div>
             <div class="pedagogy-text">
-              Passe o mouse sobre o diagrama acima ou clique nele para abrir o <strong>Visualizador em Tela Cheia com Zoom e Pan</strong>.
+              Hover over or click the diagram above to open the <strong>Fullscreen Zoom & Pan Lightbox Modal</strong>. Use mouse drag to pan, wheel to zoom, or keyboard shortcuts (<kbd>+</kbd>, <kbd>-</kbd>, <kbd>0</kbd>, <kbd>ESC</kbd>).
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 2: Security & Zero-Trust -->
+      <section id="section2" class="doc-section">
+        <div class="section-header">
+          <span class="section-tag">Module 02</span>
+          <h2 class="section-title">Security & Zero-Trust Architecture</h2>
+          <p class="section-desc">
+            Service perimeters, identity delegation, and cryptographic protection across all layers.
+          </p>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title-group">
+              <span class="card-icon">🛡️</span>
+              <h3 class="card-title">Security Invariants & Countermeasures</h3>
+            </div>
+          </div>
+          <div class="card-body">
+            <ul>
+              <li><strong>Zero-Trust Identity:</strong> Enforce Workload Identity Federation with short-lived tokens and zero service account key downloads.</li>
+              <li><strong>Data Perimeter:</strong> VPC Service Controls (VPC-SC) isolate managed Google Cloud APIs from data exfiltration risks.</li>
+              <li><strong>Encryption at Rest & Transit:</strong> Customer-Managed Encryption Keys (CMEK) with Cloud KMS, plus automatic TLS 1.3 across all hops.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 3: Decision & TCO Engine -->
+      <section id="section3" class="doc-section">
+        <div class="section-header">
+          <span class="section-tag">Module 03</span>
+          <h2 class="section-title">Interactive Decision & TCO Engine</h2>
+          <p class="section-desc">
+            Dynamic architecture selection questionnaire and live sizing calculator.
+          </p>
+        </div>
+
+        <div class="interactive-grid">
+          <!-- Architecture Selection Wizard -->
+          <div class="wizard-card">
+            <div class="card-title-group">
+              <span class="card-icon">🧙‍♂️</span>
+              <h3 class="card-title">Architecture Selection Wizard</h3>
+            </div>
+            <div class="wizard-form-group">
+              <label class="form-label" for="wizardWorkloadType">Primary Workload Profile:</label>
+              <select id="wizardWorkloadType" class="form-select">
+                <option value="agentic">Autonomous AI Agents / ADK Reasoning</option>
+                <option value="microservices">Event-Driven Cloud-Native Microservices</option>
+                <option value="data-mesh">Enterprise Analytics & Data Mesh</option>
+              </select>
+            </div>
+            <div id="wizardResult" class="recommendation-result">
+              <div class="recommendation-title">🤖 GenAI Agent Runtime on GKE Autopilot + gVisor</div>
+              <div class="recommendation-desc">Requires sandboxed execution for dynamic tool calling, Vertex AI Context Caching, and low-latency Vector Search.</div>
+            </div>
+          </div>
+
+          <!-- Sizing & TCO Calculator -->
+          <div class="tco-card">
+            <div class="card-title-group">
+              <span class="card-icon">💰</span>
+              <h3 class="card-title">Sizing & TCO Estimator</h3>
+            </div>
+            <div class="tco-form-group">
+              <label class="form-label" for="tcoVolumeSlider">
+                <span>Peak Throughput:</span>
+                <span id="tcoVolumeLabel" style="font-family: var(--font-mono); color: var(--brand-blue);">50 req/sec</span>
+              </label>
+              <input type="range" id="tcoVolumeSlider" class="form-range" min="10" max="500" value="50" step="10">
+            </div>
+            <div class="tco-result">
+              <div class="tco-result-title">Estimated Monthly Infrastructure Cost:</div>
+              <div class="tco-price-tag" id="tcoEstimatedPrice">$1,425/mo</div>
+              <div class="tco-result-desc">Includes ingress, managed compute autoscaling, and persistent caching.</div>
             </div>
           </div>
         </div>

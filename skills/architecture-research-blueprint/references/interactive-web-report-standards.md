@@ -38,10 +38,13 @@ This document provides strict, battle-tested engineering standards for generatin
 
 ## 2. Frontend Rendering Architecture (`app.js`)
 
-### A. Avoid `startOnLoad: true` inside `DOMContentLoaded`
+### A. Offline / Air-Gapped Deployment
+For air-gapped environments without CDN access, download `mermaid.min.js` directly into `web_report/` and replace the CDN `<script>` tag in `index.html` with `<script src="mermaid.min.js"></script>`.
+
+### B. Avoid `startOnLoad: true` inside `DOMContentLoaded`
 Mermaid 10.x fails to render if `startOnLoad: true` is initialized after `DOMContentLoaded` has already fired, or if a single diagram contains a syntax flaw.
 
-### B. Individual Async Rendering Loop with Error Isolation
+### C. Individual Async Rendering Loop with Error Isolation
 ```javascript
 async function renderMermaidDiagrams() {
   if (!window.mermaid) {
@@ -83,7 +86,7 @@ async function renderMermaidDiagrams() {
         if (bindFunctions) bindFunctions(el);
       } catch (err) {
         console.error(`Error rendering Mermaid #${i + 1}:`, err);
-        el.innerHTML = `<div class="diagram-error">⚠️ Erro de Renderização: ${err.message}</div>`;
+        el.innerHTML = `<div class="diagram-error">⚠️ Rendering Error: ${err.message}</div>`;
       }
     }
   }
@@ -95,7 +98,7 @@ async function renderMermaidDiagrams() {
 ## 3. Universal Fullscreen Lightbox Modal (Zoom & Pan)
 
 Every architectural report must equip diagrams with interactive zoom capabilities:
-1. **Trigger:** Floating `🔍 Expandir / Zoom` button on hover + click-to-open on diagram containers.
+1. **Trigger:** Floating `🔍 Expand / Zoom` button on hover + click-to-open on diagram containers.
 2. **Modal Viewport:** High-contrast, backdrop-blurred fullscreen container (`95vw` × `92vh`).
 3. **Controls:**
    - Zoom In (`+` / step +0.25x)
@@ -134,9 +137,9 @@ To permanently prevent LaTeX residue in web reports, use a 2-tier defense:
 | `$p99 \le 120\text{ms}$` | `<code>p99 ≤ 120ms</code>` | Formatted constraint |
 | `\ge`, `\le`, `\approx`, `\neq` | `≥`, `≤`, `≈`, `≠` | Native Unicode symbols |
 | `\times`, `\cdot`, `\dots` | `×`, `·`, `…` | Native typography |
-| `$$\text{Formula...}$$` | `<div class="pedagogy-box"><div class="pedagogy-title">📐 Fórmula</div><div class="pedagogy-text"><code>...</code></div></div>` | Styled pedagogical card |
+| `$$\text{Formula...}$$` | `<div class="pedagogy-box"><div class="pedagogy-title">📐 Formula</div><div class="pedagogy-text"><code>...</code></div></div>` | Styled pedagogical card |
 
 ### C. Automated Pre-Publish Checklist
 - [ ] Run `python3 .../sanitize_web_report.py web_report/` after consolidating HTML sections.
-- [ ] Verify that unescaped `$` only appears in currency notation (e.g. `$100/mês`) and not around code identifiers.
+- [ ] Verify that unescaped `$` only appears in currency notation (e.g. `$100/mo`) and not around code identifiers.
 - [ ] Ensure `app.js` contains `autoCleanDomMath()` for runtime safety.

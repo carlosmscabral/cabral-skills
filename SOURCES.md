@@ -30,6 +30,44 @@ npx skills add google/skills                 # all
 npx skills add google/skills --skill <name>  # one
 ```
 
+### Agents365-ai/drawio-skill — natural language to editable Draw.io diagrams & exports
+Generates editable `.drawio` XML diagrams (UML, C4, architecture, sequence, ERD, ML) from prompts,
+codebases (Python/TS/Go/Rust), Terraform/K8s/Docker configs, and SQL DDL. Includes vision
+self-correction and exports to PNG/SVG/PDF/JPG. MIT.
+
+**1. Prerequisites (Draw.io desktop CLI):**
+```bash
+# macOS
+brew install --cask drawio
+
+# Linux (headless export needs xvfb)
+sudo apt install xvfb
+# Download .deb from https://github.com/jgraph/drawio-desktop/releases
+```
+Verify with `drawio --version` (version >= 30 recommended for Mermaid-to-Draw.io and ELK layout support).
+
+**2. Install:**
+```bash
+# Via npx skills (global or per-agent)
+npx skills add Agents365-ai/365-skills -g
+
+# Or direct clone into agent skills directory
+git clone https://github.com/Agents365-ai/drawio-skill.git ~/.gemini/config/skills/drawio-skill
+# (or ~/.claude/skills/drawio-skill for Claude Code)
+```
+
+**3. Update:**
+```bash
+# Via skills CLI
+skills update drawio-skill
+
+# Or git pull
+cd ~/.gemini/config/skills/drawio-skill && git pull
+
+# Claude Code plugin marketplace
+/plugin update drawio
+```
+
 ---
 
 ## How to add a pointer here

@@ -1,13 +1,10 @@
 ---
 name: architecture-research-blueprint
 description: >
-  Orchestrates end-to-end software and cloud architecture research using parallel
-  specialist subagents, independent adversarial/critic reviewers, multi-tier
-  executive consolidation, and interactive web report generation (Google Cloud
-  Engineering Design System, zero-defect Mermaid.js, and fullscreen Zoom & Pan
-  Lightbox modal). Triggers: "research architecture", "architecture blueprint",
-  "multi-tenant architecture", "cloud architecture study", "design architecture trade-offs",
-  "generate architecture report", "multi-agent architecture research".
+  Use this skill when researching, designing, or evaluating software, cloud, and Google Cloud
+  Platform architectures. Orchestrates parallel specialist subagents, independent adversarial
+  reviews across the 6 Well-Architected pillars, multi-tier executive consolidation, and
+  interactive web reports with zero-defect Mermaid.js and fullscreen Zoom/Pan lightboxes.
 ---
 
 # Architecture Research & Interactive Blueprint Skill
@@ -19,78 +16,69 @@ This skill defines a deterministic, multi-agent workflow for conducting deep-div
 ## When to Use This Skill
 
 ### Positive Triggers (Use this skill when:)
-- Conducting exhaustive, multi-domain architectural investigations (e.g., Multi-Tenancy on Cloud, Event-Driven Architectures, Zero-Trust Enterprise Networks, Global Database Topologies).
-- Evaluating multi-dimensional trade-offs requiring parallel specialized research across different infrastructure layers (Ingress, Compute, Persistence, Security, FinOps).
-- Performing adversarial architectural reviews (Security/Blast Radius, Noisy Neighbor/Contention, Operational Burden/DDL migrations).
-- Generating structured multi-tier deliverables (Agnostic Foundations $\to$ Modular Domain Reports $\to$ Master Decision Matrix $\to$ Executive Presentation Blueprint $\to$ Interactive Web Report).
+- Conducting exhaustive architectural investigations across complex software, distributed systems, or Google Cloud topologies.
+- Evaluating multi-dimensional trade-offs requiring parallel specialized research across infrastructure layers (Edge, Compute, Data, Security, FinOps).
+- Performing independent adversarial architectural reviews (Security/Zero-Trust, Reliability/Fault Tolerance, FinOps/Cost, Performance, Operational Excellence).
+- Generating structured multi-tier deliverables (Foundations → Domain Deep Dives → Master Decision Matrix/ADRs → Executive Slides → Interactive Web Report).
 
-### Negative Triggers (Do NOT use this skill when:)
-- Documenting existing code flows with quick diagrams $\to$ use [`visual-docs`](../visual-docs/) instead.
-- Simple ad-hoc code explanation, bug fixing, or single-file refactoring $\to$ handle directly.
-- Migrating single AWS Lambda functions $\to$ use [`aws-lambda-to-cloud-run-migration`](../aws-lambda-to-cloud-run-migration/) instead.
-- Developing or testing Apigee X proxies $\to$ use [`apigee-x-proxy-development`](../apigee-x-proxy-development/) instead.
 
 ---
 
-## The 4-Phase Architecture Lifecycle
+## The 4-Phase Execution Lifecycle
 
-```mermaid
-graph TD
-    classDef phase fill:#e8f0fe,stroke:#1a73e8,stroke-width:2px;
-    classDef agent fill:#fef7e0,stroke:#f9ab00,stroke-width:2px;
-    classDef output fill:#e6f4ea,stroke:#34a853,stroke-width:2px;
-
-    P1["<strong>FASE 1: SPECIALIST RESEARCH IN PARALLEL</strong><br/>4-6 Domain Subagents + Strict Official Docs Grounding"]:::phase
-    P2["<strong>FASE 2: INDEPENDENT CRITICAL AUDIT</strong><br/>Adversarial Reviewers challenge Security, Reliability & FinOps"]:::phase
-    P3["<strong>FASE 3: MULTI-TIER CONSOLIDATION</strong><br/>Agnostic 00 + Deep Dives 01-05 + Master Blueprint + Slide Deck"]:::phase
-    P4["<strong>FASE 4: INTERACTIVE WEB REPORT APP</strong><br/>Google Engineering Design System + Decision Wizard + Zoom/Pan Modal"]:::phase
-
-    P1 --> P2
-    P2 --> P3
-    P3 --> P4
-```
+| Phase | Core Objective | Key Deliverables |
+|---|---|---|
+| **Phase 1: Parallel Specialist Research** | Spawn 4–6 domain subagents concurrently to explore orthogonal problem spaces. | Standalone domain reports with verified official citations (`https://cloud.google.com/...`). |
+| **Phase 2: Independent Adversarial Review & Quality Gate** | **Stage 2.1:** Audit grounding/depth per report → **FIX gaps in place** → **Stage 2.2:** Well-Architected 6-pillar audit. | Pre-flight audit, remediated specialist reports, and formal critique files in `reviews/`. |
+| **Phase 3: Multi-Tier Consolidation** | Synthesize domain findings, remediations, and decision records into master artifacts. | `00_system_context_and_foundations.md`, `01_`–`0N_` deep dives, `master_architecture.md`, and slide blueprint. |
+| **Phase 4: Interactive Web Report** | Publish an interactive single-page app with Clean Engineering UI, wizards, and Mermaid lightboxes. | Standalone `web_report/` SPA (`index.html`, `styles.css`, `app.js`). |
 
 ---
 
-## Phase 1: Parallel Specialist Subagents (`invoke_subagent`)
+## Phase 1: Parallel Specialist Subagents
 
 1. **Decompose into Orthogonal Macro-Domains:**
-   Break down the problem space into 4 to 6 mutually exclusive domains. For instance, in Cloud Multi-Tenancy:
-   - *Domain 1:* Resource Hierarchy, Governance, IAM, VPC-SC & Network Isolation.
-   - *Domain 2:* Edge Routing, Anycast LB, Cloud DNS, WAF & API Management.
-   - *Domain 3:* Compute & Container Orchestration (GKE Fleets, Sandboxing, Serverless).
-   - *Domain 4:* Stateful Persistence, Databases (SQL, NoSQL, Spanner) & Storage.
-   - *Domain 5:* FinOps, Cost Allocation, Tenant Observability & Noisy Neighbor Mitigation.
+   Break down the problem space into 4 to 6 mutually exclusive domains. Consult [`references/domain-archetypes.md`](./references/domain-archetypes.md) for canonical blueprints (Cloud-Native Microservices, GenAI / ADK Agent Platforms, Data Mesh, Multi-Tenant SaaS, Hybrid Networking).
 
 2. **Spawn Specialist Subagents Concurrently:**
-   - Equip each subagent with research MCPs (e.g. `google-developer-knowledge`, `search_web`).
-   - **Strict Grounding Invariant:** Every architectural assertion, quota limit, and recommendation must cite verified official documentation links (`https://cloud.google.com/...`).
-   - Require each specialist to output a standalone markdown document with trade-off matrices, concrete configuration schemas, and clean Mermaid diagrams.
+   - Equip each subagent with research MCPs (`google-developer-knowledge`, `search_web`, `read_url_content`).
+   - **Strict Grounding Invariant:** Every architectural assertion, quota limit, and recommendation must cite verified official documentation links (`https://cloud.google.com/...` or relevant official vendor documentation).
+   - Require each specialist to output a standalone markdown document containing concrete configuration schemas, trade-off matrices, and clean Mermaid diagrams.
 
 ---
 
-## Phase 2: Independent Adversarial Review (`invoke_subagent`)
+## Phase 2: Independent Adversarial Review & Quality Gate
 
-Never consolidate unverified research. Spawn dedicated review subagents to audit the specialist findings against the **3 Architectural Review Pillars** (see [`references/review-pillars.md`](./references/review-pillars.md)):
+Adversarial review runs in two sequential stages separated by a **mandatory quality gate** (see [`references/architecture-review-pillars.md`](./references/architecture-review-pillars.md)):
 
-1. **Security, Isolation & Blast Radius Reviewer:**
-   - Evaluates tenant cross-talk risks, token impersonation vulnerabilities, VPC perimeter leakage, and compliance constraints (LGPD, HIPAA, PCI-DSS).
-2. **Reliability, Contention & Noisy Neighbor Reviewer:**
-   - Audits resource starvations, database connection pool exhaustion, API quota throttling, and cascade failure patterns under heavy concurrent load.
-3. **FinOps & Operational Burden Reviewer:**
-   - Analyzes idle capacity overhead (*Idle Capacity Tax*), schema migration scaling complexity ($O(N)$ vs $O(1)$), and automated onboarding efficiency.
+### Stage 2.1: Pre-Flight Grounding & Depth Quality Gate
+Rigorously audit **each prior specialist domain analysis** before initiating pillar reviews:
+1. **Grounding & Veracity:** Verify that all APIs, SDK methods, service limits, and architectural claims cite official documentation (`https://cloud.google.com/...`) with zero hallucinations or deprecated assumptions.
+2. **Completeness & Technical Depth:** Verify that analyses contain concrete schemas, error-handling mechanisms, failure recovery paths, and cross-domain integration contracts rather than superficial hand-waving.
 
-Each reviewer writes a formal critique to `reviews/`, providing defensive architectural countermeasures.
+> [!IMPORTANT]
+> **MANDATORY QUALITY GATE & REMEDIATION LOOP:**  
+> If any grounding gaps, missing citations, hallucinations, or shallow sections are discovered during Stage 2.1, **DO NOT proceed to Stage 2.2**. You must **FIX and deepen the specialist reports directly in place** first. Re-verify that all documents meet the quality bar before triggering Well-Architected reviewers.
+
+### Stage 2.2: Well-Architected Framework Adversarial Stress-Testing
+Once all specialist reports are verified, grounded, and remediated, spawn dedicated review subagents to audit the architecture against the **6 Google Cloud Architecture Framework Pillars**:
+- **Reviewer A (Security, Privacy & Compliance):** Audits Zero-Trust identity, least privilege, VPC-SC perimeters, CMEK, data isolation, and regulatory compliance.
+- **Reviewer B (Reliability, Scalability & Performance):** Audits multi-region failover, rate limiting, connection pooling, backpressure, and latency SLAs under load.
+- **Reviewer C (FinOps, Operational Excellence & System Design):** Audits unit economics, context caching/pricing optimization, IaC reproducibility, and modular API boundaries.
+
+Each reviewer writes a formal critique to `reviews/`, providing defensive architectural countermeasures to incorporate during consolidation.
 
 ---
 
 ## Phase 3: Multi-Tier Consolidation
 
-Synthesize all findings into structured, multi-tier artifacts:
-- **`00_foundations_agnostic.md`:** Core mental models, taxonomy (Silo, Pooled, Bridge, Tiered), and invariants independent of any specific cloud provider.
-- **`01_...md` to `05_...md`:** In-depth technical domain reports incorporating reviewer remediations.
-- **`master_architecture.md`:** Executive synthesis with a multidimensional decision matrix and clear selection heuristics.
+Synthesize all findings and reviewer remediations into structured, multi-tier artifacts:
+- **`00_system_context_and_foundations.md`:** Executive context, problem statement, business goals, quality attribute scenarios (ISO/IEC 25010), and technology-agnostic mental models.
+- **`01_...md` to `0N_...md`:** In-depth technical domain reports incorporating reviewer remediations and grounded diagrams.
+- **`master_architecture.md`:** Executive synthesis with a multidimensional decision matrix, Architectural Decision Records (ADRs), and clear selection heuristics.
 - **`presentation_slides_blueprint.md`:** Structured slide-by-slide storyline for C-level and technical leadership presentations.
+
+*Tip:* For large research initiatives with 5+ domains, consolidate incrementally (synthesize the Cross-Domain Matrix first, then author the Master Decision Record & ADRs) to optimize context efficiency.
 
 ---
 
@@ -102,13 +90,15 @@ Publish the architecture as a high-grade, interactive single-page application ad
    - HSL-tailored color tokens with seamless Dark/Light theme switching (`localStorage`).
    - Sticky sidebar navigation tracked via `IntersectionObserver`.
 2. **Interactive Decision Engine (`app.js`):**
-   - **Architecture Selection Wizard:** Dynamic questionnaire matching compliance level and scale to the optimal model.
-   - **Interactive TCO Calculator:** Dynamic pricing sliders with transparent cost allocation equations.
+   - **Architecture Selection Wizard:** Dynamic questionnaire matching workload scale, compliance, and latency constraints to the optimal model.
+   - **Sizing & TCO Calculator:** Dynamic pricing sliders with transparent cost allocation equations.
    - **Copy-to-Clipboard & Code Tabs.**
 3. **Zero-Defect Mermaid & Fullscreen Zoom & Pan Modal:**
    - Individual async `mermaid.render()` with `try/catch` isolation per diagram.
    - Built-in **Lightbox Modal** with Zoom In (+), Zoom Out (-), Reset (100%), Fit-to-Screen, Mouse Drag Pan, Wheel Zoom, and Keyboard navigation (<kbd>ESC</kbd>, <kbd>+</kbd>, <kbd>-</kbd>, <kbd>0</kbd>).
    - **Automated Math Sanitization:** Run `scripts/sanitize_web_report.py` to convert all `$math$` / `$O(N)$` tokens to clean semantic HTML, backed by `autoCleanDomMath()` in `app.js`.
+
+---
 
 ## Reference Guides & Examples
 
@@ -121,5 +111,6 @@ Publish the architecture as a high-grade, interactive single-page application ad
 - [`scripts/sanitize_web_report.py`](./scripts/sanitize_web_report.py) — CLI utility to scan and sanitize LaTeX math notations into clean HTML across all report files.
 
 ### Deep-Dive Standards
+- [`references/domain-archetypes.md`](./references/domain-archetypes.md) — 5 canonical domain decomposition archetypes (Microservices, GenAI/ADK, Data Mesh, SaaS, Hybrid).
+- [`references/architecture-review-pillars.md`](./references/architecture-review-pillars.md) — Deep-dive audit checklists across the 6 Well-Architected Framework pillars.
 - [`references/interactive-web-report-standards.md`](./references/interactive-web-report-standards.md) — Mandatory frontend, Mermaid, and typography quality rules.
-- [`references/review-pillars.md`](./references/review-pillars.md) — Deep-dive audit checklists for Security, Reliability, and FinOps reviewers.
