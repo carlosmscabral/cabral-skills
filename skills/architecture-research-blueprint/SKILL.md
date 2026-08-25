@@ -37,13 +37,31 @@ This skill defines a deterministic, multi-agent workflow for conducting deep-div
 
 ## Phase 1: Parallel Specialist Subagents
 
+> [!IMPORTANT]
+> **MANDATORY SUBAGENT INVOCATION (DO NOT SIMULATE IN MAIN CONTEXT):**  
+> You MUST call the `invoke_subagent` tool to spawn independent specialist subagents concurrently. DO NOT author all domain analyses sequentially yourself within the parent agent context. Real subagents guarantee dedicated context windows, deep parallel web/docs exploration, and orthogonal specialization.
+
 1. **Decompose into Orthogonal Macro-Domains:**
    Break down the problem space into 4 to 6 mutually exclusive domains. Consult [`references/domain-archetypes.md`](./references/domain-archetypes.md) for canonical blueprints (Cloud-Native Microservices, GenAI / ADK Agent Platforms, Data Mesh, Multi-Tenant SaaS, Hybrid Networking).
 
-2. **Spawn Specialist Subagents Concurrently:**
-   - Equip each subagent with research MCPs (`google-developer-knowledge`, `search_web`, `read_url_content`).
-   - **Strict Grounding Invariant:** Every architectural assertion, quota limit, and recommendation must cite verified official documentation links (`https://cloud.google.com/...` or relevant official vendor documentation).
-   - Require each specialist to output a standalone markdown document containing concrete configuration schemas, trade-off matrices, and clean Mermaid diagrams.
+2. **Spawn Specialist Subagents Concurrently via `invoke_subagent`:**
+   Launch all domain specialists in a single batch call using `TypeName: "research"` or `TypeName: "self"`:
+   ```json
+   {
+     "Subagents": [
+       {
+         "TypeName": "research",
+         "Role": "Domain 1 Specialist (e.g. Ingress & Routing)",
+         "Prompt": "Research and author 01_domain_name.md covering... Strict requirement: Ground every technical assertion and quota limit with official vendor documentation links (https://cloud.google.com/...). Output concrete configuration schemas, trade-off matrices, and clean Mermaid diagrams."
+       },
+       {
+         "TypeName": "research",
+         "Role": "Domain 2 Specialist (e.g. Identity & Security)",
+         "Prompt": "Research and author 02_domain_name.md covering..."
+       }
+     ]
+   }
+   ```
 
 ---
 
@@ -61,7 +79,12 @@ Rigorously audit **each prior specialist domain analysis** before initiating pil
 > If any grounding gaps, missing citations, hallucinations, or shallow sections are discovered during Stage 2.1, **DO NOT proceed to Stage 2.2**. You must **FIX and deepen the specialist reports directly in place** first. Re-verify that all documents meet the quality bar before triggering Well-Architected reviewers.
 
 ### Stage 2.2: Well-Architected Framework Adversarial Stress-Testing
-Once all specialist reports are verified, grounded, and remediated, spawn dedicated review subagents to audit the architecture against the **6 Google Cloud Architecture Framework Pillars**:
+
+> [!IMPORTANT]
+> **MANDATORY INDEPENDENT REVIEWERS (DO NOT SELF-REVIEW IN MAIN CONTEXT):**  
+> You MUST spawn Reviewers A, B, and C as distinct subagents via `invoke_subagent`. Spawning external subagents eliminates author confirmation bias and ensures genuinely uncompromised, adversarial critique.
+
+Once all specialist reports are verified, grounded, and remediated, spawn 3 parallel reviewer subagents:
 - **Reviewer A (Security, Privacy & Compliance):** Audits Zero-Trust identity, least privilege, VPC-SC perimeters, CMEK, data isolation, and regulatory compliance.
 - **Reviewer B (Reliability, Scalability & Performance):** Audits multi-region failover, rate limiting, connection pooling, backpressure, and latency SLAs under load.
 - **Reviewer C (FinOps, Operational Excellence & System Design):** Audits unit economics, context caching/pricing optimization, IaC reproducibility, and modular API boundaries.
