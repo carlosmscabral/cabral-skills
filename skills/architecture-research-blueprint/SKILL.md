@@ -44,9 +44,9 @@ To guarantee context isolation, high grounding, and unbiased adversarial reviews
 
 ### Delegation Rules for AI Coding Assistants:
 1. **Google Antigravity (Primary):**
-   - Use `invoke_subagent` to dispatch parallel specialist and reviewer subagents in batch calls (`Subagents: [...]`).
-   - Use `TypeName: "research"` for read-only research or `TypeName: "self"` (or custom subagents via `define_subagent`) for authoring domain files.
-   - Subagents write their respective files (`01_...md`, `reviews/...md`) directly and notify the orchestrator when finished.
+   - Call `define_subagent` with `name: "architecture_specialist"` and `enable_write_tools: true` to equip subagents with research and file writing capabilities.
+   - Call `invoke_subagent` in batch (`Subagents: [...]`) with `TypeName: "architecture_specialist"`.
+   - Subagents write their respective files (`01_...md`, `reviews/...md`) directly in parallel and notify the orchestrator when finished.
 2. **Generic AI Coding Environments (Portability Fallback):**
    - If the host environment provides a subagent or task tool (e.g., Claude Code `Task`/`Agent`, Roo/Cline sub-tasks), dispatch tasks through that native mechanism.
    - If the host environment is strictly single-threaded without subagent tools, the agent must execute phases sequentially, completing and verifying each domain file before moving to the next.
@@ -67,31 +67,40 @@ To guarantee context isolation, high grounding, and unbiased adversarial reviews
 ## Phase 1: Parallel Specialist Subagents
 
 > [!IMPORTANT]
-> **MANDATORY DELEGATION (DO NOT SIMULATE IN MAIN CONTEXT):**  
-> When running in an environment with subagent capabilities (such as Google Antigravity `invoke_subagent`), you **MUST** spawn independent specialist subagents concurrently. Do NOT write all domain deep-dives directly in the parent context. Subagents ensure dedicated context windows, parallel web search/documentation retrieval, and specialized exploration.
+> **MANDATORY SUBAGENT DEFINITION & INVOCATION (DO NOT SIMULATE IN MAIN CONTEXT):**  
+> When running in Google Antigravity, you **MUST** first register the architecture specialist subagent type via `define_subagent` (with `enable_write_tools: true`), then spawn all domain specialists concurrently via `invoke_subagent`. Do NOT write domain deep-dives directly in the parent context. Subagents ensure dedicated context windows, parallel documentation research, and direct file authoring.
 
 1. **Decompose into Orthogonal Macro-Domains:**
    Break down the problem space into 4 to 6 mutually exclusive domains. Consult [`references/domain-archetypes.md`](./references/domain-archetypes.md) for canonical blueprints (Cloud-Native Microservices, GenAI / ADK Agent Platforms, Data Mesh, Multi-Tenant SaaS, Hybrid Networking).
 
-2. **Dispatch Specialist Subagents Concurrently:**
-   - **Antigravity Invocation:** Launch domain specialists in a single `invoke_subagent` batch call:
-     ```json
-     {
-       "Subagents": [
-         {
-           "TypeName": "research",
-           "Role": "Domain 1 Specialist (e.g. Ingress & Routing)",
-           "Prompt": "Research and author 01_domain_name.md covering... Strict requirement: Ground every technical assertion and quota limit with official vendor documentation links (https://cloud.google.com/...). Output concrete configuration schemas, trade-off matrices, and clean Mermaid diagrams."
-         },
-         {
-           "TypeName": "research",
-           "Role": "Domain 2 Specialist (e.g. Identity & Security)",
-           "Prompt": "Research and author 02_domain_name.md covering..."
-         }
-       ]
-     }
-     ```
-   - **Grounding Invariant:** Every architectural claim, quota limit, and configuration must cite verified official documentation links (`https://cloud.google.com/...`).
+2. **Step 1 — Register the Subagent Type via `define_subagent` (Once):**
+   ```json
+   {
+     "name": "architecture_specialist",
+     "description": "Specialist subagent that researches cloud/software architectures with official grounding and authors domain deep-dive markdown files directly.",
+     "enable_write_tools": true,
+     "system_prompt": "You are a specialized Senior Cloud & Software Architect. Conduct exhaustive research with verified official documentation links (https://cloud.google.com/...), design concrete schemas/topologies, and write your assigned domain markdown report (01_...md through 0N_...md) directly using write_to_file."
+   }
+   ```
+
+3. **Step 2 — Dispatch Domain Specialists Concurrently via `invoke_subagent`:**
+   Launch all domain specialists in a single batch call:
+   ```json
+   {
+     "Subagents": [
+       {
+         "TypeName": "architecture_specialist",
+         "Role": "Domain 1 Specialist (e.g. Ingress & Routing)",
+         "Prompt": "Research and author 01_domain_name.md covering... Strict requirement: Ground every technical assertion and quota limit with official vendor documentation links (https://cloud.google.com/...). Write the complete file directly using write_to_file. Include concrete configuration schemas, trade-off matrices, and clean Mermaid diagrams."
+       },
+       {
+         "TypeName": "architecture_specialist",
+         "Role": "Domain 2 Specialist (e.g. Identity & Security)",
+         "Prompt": "Research and author 02_domain_name.md covering... Write the complete file directly using write_to_file."
+       }
+     ]
+   }
+   ```
 
 ---
 
@@ -111,13 +120,13 @@ Rigorously audit **each prior specialist domain analysis** before initiating pil
 ### Stage 2.2: Well-Architected Framework Adversarial Stress-Testing
 
 > [!IMPORTANT]
-> **MANDATORY INDEPENDENT REVIEWERS:**  
-> Spawn Reviewers A, B, and C as distinct subagents (via `invoke_subagent` in Antigravity). Independent subagents eliminate author confirmation bias and produce uncompromised, adversarial critique.
+> **MANDATORY INDEPENDENT REVIEWERS (DO NOT SELF-REVIEW IN MAIN CONTEXT):**  
+> Spawn Reviewers A, B, and C as distinct subagents via `invoke_subagent` with `TypeName: "architecture_specialist"`. Spawning separate subagents eliminates author confirmation bias and ensures uncompromised critique written directly to `reviews/`.
 
 Once all specialist reports are verified, grounded, and remediated, spawn 3 parallel reviewer subagents:
-- **Reviewer A (Security, Privacy & Compliance):** Audits Zero-Trust identity, least privilege, VPC-SC perimeters, CMEK, data isolation, and regulatory compliance.
-- **Reviewer B (Reliability, Scalability & Performance):** Audits multi-region failover, rate limiting, connection pooling, backpressure, and latency SLAs under load.
-- **Reviewer C (FinOps, Operational Excellence & System Design):** Audits unit economics, context caching/pricing optimization, IaC reproducibility, and modular API boundaries.
+- **Reviewer A (Security, Privacy & Compliance):** Audits Zero-Trust identity, least privilege, VPC-SC perimeters, CMEK, data isolation, and regulatory compliance. Writes `reviews/reviewer_a_security_compliance.md`.
+- **Reviewer B (Reliability, Scalability & Performance):** Audits multi-region failover, rate limiting, connection pooling, backpressure, and latency SLAs under load. Writes `reviews/reviewer_b_reliability_performance.md`.
+- **Reviewer C (FinOps, Operational Excellence & System Design):** Audits unit economics, context caching/pricing optimization, IaC reproducibility, and modular API boundaries. Writes `reviews/reviewer_c_finops_ops_design.md`.
 
 Each reviewer writes a formal critique to `reviews/`, providing defensive architectural countermeasures to incorporate during consolidation.
 
