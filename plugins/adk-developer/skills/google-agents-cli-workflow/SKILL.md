@@ -12,7 +12,7 @@ description: >
 metadata:
   author: Google
   license: Apache-2.0
-  version: 1.3.1
+  version: 1.4.1
   requires:
     bins:
       - agents-cli
@@ -26,8 +26,8 @@ metadata:
 > **Before writing agent code, make sure a scaffolded project exists (see Phase 2).** Skipping scaffolding loses eval boilerplate, CI/CD config, and project conventions.
 
 
-> Requires: google-agents-cli ~= 1.3.1
-> If version is behind, run: uv tool install "google-agents-cli~=1.3.1"
+> Requires: google-agents-cli ~= 1.4.1
+> If version is behind, run: uv tool install "google-agents-cli~=1.4.1"
 
 > Check version: agents-cli info
 > [Install uv](https://docs.astral.sh/uv/getting-started/installation/index.md) first if needed.
@@ -170,13 +170,13 @@ It contains the dataset schema, config format, and critical gotchas. Do NOT skip
 3. Discuss results with the user
 4. Fix issues and iterate on the core cases first
 5. Only after core cases pass, add edge cases and new scenarios
-6. Repeat until quality thresholds are met
+6. Repeat until every case meets the bar you agreed with the user (`eval run` exits 0 whatever the scores are, so read them)
 
 **Expect 5-10+ iterations here.**
 
 ## Phase 5: Deploy
 
-Once evaluation thresholds are met:
+Once the user agrees the eval scores are good enough:
 
 1. Check if the project has a deployment target configured — run `agents-cli info` to see current config
 2. If the project is a prototype (no deployment target), add deployment support first:
@@ -238,7 +238,7 @@ Before finalizing any code replacement, verify the following:
   ```python
   root_agent = Agent(
       name="recipe_suggester",  # OK, related to new purpose
-      model="gemini-3.6-flash",  # PRESERVED
+      model="gemini-3.7-flash",  # PRESERVED
       instruction="You are a recipe suggester."  # OK, the direct target
   )
   ```

@@ -12,7 +12,7 @@ description: >
 metadata:
   author: Google
   license: Apache-2.0
-  version: 1.3.1
+  version: 1.4.1
   requires:
     bins:
       - agents-cli
@@ -173,7 +173,7 @@ After scaffolding, immediately load `/google-agents-cli-workflow` — it contain
 your scaffolded project, then run provisioning from the recipe's own `Makefile` (e.g.
 `make setup-infra`). Start from its `AGENTS.md`.
 
-**Verifying your agent works:** Use `agents-cli run "test prompt"` for quick smoke tests, then `agents-cli eval generate` and `agents-cli eval grade` for systematic validation. Do NOT write pytest tests that assert on LLM response content — that belongs in eval.
+**Verifying your agent works:** Use `agents-cli run "test prompt"` for quick smoke tests, then `agents-cli eval run` for systematic validation. Do NOT write pytest tests that assert on LLM response content, that belongs in eval.
 
 ---
 

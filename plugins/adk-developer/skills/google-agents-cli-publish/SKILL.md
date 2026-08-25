@@ -5,8 +5,8 @@ description: >
   "publish my ADK agent", "register an agent with Gemini Enterprise",
   "publish to Gemini Enterprise", or needs guidance on the agents-cli
   publish gemini-enterprise command.
-  Also use when the user wants to "manage agents in Agent Registry" or
-  "list/update/delete registered agents".
+  Also use when the user wants to "manage agents in Agent Registry",
+  "list/update/delete registered agents", or "register an MCP server".
   Covers ADK vs A2A registration modes, programmatic and interactive usage,
   flag reference, auto-detection from deployment metadata, Agent Registry
   fleet management, and troubleshooting.
@@ -15,7 +15,7 @@ description: >
 metadata:
   author: Google
   license: Apache-2.0
-  version: 1.3.1
+  version: 1.4.1
   requires:
     bins:
       - agents-cli
@@ -40,9 +40,9 @@ metadata:
 
 ## Registration Modes
 
-### A2A Registration (Cloud Run / GKE)
+### A2A Registration
 
-Every scaffolded agent serves the Agent-to-Agent protocol. A2A is the default — and only — registration type on **Cloud Run** and **GKE**, which have no reasoning engine, so Gemini Enterprise registers them over A2A. Pass the agent card URL and the command fetches the card and registers it; display name and description default to the card's `name`/`description`.
+Every scaffolded agent serves the Agent-to-Agent protocol. A2A is the default — and only — registration type on **Cloud Run** and **GKE** (no reasoning engine to invoke natively). It also works on **Agent Runtime** via `--registration-type a2a`, though the CLI warns against it: Gemini Enterprise invokes Agent Runtime natively via `:streamQuery`, so prefer ADK there. Pass the agent card URL and the command fetches the card and registers it; display name and description default to the card's `name`/`description`.
 
 ```bash
 # A2A on Cloud Run / GKE
@@ -51,7 +51,7 @@ agents-cli publish gemini-enterprise \
   --gemini-enterprise-app-id projects/123456/locations/global/collections/default_collection/engines/my-app
 ```
 
-Pass `--display-name` / `--description` to override the card defaults. For Agent Runtime, use ADK registration (below).
+Pass `--display-name` / `--description` to override the card defaults. On Agent Runtime, the card URL auto-builds from `deployment_metadata.json` if you omit `--agent-card-url`.
 
 ### ADK Registration (default on Agent Runtime)
 
@@ -152,32 +152,37 @@ Agent Runtime deployments may encounter "Session not found" errors with `google-
 
 ---
 
-## Managing Agents in Agent Registry
+## Agent Registry (agents and MCP servers)
 
-Agent Registry (Preview) is the Google Cloud fleet-wide record of your agents.
+Agent Registry (Preview) is the Google Cloud fleet-wide catalog of **agents and MCP servers**, separate from a Gemini Enterprise app.
 Agents deployed to a managed runtime (Agent Runtime on Gemini Enterprise
 Agent Platform) are **auto-registered** — no extra step after `agents-cli deploy`.
 Manage them with `gcloud` (requires `roles/agentregistry.editor`):
 
 ```bash
-# List / filter
-gcloud alpha agent-registry agents list --project PROJECT --location LOCATION
-gcloud alpha agent-registry agents list --filter="displayName:my-agent"
-
-# Inspect
-gcloud alpha agent-registry agents describe AGENT_NAME
+# List / inspect agents
+gcloud agent-registry agents list --project PROJECT --location LOCATION
+gcloud agent-registry agents describe AGENT_NAME
 
 # Update endpoint/metadata — edit the Service resource, not the Agent
-gcloud alpha agent-registry services update AGENT_NAME \
+gcloud agent-registry services update AGENT_NAME \
   --display-name "..." --description "..." \
-  --interfaces "url=ENDPOINT_URL,protocol=HTTP_JSON"
+  --interfaces "url=ENDPOINT_URL,protocolBinding=http-json"
+
+# Register an external MCP server: not auto-introspected, so upload a
+# toolspec.json (its tools/list response, max 10 KB). No us/eu multi-region.
+gcloud agent-registry services create SERVER_NAME --location=LOCATION \
+  --mcp-server-spec-type=tool-spec --mcp-server-spec-content=toolspec.json \
+  --interfaces="url=SERVER_URL,protocolBinding=jsonrpc"  # or http-json, grpc
 
 # Remove: delete the underlying runtime agent (auto-registered) OR, for
-# manually registered agents, delete the Service resource
-gcloud alpha agent-registry services delete AGENT_NAME
+# manually registered agents/servers, delete the Service resource
+gcloud agent-registry services delete NAME
 ```
 
-Docs: https://docs.cloud.google.com/agent-registry/manage-agents
+Terraform: `google_agent_registry_service` with an `mcp_server_spec` block.
+
+Docs: https://docs.cloud.google.com/agent-registry/manage-agents · https://docs.cloud.google.com/agent-registry/register-mcp-servers
 
 ---
 

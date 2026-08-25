@@ -12,7 +12,7 @@ description: >
 metadata:
   author: Google
   license: Apache-2.0
-  version: 1.3.1
+  version: 1.4.1
   requires:
     bins:
       - agents-cli
@@ -50,7 +50,7 @@ def get_weather(city: str) -> dict:
 
 root_agent = Agent(
     name="my_agent",
-    model="gemini-3.6-flash",
+    model="gemini-3.7-flash",
     instruction="You are a helpful assistant that ...",
     tools=[get_weather],
 )

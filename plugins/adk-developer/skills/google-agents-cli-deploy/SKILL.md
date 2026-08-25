@@ -4,7 +4,7 @@ description: >
   This skill should be used when the user wants to "deploy an agent",
   "deploy my ADK agent", "set up CI/CD", "configure secrets",
   "troubleshoot a deployment", or needs guidance on Agent Runtime,
-  Cloud Run, or GKE deployment targets, or awareness of Agent Gateway.
+  Cloud Run, or GKE deployment targets, or binding an agent to an Agent Gateway.
   Covers deployment workflows, service accounts, rollback, and production infrastructure.
   Part of the Google ADK (Agent Development Kit) skills suite.
   Do NOT use for API code patterns (use google-agents-cli-adk-code), evaluation
@@ -12,7 +12,7 @@ description: >
 metadata:
   author: Google
   license: Apache-2.0
-  version: 1.3.1
+  version: 1.4.1
   requires:
     bins:
       - agents-cli
@@ -74,7 +74,7 @@ All three targets are container-based, so any language works.
 **Task tracking:** Deployment involves multiple sequential steps (infra setup, CI/CD configuration, deploy, verification). Use a task list to track progress through these steps — skipping one often causes failures in later steps that are hard to trace back.
 
 1. If prototype (no deployment target), first enhance: `agents-cli scaffold enhance . --deployment-target <target>`
-2. **Notify the human**: "Eval scores meet thresholds and tests pass. Ready to deploy to dev?"
+2. **Notify the human**: paste the eval scores and test results, then ask "Ready to deploy to dev?"
 3. **Wait for explicit approval**
 4. Once approved: `agents-cli deploy`
 
@@ -110,9 +110,11 @@ agents-cli infra single-project
 | `--dns-peering-domain` | DNS peering domain suffix, e.g. `my-internal.corp.` (requires `--network-attachment`) | Agent Runtime |
 | `--dns-peering-project` | Project ID hosting the Cloud DNS managed zone for DNS peering (requires `--network-attachment`) | Agent Runtime |
 | `--dns-peering-network` | VPC network name in the target project for DNS peering (requires `--network-attachment`) | Agent Runtime |
+| `--agent-gateway-egress` | Bind the agent to an [Agent Gateway](https://docs.cloud.google.com/gemini-enterprise-agent-platform/govern/gateways/agent-gateway-overview) governing outbound traffic. Full resource name of a gateway with `governedAccessPath=AGENT_TO_ANYWHERE`. Empty value unbinds; omit to leave unchanged. See [Agent Gateway](#agent-gateway) | Agent Runtime |
+| `--agent-gateway-ingress` | Bind the agent to an Agent Gateway governing inbound traffic. Full resource name of a gateway with `governedAccessPath=CLIENT_TO_AGENT`. Empty value unbinds; omit to leave unchanged | Agent Runtime |
 | `--memory` | Memory limit (default: `4Gi`) | Agent Runtime, Cloud Run |
 | `--cpu` | CPU limit (default: `1`) | Agent Runtime, Cloud Run |
-| `--min-instances` | Minimum number of instances (default: `1`) | Agent Runtime, Cloud Run |
+| `--min-instances` | Minimum number of instances (default: `0`, i.e. scale to zero; the generated Terraform uses `1`) | Agent Runtime, Cloud Run |
 | `--max-instances` | Maximum number of instances (default: `10`) | Agent Runtime, Cloud Run |
 | `--concurrency` | Concurrent requests per container (default: `8`; see [Sizing a deployment](#sizing-a-deployment)) | Agent Runtime, Cloud Run |
 | `--port` | Container port | Cloud Run, Agent Runtime |
@@ -135,7 +137,9 @@ Run `agents-cli deploy --help` for the full flag reference.
 
 ## Sizing a deployment
 
-Defaults (same on Agent Runtime, Cloud Run, and the generated `service.tf`): `--cpu 1`, `--memory 4Gi`, `--concurrency 8`, `--min-instances 1`, `--max-instances 10`.
+Defaults (same on Agent Runtime and Cloud Run): `--cpu 1`, `--memory 4Gi`, `--concurrency 8`, `--min-instances 0`, `--max-instances 10`. The generated `service.tf` matches, except it pins `min_instances = 1` so production deployments don't experience cold starts.
+
+`agents-cli deploy` scales to zero by default so idle dev and demo agents don't hold capacity. Pass `--min-instances 1` (or deploy via Terraform) when you need a warm instance.
 
 The params are coupled — scale them together:
 
@@ -172,7 +176,7 @@ For event-driven / ambient agent deployment on Cloud Run, see the [`ambient-expe
 
 Agent Runtime is a managed Vertex AI service for deploying Python ADK agents. Uses container-based deployment: `agents-cli deploy` packages your project and Agent Engine builds the image from your project's `Dockerfile` (required) — the same `fast_api_app:app` image that serves Cloud Run and GKE.
 
-> **No `gcloud` CLI exists for Agent Runtime.** Deploy via `agents-cli deploy`. Query via the Python `vertexai.Client` SDK.
+> **No `gcloud` CLI exists for Agent Runtime.** Deploy via `agents-cli deploy`. Query via the Python `agentplatform.Client` SDK.
 
 Deployments can take 5-10 minutes. Use `--no-wait` to start a deployment and return immediately, then check on it later with `--status`:
 
@@ -360,21 +364,48 @@ For registering deployed agents with Gemini Enterprise, see `/google-agents-cli-
 
 ---
 
-## Agent Gateway & Semantic Governance (Gemini Enterprise Agent Platform)
+## Agent Gateway
 
-> **Note:** There are no `agents-cli` commands for these yet. Deploy your agent as usual
-> with `agents-cli deploy`, then configure Agent Gateway and Semantic Governance separately
-> (via Terraform or the Cloud Console).
+> **Note:** There are no `agents-cli` commands for creating or managing Agent Gateways or
+> Semantic Governance policies — set those up separately (via Terraform or the Cloud Console).
+> `agents-cli deploy` is the only gateway-aware command, and its support is a passthrough: it
+> binds the agent to an *existing* gateway as part of the Agent Runtime create/update call.
 
 **Agent Gateway** is the networking + security entry/exit point for all agent interactions
 (user↔agent, agent↔tool, agent↔agent) — it centralizes access control and governed
-connectivity (ingress/egress). It is not a deployment target. Deploy your agent with
-`agents-cli deploy`, then attach it to a gateway one of two ways:
+connectivity (ingress/egress). It is not a deployment target.
 
-- **Add the existing agent to a gateway** via the Console / docs flow — see [Route Agent Runtime traffic through Agent Gateway](https://docs.cloud.google.com/gemini-enterprise-agent-platform/scale/runtime/agent-gateway-runtime-deploy) ("For existing agents").
-- **Manage the gateway in Terraform** with [`google_network_services_agent_gateway`](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/network_services_agent_gateway) (currently in the `google-beta` provider) — recommended for production, so `agents-cli deploy` owns the agent version and CI/CD handles updates.
+To set up a gateway, follow [Set up an Agent Gateway](https://docs.cloud.google.com/gemini-enterprise-agent-platform/govern/gateways/set-up-agent-gateway)
+and [Route Agent Runtime traffic through Agent Gateway](https://docs.cloud.google.com/gemini-enterprise-agent-platform/scale/runtime/agent-gateway-runtime-deploy). You may also manage the gateway in Terraform with [`google_network_services_agent_gateway`](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/network_services_agent_gateway) (currently in the `google-beta` provider).
+
+Once a gateway exists, `agents-cli deploy` binds an agent to it with `--agent-gateway-egress`
+and/or `--agent-gateway-ingress`, each taking a full resource name
+(`projects/PROJECT/locations/REGION/agentGateways/GATEWAY`). Only Agent Runtime deployment is
+supported, and the agent must have Agent Identity (the `--agent-identity` flag), which can only
+be set when the agent is created.
+
+An egress gateway performs TLS decryption and inspection on outbound agent communications,
+so the image must trust the gateway's root CA. That setup is opt-in at scaffold time. If you're
+creating a new project, pass `--agent-gateway` flag to `agents-cli create`:
+
+```bash
+agents-cli create my-agent -d agent_runtime --agent-gateway
+```
+
+Alternatively, you can pass the same flag to `agents-cli scaffold enhance` to upgrade an
+existing project:
+```bash
+agents-cli scaffold enhance . --agent-gateway
+```
+
+Either writes a Dockerfile that consumes the `AGENT_GATEWAY_ROOT_CERTIFICATES` build arg the
+platform injects, and records `agent_gateway: true` under `create_params` so `scaffold upgrade`
+keeps it. Deploying with `--agent-gateway-egress` against a Dockerfile that lacks the build arg
+fails with a pointer to the command above; `--no-agent-gateway` removes the setup again.
 
 Background: [Agent Gateway overview](https://docs.cloud.google.com/gemini-enterprise-agent-platform/govern/gateways/agent-gateway-overview).
+
+## Semantic Governance
 
 **Semantic Governance Policies (SGP)** add a natural-language security/compliance layer
 that keeps an agent's tool invocations aligned with user intent and organizational

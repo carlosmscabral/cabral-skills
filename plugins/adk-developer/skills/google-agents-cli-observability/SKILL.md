@@ -13,7 +13,7 @@ description: >
 metadata:
   author: Google
   license: Apache-2.0
-  version: 1.3.1
+  version: 1.4.1
   requires:
     bins:
       - agents-cli
@@ -39,6 +39,7 @@ Already ran `agents-cli deploy`? Two options:
 |------|----------|
 | `references/cloud-trace-and-logging.md` | Scaffolded project details — Terraform-provisioned resources, environment variables, verification commands, enabling/disabling locally |
 | `references/bigquery-agent-analytics.md` | BQ Agent Analytics plugin — enabling, key features, GCS offloading, tool provenance |
+| `references/feedback-mechanism.md` | Adding a user-feedback endpoint — request model, structured logging, log sink → BigQuery |
 
 ---
 
