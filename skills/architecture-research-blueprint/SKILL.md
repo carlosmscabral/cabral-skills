@@ -21,6 +21,35 @@ This skill defines a deterministic, multi-agent workflow for conducting deep-div
 - Performing independent adversarial architectural reviews (Security/Zero-Trust, Reliability/Fault Tolerance, FinOps/Cost, Performance, Operational Excellence).
 - Generating structured multi-tier deliverables (Foundations → Domain Deep Dives → Master Decision Matrix/ADRs → Executive Slides → Interactive Web Report).
 
+---
+
+## Orchestration & Delegation Contract
+
+To guarantee context isolation, high grounding, and unbiased adversarial reviews, this skill uses **hierarchical multi-agent delegation**:
+
+```
+                               ROOT ORCHESTRATOR
+                                      │
+           ┌──────────────────────────┴──────────────────────────┐
+           ▼                                                     ▼
+  PHASE 1: SPECIALISTS (Parallel)                       PHASE 2: QUALITY GATE & REVIEWERS
+  ├── Domain 1 Specialist                               Stage 2.1: Grounding/Depth Gate
+  ├── Domain 2 Specialist                                        │ (Pass / In-Place Fix)
+  ├── Domain 3 Specialist                                        ▼
+  └── Domain 4 Specialist                               Stage 2.2: Adversarial Reviewers (Parallel)
+                                                        ├── Reviewer A (Security & Privacy)
+                                                        ├── Reviewer B (Reliability & Performance)
+                                                        └── Reviewer C (FinOps & System Design)
+```
+
+### Delegation Rules for AI Coding Assistants:
+1. **Google Antigravity (Primary):**
+   - Use `invoke_subagent` to dispatch parallel specialist and reviewer subagents in batch calls (`Subagents: [...]`).
+   - Use `TypeName: "research"` for read-only research or `TypeName: "self"` (or custom subagents via `define_subagent`) for authoring domain files.
+   - Subagents write their respective files (`01_...md`, `reviews/...md`) directly and notify the orchestrator when finished.
+2. **Generic AI Coding Environments (Portability Fallback):**
+   - If the host environment provides a subagent or task tool (e.g., Claude Code `Task`/`Agent`, Roo/Cline sub-tasks), dispatch tasks through that native mechanism.
+   - If the host environment is strictly single-threaded without subagent tools, the agent must execute phases sequentially, completing and verifying each domain file before moving to the next.
 
 ---
 
@@ -38,30 +67,31 @@ This skill defines a deterministic, multi-agent workflow for conducting deep-div
 ## Phase 1: Parallel Specialist Subagents
 
 > [!IMPORTANT]
-> **MANDATORY SUBAGENT INVOCATION (DO NOT SIMULATE IN MAIN CONTEXT):**  
-> You MUST call the `invoke_subagent` tool to spawn independent specialist subagents concurrently. DO NOT author all domain analyses sequentially yourself within the parent agent context. Real subagents guarantee dedicated context windows, deep parallel web/docs exploration, and orthogonal specialization.
+> **MANDATORY DELEGATION (DO NOT SIMULATE IN MAIN CONTEXT):**  
+> When running in an environment with subagent capabilities (such as Google Antigravity `invoke_subagent`), you **MUST** spawn independent specialist subagents concurrently. Do NOT write all domain deep-dives directly in the parent context. Subagents ensure dedicated context windows, parallel web search/documentation retrieval, and specialized exploration.
 
 1. **Decompose into Orthogonal Macro-Domains:**
    Break down the problem space into 4 to 6 mutually exclusive domains. Consult [`references/domain-archetypes.md`](./references/domain-archetypes.md) for canonical blueprints (Cloud-Native Microservices, GenAI / ADK Agent Platforms, Data Mesh, Multi-Tenant SaaS, Hybrid Networking).
 
-2. **Spawn Specialist Subagents Concurrently via `invoke_subagent`:**
-   Launch all domain specialists in a single batch call using `TypeName: "research"` or `TypeName: "self"`:
-   ```json
-   {
-     "Subagents": [
-       {
-         "TypeName": "research",
-         "Role": "Domain 1 Specialist (e.g. Ingress & Routing)",
-         "Prompt": "Research and author 01_domain_name.md covering... Strict requirement: Ground every technical assertion and quota limit with official vendor documentation links (https://cloud.google.com/...). Output concrete configuration schemas, trade-off matrices, and clean Mermaid diagrams."
-       },
-       {
-         "TypeName": "research",
-         "Role": "Domain 2 Specialist (e.g. Identity & Security)",
-         "Prompt": "Research and author 02_domain_name.md covering..."
-       }
-     ]
-   }
-   ```
+2. **Dispatch Specialist Subagents Concurrently:**
+   - **Antigravity Invocation:** Launch domain specialists in a single `invoke_subagent` batch call:
+     ```json
+     {
+       "Subagents": [
+         {
+           "TypeName": "research",
+           "Role": "Domain 1 Specialist (e.g. Ingress & Routing)",
+           "Prompt": "Research and author 01_domain_name.md covering... Strict requirement: Ground every technical assertion and quota limit with official vendor documentation links (https://cloud.google.com/...). Output concrete configuration schemas, trade-off matrices, and clean Mermaid diagrams."
+         },
+         {
+           "TypeName": "research",
+           "Role": "Domain 2 Specialist (e.g. Identity & Security)",
+           "Prompt": "Research and author 02_domain_name.md covering..."
+         }
+       ]
+     }
+     ```
+   - **Grounding Invariant:** Every architectural claim, quota limit, and configuration must cite verified official documentation links (`https://cloud.google.com/...`).
 
 ---
 
@@ -81,8 +111,8 @@ Rigorously audit **each prior specialist domain analysis** before initiating pil
 ### Stage 2.2: Well-Architected Framework Adversarial Stress-Testing
 
 > [!IMPORTANT]
-> **MANDATORY INDEPENDENT REVIEWERS (DO NOT SELF-REVIEW IN MAIN CONTEXT):**  
-> You MUST spawn Reviewers A, B, and C as distinct subagents via `invoke_subagent`. Spawning external subagents eliminates author confirmation bias and ensures genuinely uncompromised, adversarial critique.
+> **MANDATORY INDEPENDENT REVIEWERS:**  
+> Spawn Reviewers A, B, and C as distinct subagents (via `invoke_subagent` in Antigravity). Independent subagents eliminate author confirmation bias and produce uncompromised, adversarial critique.
 
 Once all specialist reports are verified, grounded, and remediated, spawn 3 parallel reviewer subagents:
 - **Reviewer A (Security, Privacy & Compliance):** Audits Zero-Trust identity, least privilege, VPC-SC perimeters, CMEK, data isolation, and regulatory compliance.
