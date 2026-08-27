@@ -1,0 +1,38 @@
+[
+  {"op": "delete-element", "element": "i0"},
+  {"op": "delete-element", "element": "i1"},
+
+  {"op": "set-background", "slide": "p", "color": "#1E2761"},
+  {"op": "add-textbox", "slide": "p", "text": "CHAPTER", "x": 60, "y": 115, "width": 600, "height": 18, "font_size": 10, "bold": true, "color": "#CADCFC", "font_family": "Google Sans"},
+  {"op": "add-textbox", "slide": "p", "text": "01", "x": 60, "y": 135, "width": 600, "height": 90, "font_size": 84, "bold": true, "color": "#1A73E8", "font_family": "Google Sans"},
+  {"op": "add-textbox", "slide": "p", "text": "The Paradigm Shift", "x": 60, "y": 230, "width": 600, "height": 45, "font_size": 36, "bold": true, "color": "#FFFFFF", "font_family": "Google Sans"},
+  {"op": "add-shape", "slide": "p", "shape_type": "RECTANGLE", "x": 60, "y": 278, "width": 200, "height": 2, "background_color": "#1A73E8"},
+  {"op": "add-textbox", "slide": "p", "text": "Why ad-hoc prompting fails at scale.", "x": 60, "y": 290, "width": 600, "height": 35, "font_size": 16, "color": "#CADCFC", "font_family": "Google Sans Text"},
+  {"op": "set-notes", "slide": "p", "text": "Welcome everyone. Today we examine the shift from prompt engineering to deterministic agentic manufacturing pipelines."},
+
+  {"op": "add-slide", "layout": "BLANK", "id": "SLIDE_01"},
+  {"op": "set-background", "slide": "SLIDE_01", "color": "#F8F9FA"},
+  {"op": "add-textbox", "slide": "SLIDE_01", "text": "PARADIGMS", "x": 36, "y": 28, "width": 648, "height": 14, "font_size": 10, "bold": true, "color": "#1A73E8", "font_family": "Google Sans"},
+  {"op": "add-textbox", "slide": "SLIDE_01", "text": "Two Paradigms of Agent Development", "x": 36, "y": 40, "width": 648, "height": 26, "font_size": 24, "bold": true, "color": "#202124", "font_family": "Google Sans"},
+  {"op": "add-textbox", "slide": "SLIDE_01", "text": "Comparing ad-hoc prompting with deterministic pipelines", "x": 36, "y": 68, "width": 648, "height": 20, "font_size": 13, "color": "#5F6368", "font_family": "Google Sans Text"},
+
+  {"op": "add-shape", "slide": "SLIDE_01", "shape_type": "ROUND_RECTANGLE", "x": 36, "y": 100, "width": 312, "height": 275, "background_color": "#FFFFFF", "id": "CARD_1"},
+  {"op": "style-shape", "element": "CARD_1", "background_color": "#FFFFFF", "outline_color": "#DADCE0", "outline_weight": 1.0},
+  {"op": "add-shape", "slide": "SLIDE_01", "shape_type": "RECTANGLE", "x": 36, "y": 100, "width": 312, "height": 3, "background_color": "#D93025"},
+  {"op": "add-shape", "slide": "SLIDE_01", "shape_type": "ROUND_RECTANGLE", "x": 52, "y": 116, "width": 100, "height": 18, "background_color": "#FCE8E6", "id": "PILL_1"},
+  {"op": "add-textbox", "slide": "SLIDE_01", "text": "AD-HOC", "x": 52, "y": 116, "width": 100, "height": 18, "font_size": 9.5, "bold": true, "color": "#C5221F", "font_family": "Google Sans", "alignment": "center", "content_alignment": "MIDDLE"},
+  {"op": "add-textbox", "slide": "SLIDE_01", "text": "Prompt & Hope", "x": 52, "y": 142, "width": 280, "height": 24, "font_size": 16, "bold": true, "color": "#202124", "font_family": "Google Sans"},
+  {"op": "add-shape", "slide": "SLIDE_01", "shape_type": "RECTANGLE", "x": 52, "y": 172, "width": 280, "height": 1, "background_color": "#DADCE0"},
+  {"op": "add-textbox", "slide": "SLIDE_01", "text": "• Manual copy-pasting of context into chat\n• Unpredictable outputs and silent regressions\n• Zero test harness or automated verification", "x": 52, "y": 182, "width": 280, "height": 180, "font_size": 12, "color": "#202124", "font_family": "Google Sans Text", "line_spacing": 140},
+
+  {"op": "add-shape", "slide": "SLIDE_01", "shape_type": "ROUND_RECTANGLE", "x": 372, "y": 100, "width": 312, "height": 275, "background_color": "#FFFFFF", "id": "CARD_2"},
+  {"op": "style-shape", "element": "CARD_2", "background_color": "#FFFFFF", "outline_color": "#DADCE0", "outline_weight": 1.0},
+  {"op": "add-shape", "slide": "SLIDE_01", "shape_type": "RECTANGLE", "x": 372, "y": 100, "width": 312, "height": 3, "background_color": "#1E8E3E"},
+  {"op": "add-shape", "slide": "SLIDE_01", "shape_type": "ROUND_RECTANGLE", "x": 388, "y": 116, "width": 120, "height": 18, "background_color": "#E6F4EA", "id": "PILL_2"},
+  {"op": "add-textbox", "slide": "SLIDE_01", "text": "AI FACTORY", "x": 388, "y": 116, "width": 120, "height": 18, "font_size": 9.5, "bold": true, "color": "#137333", "font_family": "Google Sans", "alignment": "center", "content_alignment": "MIDDLE"},
+  {"op": "add-textbox", "slide": "SLIDE_01", "text": "Deterministic Harness", "x": 388, "y": 142, "width": 280, "height": 24, "font_size": 16, "bold": true, "color": "#202124", "font_family": "Google Sans"},
+  {"op": "add-shape", "slide": "SLIDE_01", "shape_type": "RECTANGLE", "x": 388, "y": 172, "width": 280, "height": 1, "background_color": "#DADCE0"},
+  {"op": "add-textbox", "slide": "SLIDE_01", "text": "• Automated context injection via file mounts\n• Enforcing hooks that block commits on failure\n• Adversarial evaluator sub-agents grade runs", "x": 388, "y": 182, "width": 280, "height": 180, "font_size": 12, "color": "#202124", "font_family": "Google Sans Text", "line_spacing": 140},
+
+  {"op": "set-notes", "slide": "SLIDE_01", "text": "On the left is manual trial and error. On the right is the AI Factory model with structured specs and automated verification loops."}
+]
