@@ -1,0 +1,42 @@
+version: "1.0"
+
+metadata:
+  title: "Project Quickstart Briefing"
+  subtitle: "Executive Summary & Key Milestones"
+  template_id: "1FJ4wCMDlI1zW3XCbIXXn-ejOOjq5iQ1Mit_9MuGnO-U"
+  target_audience: "Executive Leadership"
+  core_thesis: "Automated slide generation eliminates manual deck authoring overhead."
+
+chapters:
+  - chapter_number: 1
+    title: "Executive Overview"
+    subtitle: "Core objectives and measurable milestones"
+    speaker_notes: "Welcome everyone. Here is our executive briefing covering the core strategic objectives."
+    slides:
+      - archetype: "chapter_divider"
+        title: "Executive Overview"
+        subtitle: "Core objectives and measurable milestones"
+        kicker: "CHAPTER"
+        chapter_number: 1
+        speaker_notes: "Welcome everyone. Here is our executive briefing covering the core strategic objectives."
+
+      - archetype: "split_cards"
+        title: "Strategic Objectives & Priorities"
+        subtitle: "Two core milestones planned for this quarter"
+        kicker: "QUARTERLY GOALS"
+        cards:
+          - title: "Deterministic Pipelines"
+            category_pill: "PRIORITY 1"
+            bullets:
+              - "Standardize on 8 Blueprint layout archetypes"
+              - "Enforce 100% WCAG 2.1 AA accessibility compliance"
+              - "Automate visual QA with headless preview galleries"
+            theme: "#1A73E8"
+          - title: "Multi-Modal Ingestion"
+            category_pill: "PRIORITY 2"
+            bullets:
+              - "Ingest codebases and AST symbol hierarchies"
+              - "Parse Google Slides presentations via read-all"
+              - "Translate Markdown RFCs into structured decks"
+            theme: "#1E8E3E"
+        speaker_notes: "On Priority 1, we establish deterministic pipelines; on Priority 2, we enable multi-modal ingestion."

@@ -1,0 +1,133 @@
+version: "1.0"
+
+metadata:
+  title: "Titan Ingestion Engine Architecture"
+  subtitle: "High-Throughput Streaming & Distributed Consensus"
+  template_id: "1FJ4wCMDlI1zW3XCbIXXn-ejOOjq5iQ1Mit_9MuGnO-U"
+  target_audience: "Staff & Principal Infrastructure Engineers"
+  core_thesis: "Migrating from batch RPCs to event-driven gRPC streaming reduces p99 ingestion latency by 85%."
+  theme:
+    palette: "blueprint"
+    primary_color: "#1E2761"
+    accent_color: "#1A73E8"
+
+chapters:
+  - chapter_number: 1
+    title: "System Context & Problem Statement"
+    subtitle: "Why legacy batching fails under million-QPS spikes"
+    speaker_notes: "Welcome everyone. Today we review the architectural overhaul of Titan's streaming ingestion engine."
+    slides:
+      - archetype: "chapter_divider"
+        title: "System Context & Problem Statement"
+        subtitle: "Why legacy batching fails under million-QPS spikes"
+        kicker: "CHAPTER"
+        chapter_number: 1
+        speaker_notes: "This chapter frames the architectural bottleneck observed during Q3 load spikes."
+
+      - archetype: "split_cards"
+        title: "Two Paradigms of Ingestion"
+        subtitle: "Comparing synchronous polling with zero-copy stream processing"
+        kicker: "ARCHITECTURAL COMPARISON"
+        cards:
+          - title: "Legacy Batch Polling"
+            category_pill: "V1 ARCHITECTURE"
+            bullets:
+              - "High lock contention across Spanner workers"
+              - "p99 latency spikes exceeding 4.2 seconds"
+              - "No backpressure negotiation during burst traffic"
+            theme: "#D93025"
+          - title: "Event-Driven Streaming"
+            category_pill: "TITAN V2"
+            bullets:
+              - "Zero-copy ring buffer with distributed sharding"
+              - "Sub-15ms p99 end-to-end ingestion latency"
+              - "Adaptive credit-based backpressure protocol"
+            theme: "#1E8E3E"
+        speaker_notes: "Notice the difference on the right: sharded memory rings completely bypass database lock contention."
+
+  - chapter_number: 2
+    title: "Core Mechanics & Code Implementation"
+    subtitle: "Zero-copy streaming pipeline and safety ratchets"
+    speaker_notes: "Let's dive into the core Go streaming engine and automated safety hooks."
+    slides:
+      - archetype: "chapter_divider"
+        title: "Core Mechanics & Code Implementation"
+        subtitle: "Zero-copy streaming pipeline and safety ratchets"
+        kicker: "CHAPTER"
+        chapter_number: 2
+        speaker_notes: "In this chapter, we inspect the production Go streaming worker."
+
+      - archetype: "code_terminal"
+        title: "Zero-Copy Stream Ingestion Loop"
+        subtitle: "Lock-free ring buffer dispatch with atomic sequence counters"
+        kicker: "PRODUCTION CODE"
+        terminals:
+          - filename: "pkg/stream/worker.go"
+            language: "go"
+            code: |
+              func (w *StreamWorker) Process(ctx context.Context) error {
+                  for event := range w.ringBuffer.Subscribe() {
+                      if err := w.pipeline.Dispatch(ctx, event); err != nil {
+                          w.metrics.RecordDrop(event.ID)
+                          return fmt.Errorf("dispatch failed: %w", err)
+                      }
+                      w.seqCounter.Add(1)
+                  }
+                  return nil
+              }
+            badge_text: "✓ DO: LOCK-FREE RING"
+            status: "do"
+        speaker_notes: "The ring buffer dispatch loop uses atomic addition to track event sequences without mutex locks."
+
+  - chapter_number: 3
+    title: "Economics & Execution Roadmap"
+    subtitle: "Benchmark results and the 30-day rollout plan"
+    speaker_notes: "Finally, let's look at the quantitative benchmark results and our phased deployment schedule."
+    slides:
+      - archetype: "chapter_divider"
+        title: "Economics & Execution Roadmap"
+        subtitle: "Benchmark results and the 30-day rollout plan"
+        kicker: "CHAPTER"
+        chapter_number: 3
+        speaker_notes: "This closing chapter covers performance benchmarks and rollout milestones."
+
+      - archetype: "hero_metrics"
+        title: "Production Benchmark Results"
+        subtitle: "Load test comparisons on 50-node clusters under 2M QPS"
+        kicker: "BENCHMARKS"
+        metrics:
+          - title: "LEGACY V1 POLLER"
+            value: "4,200ms"
+            unit: "p99 End-to-End Latency"
+            delta: "-85% SLA BREACH"
+            description: "High mutex contention causing severe thread starvation."
+          - title: "TITAN V2 STREAMING"
+            value: "14.2ms"
+            unit: "p99 End-to-End Latency"
+            delta: "+300x THROUGHPUT"
+            description: "Stable, linear scalability with zero thread lock stalls."
+        speaker_notes: "The benchmark results show a 300x throughput improvement with a sustained 14.2 millisecond latency."
+
+      - archetype: "actionable_takeaways"
+        title: "Rollout Plan & Production Checklist"
+        subtitle: "Phased deployment across canary clusters"
+        kicker: "EXECUTION"
+        principles:
+          - number: 1
+            title: "Canary Shard Rollout"
+            description: "Deploy Titan v2 to 5% of traffic in us-central1."
+          - number: 2
+            title: "Automated Rollback Ratchet"
+            description: "Trigger auto-revert if p99 latency exceeds 30ms for 2m."
+          - number: 3
+            title: "Full Cluster Migration"
+            description: "Drain legacy v1 workers once canary reaches 99.99% SLA."
+        roadmap:
+          title: "30-DAY ROLLOUT ROADMAP"
+          milestones:
+            - "Week 1: Canary Deploy (5%)"
+            - "Week 2: Shadow Traffic Test"
+            - "Week 3: 50% Regional Cutover"
+            - "Week 4: 100% Global Rollout"
+          cta_button_text: "VIEW CANARY DASHBOARD"
+        speaker_notes: "Our 4-week rollout ensures zero downtime with automated latency ratchets protecting production."

@@ -18,6 +18,7 @@ Self-contained, `npx`-installable skills:
 | [aws-lambda-to-cloud-run-migration](skills/aws-lambda-to-cloud-run-migration/) | Migrates a single AWS Lambda function to Google Cloud Run — analyzes AWS lock-ins (SNS, SQS, SDKs, IAM), build/trigger mechanisms, and service integrations into a migration report with containerization and GCP service mapping |
 | [aws-lambda-fleet-to-cloud-run](skills/aws-lambda-fleet-to-cloud-run/) | Fleet-level migration of 10–100+ Lambda functions — discovery, grouping (1:1 vs consolidation), dependency-graph wave sequencing, and a consolidated migration program |
 | [visual-docs](skills/visual-docs/) | Didactic visual documentation — flow/sequence/state diagrams, ASCII packet walks, annotated code, with a compile-to-validate step so every diagram actually renders |
+| [preso-builder](skills/preso-builder/) | Automated Google Slides presentation builder matching "The AI Factory Blueprint" style — ingests codebases, markdown, or existing decks into declarative specs with automated multimodal visual QA and HTML previews |
 
 ### Install
 
