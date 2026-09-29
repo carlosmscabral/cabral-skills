@@ -10,12 +10,12 @@ description: >
   Covers ADK vs A2A registration modes, programmatic and interactive usage,
   flag reference, auto-detection from deployment metadata, Agent Registry
   fleet management, and troubleshooting.
-  Part of the Google ADK (Agent Development Kit) skills suite.
+  Part of the agents-cli skills suite.
   Do NOT use for deployment (use google-agents-cli-deploy).
 metadata:
   author: Google
   license: Apache-2.0
-  version: 1.4.1
+  version: 1.7.0
   requires:
     bins:
       - agents-cli
@@ -31,6 +31,7 @@ metadata:
 1. **Agent must be deployed** — the agent must be running and reachable
 2. **Gemini Enterprise app must exist** — Create one in Google Cloud Console → Gemini Enterprise → Apps before registering
 3. **`deployment_metadata.json`** (Agent Runtime only) — Created automatically by `agents-cli deploy`; contains the agent runtime ID, deployment target, the A2A flag, and the agent directory
+4. **Text-based agent** — Live/voice (bidi) agents are **not supported** by Gemini Enterprise, which has no `/run_live` transport. Register a text-based agent instead.
 
 ## Required Permissions for A2A on Cloud Run
 
@@ -42,10 +43,12 @@ metadata:
 
 ### A2A Registration
 
-Every scaffolded agent serves the Agent-to-Agent protocol. A2A is the default — and only — registration type on **Cloud Run** and **GKE** (no reasoning engine to invoke natively). It also works on **Agent Runtime** via `--registration-type a2a`, though the CLI warns against it: Gemini Enterprise invokes Agent Runtime natively via `:streamQuery`, so prefer ADK there. Pass the agent card URL and the command fetches the card and registers it; display name and description default to the card's `name`/`description`.
+Every scaffolded agent serves the Agent-to-Agent protocol. A2A is the default — and only — registration type on **Cloud Run** and **GKE** (no reasoning engine to invoke natively). It also works on **Agent Runtime** via `--registration-type a2a`. For an ADK agent there the CLI warns against it, because Gemini Enterprise can invoke Agent Runtime natively via `:streamQuery` — prefer ADK registration in that case. For an agent built on another framework there is no ADK app to invoke natively, so A2A is the right mode on every target and the warning is expected. Pass the agent card URL and the command fetches the card and registers it; display name and description default to the card's `name`/`description`.
 
 ```bash
-# A2A on Cloud Run / GKE
+# A2A on Cloud Run / GKE. The card path depends on the project's language:
+#   Python -> /a2a/{app_name}/.well-known/agent-card.json
+#   Go     -> /.well-known/agent-card.json
 agents-cli publish gemini-enterprise \
   --agent-card-url https://my-service-abc123.us-east1.run.app/a2a/app/.well-known/agent-card.json \
   --gemini-enterprise-app-id projects/123456/locations/global/collections/default_collection/engines/my-app
@@ -55,7 +58,11 @@ Pass `--display-name` / `--description` to override the card defaults. On Agent 
 
 ### ADK Registration (default on Agent Runtime)
 
-This is the **default and recommended registration for Agent Runtime** deployments: Gemini Enterprise invokes the agent natively via `:streamQuery` on its reasoning engine resource, authenticating end-to-end. Under the hood, `:streamQuery` dispatches to the `AdkApp`'s `streaming_agent_run_with_events` method — when debugging an ADK invocation, search the runtime's `reasoning_engine_stderr` logs for that method name to trace the failure. It's also the path to use when the agent needs an OAuth authorization (`--authorization-id`). The agent is registered directly via its reasoning engine resource name; no agent card URL is needed.
+> **ADK projects only.** The agent must be deployed to Agent Runtime as an ADK app, since
+> registration invokes it through `:streamQuery`. An agent on another framework registers over
+> A2A, so deploy it to Cloud Run or GKE and publish from there.
+
+This is the **default and recommended registration for ADK agents on Agent Runtime**: Gemini Enterprise invokes the agent natively via `:streamQuery` on its reasoning engine resource, authenticating end-to-end. Under the hood, `:streamQuery` dispatches to the `AdkApp`'s `streaming_agent_run_with_events` method — when debugging an ADK invocation, search the runtime's `reasoning_engine_stderr` logs for that method name to trace the failure. It's also the path to use when the agent needs an OAuth authorization (`--authorization-id`). The agent is registered directly via its reasoning engine resource name; no agent card URL is needed.
 
 ```bash
 agents-cli publish gemini-enterprise \
@@ -117,7 +124,7 @@ agents-cli publish gemini-enterprise --interactive
 | `--display-name` | `GEMINI_DISPLAY_NAME` | Display name in Gemini Enterprise |
 | `--description` | `GEMINI_DESCRIPTION` | Agent description |
 | `--tool-description` | `GEMINI_TOOL_DESCRIPTION` | Tool description (ADK mode only, defaults to description) |
-| `--registration-type` | `REGISTRATION_TYPE` | `adk` or `a2a` (defaults to `adk` on Agent Runtime, `a2a` on Cloud Run / GKE) |
+| `--registration-type` | `REGISTRATION_TYPE` | `adk` or `a2a` (defaults to `adk` for an ADK agent on Agent Runtime, `a2a` everywhere else, including any non-ADK framework) |
 | `--agent-card-url` | `AGENT_CARD_URL` | Agent card URL for A2A registration |
 | `--deployment-target` | `DEPLOYMENT_TARGET` | `agent_runtime`, `cloud_run`, or `gke` (sets the default registration type — ADK on Agent Runtime, A2A on Cloud Run / GKE — and the A2A auth method) |
 | `--project-id` | `GOOGLE_CLOUD_PROJECT` | GCP project ID for billing |
@@ -134,10 +141,10 @@ agents-cli publish gemini-enterprise --interactive
 When `deployment_metadata.json` exists, the command automatically:
 
 - Reads the **agent runtime ID** (`remote_agent_runtime_id`)
-- Determines the **registration type**: defaults to **ADK** (native `:streamQuery`) on **Agent Runtime**, and **A2A** on **Cloud Run / GKE** (which have no reasoning engine). Override with `--registration-type`.
+- Determines the **registration type**: defaults to **ADK** (native `:streamQuery`) on **Agent Runtime**, and **A2A** on **Cloud Run / GKE** (which have no reasoning engine). A project scaffolded with another framework serves no ADK app, so it defaults to **A2A** on every target. Override with `--registration-type`.
 - Determines the **deployment target** for authentication
 
-This means that for the simplest case (an agent on Agent Runtime, registered as ADK), you only need to provide the Gemini Enterprise app ID:
+This means that for the simplest case (an ADK agent on Agent Runtime, registered as ADK), you only need to provide the Gemini Enterprise app ID:
 
 ```bash
 agents-cli publish gemini-enterprise \
@@ -146,7 +153,7 @@ agents-cli publish gemini-enterprise \
 
 ---
 
-## SDK Compatibility
+## SDK Compatibility (Python only)
 
 Agent Runtime deployments may encounter "Session not found" errors with `google-cloud-aiplatform` versions <= 1.128.0. In interactive mode (`--interactive`), the command checks the SDK version from `uv.lock` and offers to upgrade. In programmatic mode, ensure your SDK is up to date before registering.
 
@@ -196,7 +203,7 @@ Docs: https://docs.cloud.google.com/agent-registry/manage-agents · https://docs
 | Re-publishing the same agent | Registration is idempotent — re-running updates the existing registration in place instead of creating a duplicate |
 | HTTP 403 on registration | Check that your account has Discovery Engine Editor permissions on the Gemini Enterprise project |
 | Debugging ADK invocation failures on Agent Runtime | Gemini Enterprise calls the agent via the `AdkApp`'s `streaming_agent_run_with_events` method (the native `:streamQuery` contract). Grep the runtime's `reasoning_engine_stderr` logs for `streaming_agent_run_with_events` to find the underlying error |
-| "Could not fetch agent card" | Verify the agent is running and the URL is correct; for Cloud Run, ensure `gcloud auth login` is done |
+| "Could not fetch agent card" | Verify the agent is running and the URL is correct; for Cloud Run, ensure `gcloud auth login` is done. A Live/voice agent drops its A2A card and cannot be published — Gemini Enterprise does not support Live agents |
 
 ---
 

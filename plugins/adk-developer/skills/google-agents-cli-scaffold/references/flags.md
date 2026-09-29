@@ -4,7 +4,7 @@
 
 | Flag | Short | Default | Description |
 |------|-------|---------|-------------|
-| `--agent` | `-a` | `adk` | Agent template — local name (e.g. `adk`), local path (`local@/path`), adk-samples shortcut (`adk@<name>`, legacy `python/agents/` tree only), or remote Git URL |
+| `--agent` | `-a` | `adk` | Agent template — local name (`adk` for Python, `adk_go` for Go), local path (`local@/path`), adk-samples shortcut (`adk@<name>`, legacy `python/agents/` tree only), or remote Git URL |
 | `--deployment-target` | `-d` | `agent_runtime` | Deployment target (`agent_runtime`, `cloud_run`, `gke`, `none`) |
 | `--region` | | `us-east1` | GCP region |
 | `--prototype` | `-p` | off | Skip CI/CD and Terraform (recommended for first pass) |
@@ -15,11 +15,15 @@
 | `--output-dir` | `-o` | `.` | Output directory for the project |
 | `--bq-analytics` | | off | Enable BigQuery Agent Analytics plugin (supported on `agent_runtime`, `cloud_run`, and `gke`) |
 | `--skip-checks` | `-s` | off | Skip verification checks for GCP and Agent Platform |
-| `--adk` | | off | Quickstart mode: adk + agent_runtime + prototype, skips prompts |
+| `--adk` | | off | Quickstart mode: adk + agent_runtime + prototype, skips prompts. It forces `--agent adk` (Python). For a Go quickstart use `--agent adk_go --prototype --yes` instead. |
 | `--auto-approve` / `--yes` | `-y` | off | Non-interactive: skip prompts, use defaults for missing params |
 | `--interactive` | `-i` | off | Interactive mode: show menus and prompts (for use in terminals) |
 
 For all available flags, run `agents-cli scaffold create --help`.
+
+> **ADK-specific:** `--adk` is a shortcut for the built-in ADK template, and `adk` is the only
+> built-in one. `--agent` also takes a template repo (`<org>/<repo>[/<path>]@<tag>` or `local@<path>`),
+> which is how other frameworks ship.
 
 > To use Google AI Studio instead of Vertex AI, edit the generated `.env`: comment the `GOOGLE_*` lines and uncomment `GEMINI_API_KEY`.
 
