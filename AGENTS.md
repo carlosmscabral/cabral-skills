@@ -55,8 +55,9 @@ To blend in an external upstream you want to track:
    `plugins/<name>/skills/`, and write provenance (repo/tag/commit/license/skills) into
    `vendored.json`.
 2. Add the upstream to the drift workflow matrix
-   (`.github/workflows/check-vendored-upstreams.yml`) so a newer release opens a tracking issue.
-   It **never auto-syncs** — syncing stays deliberate and pinned.
+   (`.github/workflows/check-vendored-upstreams.yml`, with its `script` and `plugin_json`) so a
+   newer release runs the sync script at that tag and opens a **pull request**. It **never
+   auto-merges** — syncing stays deliberate and pinned (you review, merge, and tag).
 3. **Never hand-edit vendored skill dirs** — edits are lost on the next sync. Fix upstream (or
    fork and point the sync at your fork).
 
@@ -88,8 +89,11 @@ Carry `name`, `version`, `description`, and a `skills[]` array listing the bundl
 ## Vendored upstreams
 
 Tracked in [`vendored.json`](vendored.json); a scheduled Action
-(`.github/workflows/check-vendored-upstreams.yml`) watches each and files an issue on a newer
-release (never auto-syncs).
+(`.github/workflows/check-vendored-upstreams.yml`, Mondays 06:17 UTC or manual dispatch) watches
+each and, on a newer release, runs the sync script, bumps the plugin version (minor), validates,
+and opens/updates a PR from `bot/vendor-<key>` (never auto-merges). If the sync fails it opens a
+tracking issue instead. Requires the repo setting "Allow GitHub Actions to create and approve pull
+requests".
 
 ### google/agents-cli → `plugins/adk-developer/skills/`
 
