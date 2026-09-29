@@ -4,26 +4,26 @@ description: >
   This skill should be used when the user wants to "create an agent project",
   "start a new ADK project", "build me a new agent", "add CI/CD to my project",
   "add deployment", "enhance my project", or "upgrade my project".
-  Part of the Google ADK (Agent Development Kit) skills suite.
+  Part of the agents-cli skills suite.
   Covers `agents-cli scaffold create`, `scaffold enhance`, and `scaffold upgrade` commands,
   template options, deployment targets, and the prototype-first workflow.
-  Do NOT use for writing agent code (use google-agents-cli-adk-code) or
+  Do NOT use for writing agent code (ADK projects: use google-agents-cli-adk-code) or
   deployment operations (use google-agents-cli-deploy).
 metadata:
   author: Google
   license: Apache-2.0
-  version: 1.4.1
+  version: 1.7.0
   requires:
     bins:
       - agents-cli
     install: "uv tool install google-agents-cli"
 ---
 
-# ADK Project Scaffolding Guide
+# Project Scaffolding Guide
 
 > **Requires:** `agents-cli` (`uv tool install google-agents-cli`) — [install uv](https://docs.astral.sh/uv/getting-started/installation/index.md) first if needed.
 
-Use the `agents-cli` CLI to create new ADK agent projects or enhance existing ones with deployment, CI/CD, and infrastructure scaffolding.
+Use the `agents-cli` CLI to create new agent projects or enhance existing ones with deployment, CI/CD, and infrastructure scaffolding.
 
 ---
 
@@ -39,8 +39,8 @@ Use the `agents-cli` CLI to create new ADK agent projects or enhance existing on
 
 | Choice | CLI flag |
 |--------|----------|
-| Retrieval/RAG, sandboxed execution, cross-session memory, OAuth consent, guardrails, scheduled runs | **No flag** — these come from clone-and-study recipes; see the topic index in `/google-agents-cli-adk-code` → `references/samples.md` |
-| A2A protocol | built into every ADK agent — scaffold normally (`--agent adk`) |
+| Retrieval/RAG, sandboxed execution, cross-session memory, OAuth consent, guardrails, scheduled runs | **No flag** — these come from clone-and-study recipes. **ADK Python:** see the topic index in `/google-agents-cli-adk-code` → `references/samples.md`; on other frameworks, see the sample index the framework template ships |
+| A2A protocol | built into the scaffolded app — scaffold normally (**ADK Python:** `--agent adk`, the default; **ADK Go:** `--agent adk_go`) |
 | Prototype (no deployment) | `--prototype` |
 | Deployment target | `--deployment-target <agent_runtime\|cloud_run\|gke>` |
 | CI/CD runner | `--cicd-runner <github_actions\|google_cloud_build>` |
@@ -123,13 +123,24 @@ agents-cli scaffold enhance . --cicd-runner github_actions
 
 ## Template Options
 
-| Template | Deployment | Description |
-|----------|------------|-------------|
-| `adk` | Agent Runtime, Cloud Run, GKE | Standard ADK agent (default); A2A protocol built in |
+| Template | Language | Deployment | Description |
+|----------|----------|------------|-------------|
+| `adk` | Python | Agent Runtime, Cloud Run, GKE | Standard ADK agent (default); A2A protocol built in |
+| `adk_go` | Go | Agent Runtime, Cloud Run, GKE | Standard ADK Go agent; A2A protocol built in |
 
-> **`adk` is the only template.** Capabilities beyond it — retrieval, sandboxed execution, memory,
-> OAuth, guardrails — are clone-and-study recipes, not templates. See the topic index in
+> **`adk` and `adk_go` are the only built-in templates.** `adk` is the default, so a Go project
+> needs `--agent adk_go` explicitly.
+> Other frameworks ship as template repos you scaffold
+> from directly: `--agent google/agents-cli/extensions/langchain/template@v1.7.0`, with nothing installed. The first-party LangChain
+> template is `extensions/langchain/template/` in the agents-cli repo; see
+> `/google-agents-cli-workflow` → `references/extension.md` to publish your own. Capabilities
+> beyond the template — retrieval, sandboxed execution, memory, OAuth, guardrails — are
+> clone-and-study recipes, not templates. **ADK Python:** see the topic index in
 > `/google-agents-cli-adk-code` → `references/samples.md`.
+
+> **Live and voice agents:** no template. Scaffold `adk`, then follow the conversion checklist
+> in `/google-agents-cli-adk-code` (`references/adk-python-live.md`, "Converting a scaffolded
+> project to Live"). The model swap is one of five edits.
 
 ---
 
@@ -166,8 +177,14 @@ When using `agent_runtime` as the deployment target, Agent Runtime manages sessi
 
 After scaffolding, immediately load `/google-agents-cli-workflow` — it contains the development workflow, coding guidelines, and operational rules you must follow when implementing the agent.
 
-**Key files to customize:** `app/agent.py` (instruction, tools, model), `app/tools.py` (custom tool functions), `.env` (project ID, location, API keys).
-**Files to preserve:** `agents-cli-manifest.yaml` (CLI reads this), deployment configs under `deployment/`, `Makefile`, `app/__init__.py` (the `App(name=...)` must match the directory name — default `app`), and the generated runtime/A2A infra (`app/fast_api_app.py`, `app/app_utils/a2a.py`, `app/app_utils/services.py`, `Dockerfile`) — these wire up serving, sessions, and the built-in A2A surface; don't hand-edit them.
+What you edit differs by language; `/google-agents-cli-adk-code` has the annotated tree for each,
+in `references/adk-python.md` and `references/adk-go.md`.
+
+- **ADK Python (`--agent adk`)** — customize `app/agent.py` and `app/tools.py`.
+- **ADK Go (`--agent adk_go`)** — customize `app/agent.go`.
+
+`.env` is yours. Preserve everything else the template generated — it wires up serving, sessions
+and the built-in A2A surface.
 
 **Adapting a recipe:** copy its `app/`, `infra/terraform/`, and any ingestion or provisioning into
 your scaffolded project, then run provisioning from the recipe's own `Makefile` (e.g.
@@ -182,7 +199,7 @@ your scaffolded project, then run provisioning from the recipe's own `Makefile` 
 When you need specific files (Terraform, CI/CD workflows, Dockerfile) but don't want to scaffold the current project directly, create a temporary reference project in `/tmp/`:
 
 ```bash
-agents-cli scaffold create /tmp/ref-project \
+agents-cli scaffold create ref-project --output-dir /tmp \
   --agent adk \
   --deployment-target cloud_run
 ```
@@ -206,7 +223,7 @@ This is useful for:
 - **Agent Runtime clears session_type** — if deploying to `agent_runtime`, remove any `session_type` setting from your code
 - **Start with `--prototype`** for quick iteration — add deployment later with `enhance`
 - **Project names** must be ≤26 characters, lowercase, letters/numbers/hyphens only
-- **NEVER write A2A code from scratch** — A2A is built into every Python ADK agent (`adk`); the A2A Python API surface (import paths, `AgentCard` schema, `to_a2a()` signature) is non-trivial and changes across versions. Scaffold normally; never hand-write the A2A surface.
+- **NEVER write A2A code from scratch** — A2A is built into the scaffolded app (the `adk` and `adk_go` templates and framework templates alike); each language's A2A surface (import paths, `AgentCard` schema etc.) is non-trivial and changes across versions. Scaffold normally; never hand-write the A2A surface. (The only sanctioned A2A hand-edit is *removing* the generated wiring for a **Live** agent, which can't be served over A2A — see `/google-agents-cli-adk-code`, `references/adk-python-live.md`.)
 
 ---
 
@@ -215,7 +232,7 @@ This is useful for:
 Using scaffold as reference:
 User says: "I need a Dockerfile for my non-standard project"
 Actions:
-1. Create temp project: `agents-cli scaffold create /tmp/ref --agent adk --deployment-target cloud_run`
+1. Create temp project: `agents-cli scaffold create ref --output-dir /tmp --agent adk --deployment-target cloud_run`
 2. Copy relevant files (Dockerfile, etc.) from /tmp/ref
 3. Delete temp project
 Result: Infrastructure files adapted to the actual project
@@ -231,6 +248,15 @@ Result: Valid A2A imports and Dockerfile — no manual A2A code written.
 
 ---
 
+Go project:
+User says: "Build me a Go agent that deploys to Cloud Run"
+Actions:
+1. Follow the standard flow (understand requirements, choose architecture, scaffold)
+2. `agents-cli scaffold create my-go-agent --agent adk_go --deployment-target cloud_run --prototype`
+Result: Go project with `app/agent.go`, the launcher in `main.go`, and the A2A card at the root.
+
+---
+
 ## Troubleshooting
 
 ### `agents-cli` command not found
@@ -242,6 +268,6 @@ See `/google-agents-cli-workflow` → **Setup** section.
 ## Related Skills
 
 - `/google-agents-cli-workflow` — Development workflow, coding guidelines, and the build-evaluate-deploy lifecycle
-- `/google-agents-cli-adk-code` — ADK Python API quick reference for writing agent code
+- `/google-agents-cli-adk-code` — ADK API quick reference for writing agent code, including the graph Workflow API
 - `/google-agents-cli-deploy` — Deployment targets, CI/CD pipelines, and production workflows
 - `/google-agents-cli-eval` — Evaluation methodology, dataset schema, and the eval-fix loop
