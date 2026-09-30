@@ -77,6 +77,21 @@ def _hotspots_by_slide(operations: Optional[Sequence[dict[str, Any]]]) -> dict[i
     return out
 
 
+def _hidden_slide_indices(operations: Optional[Sequence[dict[str, Any]]]) -> set[int]:
+    """1-based deck indices hidden via `skip-slide` (explicit skip or out-of-tier)."""
+    if not operations:
+        return set()
+    index_by_id: dict[str, int] = {}
+    for op in operations:
+        if op.get("op") == "add-slide":
+            index_by_id[str(op.get("id"))] = len(index_by_id) + 1
+    return {
+        index_by_id[str(op.get("slide"))]
+        for op in operations
+        if op.get("op") == "skip-slide" and str(op.get("slide")) in index_by_id
+    }
+
+
 def write_audit_checklist(
     thumbnails: Sequence[Union[str, Path]],
     output_path: Union[str, Path],
@@ -88,6 +103,7 @@ def write_audit_checklist(
     thumbs = sorted(Path(t).resolve() for t in thumbnails)
     rows = _deck_slide_rows(spec)
     hotspots = _hotspots_by_slide(operations)
+    hidden = _hidden_slide_indices(operations)
     dest = Path(output_path).resolve()
     dest.parent.mkdir(parents=True, exist_ok=True)
 
@@ -117,6 +133,8 @@ def write_audit_checklist(
             meta.append(f"tier `{tier}`")
         if row.get("skip"):
             meta.append("hidden (skip)")
+        elif i in hidden:
+            meta.append("hidden (tier)")
         lines.append(f"### {i:02d}. {title}")
         lines.append("")
         lines.append(f"- PNG: `{thumb}`")

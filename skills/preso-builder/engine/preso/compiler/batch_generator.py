@@ -278,6 +278,27 @@ class PresentationManifest:
 # =============================================================================
 
 
+def _drop_empty_textboxes(ops: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Removes `add-textbox` ops with no text, plus any op that targets them.
+
+    Archetypes emit optional text boxes (hero `unit`, captions, ...). Slides
+    rejects styling an empty text box with HTTP 400 ("The object ... has no
+    text"), which fails the whole atomic batch.
+    """
+    dropped = {
+        op.get("id")
+        for op in ops
+        if op.get("op") == "add-textbox" and not str(op.get("text") or "").strip()
+    }
+    dropped.discard(None)
+    if not dropped:
+        return ops
+    return [
+        op for op in ops
+        if op.get("id") not in dropped and op.get("element") not in dropped
+    ]
+
+
 @dataclass
 class BatchCompilerConfig:
     """Configuration options for batch operation compilation."""
@@ -524,10 +545,10 @@ class BatchCompiler:
             archetype = slide_data["archetype"]
 
             # Generate archetype batch operations via ArchetypeEngine
-            slide_ops = ArchetypeEngine.generate_slide_ops(
+            slide_ops = _drop_empty_textboxes(ArchetypeEngine.generate_slide_ops(
                 slide_spec=slide_data,
                 slide_index=idx,
-            )
+            ))
 
             # Local images cannot go through batch `add-image` (URL-only);
             # archetypes emit `_pending-image` markers that the CLI inserts
@@ -586,4 +607,4 @@ class BatchCompiler:
             slide_spec=slide_data,
             slide_index=slide_index,
         )
-        return [op for op in ops if op.get("op") != "_pending-image"]
+        return [op for op in _drop_empty_textboxes(ops) if op.get("op") != "_pending-image"]

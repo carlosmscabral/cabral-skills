@@ -90,6 +90,14 @@ def handle_spec(args: argparse.Namespace) -> int:
     return 0
 
 
+
+def _resolved_ids(batch_exec_res: Any) -> dict[str, str]:
+    """Placeholder -> real object IDs from `execute_batch` (a dict, or an object)."""
+    if isinstance(batch_exec_res, dict):
+        return dict(batch_exec_res.get("resolved_ids") or {})
+    return dict(getattr(batch_exec_res, "resolved_ids", None) or {})
+
+
 def _resolve_image_paths(batch_result: BatchResult, base_dir: Path) -> None:
     """Resolves relative local image paths against the spec file's directory."""
     for img in batch_result.pending_images:
@@ -210,7 +218,7 @@ def handle_build(args: argparse.Namespace) -> int:
         print(f"✅ Batch update executed successfully on deck '{deck_id}'.")
 
         if batch_result.pending_images:
-            resolved = getattr(batch_exec_res, "resolved_ids", {}) or {}
+            resolved = _resolved_ids(batch_exec_res)
             print(f"🖼️ Inserting {len(batch_result.pending_images)} local image(s)...")
             for img in batch_result.pending_images:
                 target_slide = resolved.get(img["slide"], img["slide"])

@@ -144,5 +144,33 @@ class TestAuditAndBudgets(unittest.TestCase):
         self.assertIn("3-card title", buf.getvalue())
 
 
+
+
+class TestEmptyTextboxGuard(unittest.TestCase):
+
+    def test_hero_metric_without_unit_emits_no_empty_textbox(self) -> None:
+        """Slides rejects styling an empty text box (HTTP 400), so none may be emitted."""
+        res = BatchCompiler().compile_slides([{
+            "archetype": "hero_metrics", "title": "Numbers", "subtitle": "A full takeaway sentence here.",
+            "metrics": [{"value": "10", "label": "A"}, {"value": "20", "label": "B"}],
+        }])
+        empty = [o for o in res.operations
+                 if o["op"] == "add-textbox" and not str(o.get("text") or "").strip()]
+        self.assertEqual(empty, [])
+        dropped_targets = [o for o in res.operations if str(o.get("element", "")).startswith("UNIT_")]
+        self.assertEqual(dropped_targets, [])
+
+
+class TestResolvedIds(unittest.TestCase):
+
+    def test_resolved_ids_from_dict_response(self) -> None:
+        """Live `execute_batch` returns a dict; local images must target the real slide ID."""
+        from preso.cli import _resolved_ids
+        res = {"resolved_ids": {"SLIDE_03_IMAGE_SPLIT": "slide_123_0"}}
+        self.assertEqual(_resolved_ids(res), {"SLIDE_03_IMAGE_SPLIT": "slide_123_0"})
+        self.assertEqual(_resolved_ids({}), {})
+        self.assertEqual(_resolved_ids(None), {})
+
+
 if __name__ == "__main__":
     unittest.main()
