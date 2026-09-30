@@ -1,0 +1,233 @@
+# =============================================================================
+# THE AI FACTORY BLUEPRINT - ENTERPRISE ARCHITECTURE SPECIFICATION
+# =============================================================================
+# Comprehensive Reference Manifest for preso-builder
+# Demonstrates all 8 Blueprint slide archetypes across 3 chapters.
+# =============================================================================
+
+version: "1.0"
+
+metadata:
+  title: "The AI Factory Blueprint"
+  subtitle: "Deterministic Engineering for the Agentic Era"
+  template_id: "1FJ4wCMDlI1zW3XCbIXXn-ejOOjq5iQ1Mit_9MuGnO-U"
+  target_audience: "Executive Leadership & Senior Staff Engineers"
+  core_thesis: "Move from manual hand-prompting to deterministic agentic manufacturing pipelines."
+  theme:
+    palette: "blueprint"
+    primary_color: "#1E2761"
+    accent_color: "#1A73E8"
+    dark_background: "#1E2761"
+    light_background: "#FFFFFF"
+    card_background: "#F8F9FA"
+
+chapters:
+  # ===========================================================================
+  # CHAPTER 1: FOUNDATION & ARCHITECTURE
+  # ===========================================================================
+  - chapter_number: 1
+    title: "Foundation & Architecture"
+    subtitle: "From isolated prompts to systematic engineering"
+    speaker_notes: "Welcome everyone. Today we are exploring the paradigm shift from ad-hoc prompting to deterministic agentic manufacturing pipelines."
+    slides:
+      # Archetype 1: Chapter Divider
+      - archetype: "chapter_divider"
+        title: "Foundation & Architecture"
+        subtitle: "From isolated prompts to systematic engineering"
+        kicker: "CHAPTER"
+        chapter_number: 1
+        speaker_notes: "Welcome everyone. Today we are exploring the paradigm shift from ad-hoc prompting to deterministic agentic manufacturing pipelines."
+
+      # Archetype 2: 2-Card / 3-Card Split Comparison
+      - archetype: "split_cards"
+        title: "Two Paradigms of Agent Development"
+        subtitle: "Comparing ad-hoc prompting with deterministic pipelines"
+        kicker: "PARADIGM COMPARISON"
+        cards:
+          - title: "Ad-Hoc Prompting"
+            category_pill: "TRADITIONAL"
+            bullets:
+              - "Manual copy-pasting of context into web chat"
+              - "Unpredictable outputs and silent regressions"
+              - "Zero test harness or automated verification"
+            theme: "#1A73E8"
+          - title: "Deterministic Harness"
+            category_pill: "AI FACTORY"
+            bullets:
+              - "Automated context injection via file mounts"
+              - "Enforcing hooks that block commits on failure"
+              - "Adversarial evaluator sub-agents grade runs"
+            theme: "#1E8E3E"
+        speaker_notes: "On the left is how teams start: manual trial and error. On the right is the AI Factory model with structured specs and automated verification loops."
+
+      # Archetype 3: Code / Ratchet Terminal Box
+      - archetype: "code_terminal"
+        title: "The Enforcing Ratchet in Practice"
+        subtitle: "Make failures impossible to repeat with pre-commit hooks"
+        kicker: "CODE & RATCHETS"
+        terminals:
+          - filename: ".agent/hooks/pre-commit"
+            language: "bash"
+            code: |
+              #!/bin/sh
+              typecheck && lint
+              test --bail || exit 1   # red = blocked
+              
+              # Ratcheted rule enforcement
+              echo "✓ All checks passed cleanly"
+            badge_text: "✓ DO: RATCHETED"
+            status: "do"
+          - filename: "scripts/run_and_hope.sh"
+            language: "bash"
+            code: |
+              #!/bin/sh
+              # Blindly retry prompt
+              python run_agent.py \
+                --retry 10 \
+                --ignore-errors
+              # Regressions recur silently
+            badge_text: "✗ DON'T: HOPE-BASED"
+            status: "dont"
+        speaker_notes: "Here is the concrete implementation of a ratchet. The agent cannot commit code unless the entire typecheck and test suite passes cleanly."
+
+  # ===========================================================================
+  # CHAPTER 2: ECONOMICS & ENGINEERING DISCIPLINES
+  # ===========================================================================
+  - chapter_number: 2
+    title: "Economics & Engineering Disciplines"
+    subtitle: "Why strong harnesses yield 10x ROI over naked models"
+    speaker_notes: "In this chapter we look at the economics of agentic systems and the four disciplines required to scale reliably."
+    slides:
+      # Archetype 1: Chapter Divider
+      - archetype: "chapter_divider"
+        title: "Economics & Disciplines"
+        subtitle: "Why strong harnesses yield 10x ROI over naked models"
+        kicker: "CHAPTER"
+        chapter_number: 2
+        speaker_notes: "In this chapter we look at the economics of agentic systems and the four disciplines required to scale reliably."
+
+      # Archetype 4: Hero Metric / Economics Comparison
+      - archetype: "hero_metrics"
+        title: "The Economics of Skipping Basics"
+        subtitle: "Harness investment vs token waste in real experiments"
+        kicker: "ECONOMIC ANALYSIS"
+        metrics:
+          - value: "$9"
+            unit: "· 20 min"
+            label: "SOLO MODEL"
+            delta: "-85%"
+            delta_type: "negative"
+            description: "Broken mechanics, failed physics, wasted UI. A toy you throw away."
+            accent_color: "#D93025"
+          - value: "$200"
+            unit: "· 6 hours"
+            label: "FULL HARNESS"
+            delta: "+10x"
+            delta_type: "positive"
+            description: "Functional game engine, rich editors, verified integrations. Shippable."
+            is_hero: true
+            accent_color: "#1E8E3E"
+        speaker_notes: "Look at these economics. A solo model costs 9 dollars but yields a toy. A 200-dollar full harness yields shippable, enterprise-grade software."
+
+      # Archetype 5: Ladder / Stepped Hierarchy
+      - archetype: "ladder_hierarchy"
+        title: "The Four Disciplines of Agentic Systems"
+        subtitle: "Master each rung sequentially before adopting frameworks"
+        kicker: "DISCIPLINE LADDER"
+        steps:
+          - step_number: 1
+            title: "Prompt Engineering"
+            description: "GCCD framework: Goal, Context, Constraints, Done-when criteria."
+            badge: "RUNG 01"
+          - step_number: 2
+            title: "Context Architecture"
+            description: "Compact, offload, reset, and persist memory to external files."
+            badge: "RUNG 02"
+          - step_number: 3
+            title: "Harness & Ratchet"
+            description: "Equip tools, sandboxes, enforcing hooks, and adversarial evaluators."
+            badge: "RUNG 03"
+          - step_number: 4
+            title: "Loop Engineering"
+            description: "Automate prompters on schedules with humans in the review seat."
+            badge: "RUNG 04"
+        speaker_notes: "We structure the discipline into a 4-step ladder: Prompt, Context, Harness, and Loop. Each rung builds upon the last."
+
+      # Archetype 6: Executive 1-Liner Grid
+      - archetype: "executive_grid"
+        title: "The AI Factory Blueprint in One Line Each"
+        subtitle: "Summary of core operational pillars"
+        kicker: "EXECUTIVE SUMMARY"
+        quadrants:
+          - number: "01"
+            title: "Prompt"
+            narrative: "Guide intent with GCCD: Goal, Context, Constraints, Done-when criteria."
+          - number: "02"
+            title: "Context"
+            narrative: "Curate the window: compact, offload, reset, persist state to files."
+          - number: "03"
+            title: "Harness"
+            narrative: "Give it state, tools, hooks, and an adversarial evaluator."
+          - number: "04"
+            title: "Loop"
+            narrative: "Automate the prompter; keep yourself in the review seat."
+        speaker_notes: "Here is the executive 4-quadrant summary. Prompt, Context, Harness, and Loop. Each pillar must be solid."
+
+  # ===========================================================================
+  # CHAPTER 3: OPERATIONAL EXCELLENCE & NEXT STEPS
+  # ===========================================================================
+  - chapter_number: 3
+    title: "Operational Excellence & Next Steps"
+    subtitle: "Actionable guidance for adopting agentic workflows"
+    speaker_notes: "In our final chapter, we cover operational best practices and key action items for technical leadership."
+    slides:
+      # Archetype 1: Chapter Divider
+      - archetype: "chapter_divider"
+        title: "Operational Excellence"
+        subtitle: "Actionable guidance for adopting agentic workflows"
+        kicker: "CHAPTER"
+        chapter_number: 3
+        speaker_notes: "In our final chapter, we cover operational best practices and key action items for technical leadership."
+
+      # Archetype 7: Do / Don't Best Practice Checklist
+      - archetype: "dodont_checklist"
+        title: "Agentic Tool Adoption: Do's and Don'ts"
+        subtitle: "Operationalize what you learned rather than bypassing disciplines"
+        kicker: "BEST PRACTICES"
+        checklist:
+          do_title: "BLUEPRINT STANDARD (DO)"
+          dont_title: "ANTI-PATTERN (DON'T)"
+          do_items:
+            - "Define verifiable 'done-when' criteria before runs"
+            - "Isolate parallel tasks in separate worktrees"
+            - "Employ independent checker sub-agents to grade work"
+          dont_items:
+            - "Fanning out vague requirements to 20 agents"
+            - "Letting loops merge code directly with no human gate"
+            - "Relying on model retries instead of ratcheted hooks"
+          takeaway: "Tools amplify whatever you bring them: mastery or waste."
+        speaker_notes: "Review our do and don't checklist when adopting agentic tooling across engineering teams."
+
+      # Archetype 8: Actionable Takeaways & Next Steps
+      - archetype: "actionable_takeaways"
+        title: "Build the Factory. Learn the Floor First."
+        subtitle: "Key takeaways and next steps for engineering leaders"
+        kicker: "ACTION PLAN"
+        takeaway:
+          thesis: "Engineering shifts from a keystroke activity to a judgment activity."
+          principles:
+            - title: "Decompose Problems"
+              description: "Break complex work into scoped subtasks with testable success criteria."
+            - title: "Enforce Quality Gates"
+              description: "Catch errors at the harness layer to eliminate recurring regressions."
+            - title: "Automate with Human Gates"
+              description: "Design automated loops with review gates at pull-request boundaries."
+          roadmap_title: "30-DAY EXECUTION ROADMAP"
+          roadmap_items:
+            - "Week 1: Audit prompt specs & done-when gates"
+            - "Week 2: Implement pre-commit ratchet hooks"
+            - "Week 3: Stand up adversarial QA checker agent"
+            - "Week 4: Roll out automated build pipeline"
+          cta_text: "START WITH RUNG 01 TODAY →"
+          contact_info: "go/ai-factory-blueprint · feedback@google.com"
+        speaker_notes: "To wrap up: master the disciplines sequentially. Build the factory, but ensure your teams understand the floor first."

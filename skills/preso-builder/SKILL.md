@@ -11,9 +11,8 @@ description: >-
 
 # preso-builder: The AI Factory Blueprint deck builder
 
-A spec-first engine: you author `preso_spec.yaml`. The engine
-([carlosmscabral/preso-builder](https://github.com/carlosmscabral/preso-builder))
-validates it, compiles it into one atomic `gslides batch`, builds the deck from the
+A spec-first engine: you author `preso_spec.yaml`. The engine (bundled in
+[`engine/`](engine/README.md) next to this file) validates it, compiles it into one atomic `gslides batch`, builds the deck from the
 Blueprint template (`1FJ4wCMDlI1zW3XCbIXXn-ejOOjq5iQ1Mit_9MuGnO-U`), then exports
 thumbnails so you can audit what actually rendered.
 
@@ -31,9 +30,10 @@ Not for: data charts or telemetry plots (`dataviz`), didactic diagrams/walkthrou
 ## Setup
 
 ```bash
-pip install -e ~/preso-builder            # gives you the `preso` command
+SKILL_DIR=<directory containing this SKILL.md>
+pip install -e "$SKILL_DIR/engine"         # gives you the `preso` command
 # or, without installing:
-alias preso="python3 ~/preso-builder/preso.py"
+alias preso="python3 $SKILL_DIR/engine/preso.py"
 test -x /google/bin/releases/gemini-agents-gslides/gslides && echo "live build OK"
 ```
 
@@ -167,7 +167,7 @@ Try these in order:
 ## Gotchas
 
 - Run commands as `preso …` only if the package is installed. Otherwise use
-  `python3 ~/preso-builder/preso.py …`.
+  `python3 <skill-dir>/engine/preso.py …`.
 - `--clean-placeholders` returns **400** on the Blueprint template because it has no `i0`/`i1`.
   Leave it off, since template slides are pruned automatically.
 - Hero metric values overflow at 54pt beyond about 5 chars with 3 metrics, or about 9 with 2. Move the qualifier into `unit`.

@@ -18,7 +18,6 @@ earlier "plugins don't/shouldn't carry rules" assumption.
 ### Install scope (CLI is always global)
 - `agy plugin install` / `link` / `import` write **exclusively** to the global config dir
   **`~/.gemini/config/plugins/`**. There is no flag to install into a workspace `.agents/`.
-  (Path correction: docs say `config/plugins`, not the `jetski/plugins` we'd noted from memory.)
 - `agy plugin enable <name>` / `disable <name>` operate **only** on global plugins — they physically
   rename `plugin.json` ⇄ `plugin.json.disabled` in the global dir. Run against a workspace-local
   plugin they fail with "plugin not found."

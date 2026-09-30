@@ -1,0 +1,49 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# IDE & Editor settings
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Test & Coverage artifacts
+.pytest_cache/
+.coverage
+htmlcov/
+qa_output/
+qa_output_antigravity/
+dist/qa/
+
+# Sub-agent coordination scratch space
+.agents/
+
+# Temporary run outputs
+*.log
+/tmp/
+tmp/
+dry_run_batch.json
+preview.html
+handoff.md
+BRIEFING.md
+ORIGINAL_REQUEST.md
+
+# Customer / working deck specs and their QA output (never committed)
+decks/
