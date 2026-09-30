@@ -34,6 +34,8 @@ Newly created presentations via `gslides create` contain a single default title 
 
 When cloning a master template presentation (`gslides copy`), custom slide layouts are preserved and default blank slides are added cleanly using `"layout": "BLANK"`.
 
+> **Blueprint template:** it has no `i0`/`i1`, so `--clean-placeholders` fails with **HTTP 400**. Leave it off. `preso build` records the template's own slides before the batch and deletes them afterward.
+
 ---
 
 ### 3. Complete Batch Operations Reference Table
@@ -52,7 +54,10 @@ When cloning a master template presentation (`gslides copy`), custom slide layou
 | `delete-element`| `element` | — | Deletes an element by ID (e.g. `i0`, `i1`). |
 | `update-text` | `element`, `text` | — | Replaces all text in an existing element. |
 | `add-text` | `element`, `text` | — | Appends text into an existing shape or placeholder. |
-| `style-text` | `element` | `color`, `bold`, `font_size`, `font_family`, `start`, `end` | Restyles a character range in existing text. |
+| `style-text` | `element` | `color`, `bold`, `font_size`, `font_family`, `start`, `end` | Restyles a character range in existing text. **Ignores `line_spacing`**, which you can only set at `add-textbox` time. |
+| `add-image` | `slide`, `url`, `x`, `y`, `width`, `height` | — | Inserts an image from a URL. Aspect ratio is preserved inside the box. |
+| `skip-slide` / `unskip-slide` | `slide` | — | Hides or unhides a slide in presentation mode. `preso` emits `skip-slide` for `appendix`, `skip: true`, and tiers not shown at `--duration`. These ops exist even though `--help` doesn't list them. |
+| `_pending-image` | *(internal)* | — | Never sent to gslides. `image_split` emits it for local files, and the compiler lifts it into `BatchResult.pending_images`. |
 
 ---
 
@@ -88,3 +93,18 @@ For Archetype 5 (`ladder_hierarchy`), directional flow is created using connecte
   "line_weight": 2.0
 }
 ```
+
+---
+
+### 6. `resolved_ids`, Local Images & Surgical Edits
+
+* `gslides batch --json` returns `{"created_slides": [...], "resolved_ids": {"SLIDE_01": "g3ea…_0_12", …}}`.
+  Use `resolved_ids` for any follow-up command that targets a slide you just created.
+* Local image files can't go through the batch. After the batch runs, `preso build` calls
+  `gslides mutate insert-image-from-file <deck> --slide <resolved_id> --file <png> --x --y --width --height`.
+* Pathway C (surgical edits on a built deck), known quirks:
+  * `resize-element` takes a **scale factor**, not target points.
+  * `move-element` **resets scale**, so move first and then resize.
+  * Text ranges (`start`/`end`) are **UTF-16** code units. Characters outside the BMP (most emoji)
+    count as 2. Avoid them in visible text.
+  * The next `preso build` overwrites manual edits, so put durable changes back into the spec.

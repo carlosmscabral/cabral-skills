@@ -1,6 +1,6 @@
 # Blueprint Layout Archetypes Reference Guide
 
-This document provides visual diagrams, coordinate bounding box formulas, field parameters, and character capacity limits for all 8 standardized presentation layout archetypes in the **AI Factory Blueprint** design system.
+This document provides visual diagrams, coordinate bounding box formulas, field parameters, and character capacity limits for all 10 standardized presentation layout archetypes in the **AI Factory Blueprint** design system.
 
 ---
 
@@ -10,10 +10,10 @@ This document provides visual diagrams, coordinate bounding box formulas, field 
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │ Y=36pt  [██████ RED ██████][████ YELLOW ████][████ GREEN ████][████ BLUE ████]│ (5pt Rainbow Bar)
 │                                                                             │
-│ Y=56pt  03                                                                  │ (72pt Google Sans Bold, #202124)
-│ Y=134pt Context Engineering                                                 │ (72pt Google Sans Bold, #202124)
+│ Y=52pt  03                                                                  │ (56pt Google Sans Bold, #202124)
+│ Y=118pt Context Engineering                                                 │ (56/46/38pt adaptive, #202124)
 │                                                                             │
-│ Y=226pt Models degrade as their context fills. Manage what the agent        │ (18pt Google Sans, #1A73E8)
+│ Y=196pt Models degrade as their context fills. Manage what the agent        │ (16/15/14.5pt, #1A73E8)
 │         holds in mind — or watch quality and budget collapse together.      │
 │                                                                             │
 │ Y=375pt Google Cloud                                       Proprietary & 14 │ (Master Layout Footer)
@@ -23,14 +23,18 @@ This document provides visual diagrams, coordinate bounding box formulas, field 
 #### Bounding Box & Coordinates
 * **Canvas Fill**: `#FFFFFF` (Pure white canvas)
 * **Google Rainbow Progress Bar**: `X=36pt`, `Y=36pt`, `W=648pt`, `H=5pt` (4 segments: `#EA4335` Red, `#FBBC04` Yellow, `#34A853` Green, `#4285F4` Blue)
-* **Chapter Counter**: `X=36pt`, `Y=56pt`, `W=648pt`, `H=70pt` (72pt Bold Black `#202124`)
-* **Chapter Title**: `X=36pt`, `Y=134pt`, `W=648pt`, `H=80pt` (72pt Bold Black `#202124`)
-* **Subtitle / Aphorism**: `X=36pt`, `Y=226pt`, `W=648pt`, `H=80pt` (18pt Regular Google Blue `#1A73E8`, Line spacing: `125%`)
+* **Chapter Counter**: `X=36pt`, `Y=52pt`, `W=648pt`, `H=56pt` (56pt Bold Black `#202124`)
+* **Chapter Title** (adaptive by length, from the engine):
+  * 22 chars or fewer: 56pt, `Y=118pt`, `H=65pt` (one line). Subtitle 16pt at `Y=196pt`.
+  * 23–42 chars: 46pt, `Y=116pt`, `H=112pt` (two lines). Subtitle 15pt at `Y=240pt`.
+  * More than 42 chars: 38pt, `Y=114pt`, `H=126pt`. Subtitle 14.5pt at `Y=250pt`.
+* **Subtitle / Aphorism**: `X=36pt`, `W=648pt`, Google Blue `#1A73E8`, line spacing `125%`
+* **Not navy.** The dark navy slide is `demo_pivot`.
 
 #### Character Capacity & Budget
-* `title`: Max 45 characters.
+* `title`: 22 chars or fewer keeps it on one line at 56pt. The practical max is about 45.
 * `subtitle`: Max 120 characters.
-* `speaker_notes`: Mandatory (min 15 chars, recommended 2-3 sentences framing the chapter).
+* `speaker_notes`: Optional (a missing note becomes a visible TODO). Chapter-level `speaker_notes` feed the auto divider.
 
 ---
 
@@ -251,3 +255,51 @@ Y=375pt└───────────────────────�
   * Roadmap Title: `X=428pt`, `Y=116pt`, Font: `Google Sans 14pt Bold`, Color: `#FFFFFF`
   * 4 Milestone Steps: `Y=146pt, 176pt, 206pt, 236pt`, Font: `Google Sans Text 11pt`, Color: `#CADCFC`
   * CTA Button: `X=428pt`, `Y=316pt`, `W=240pt`, `H=36pt`, Fill: `#1A73E8`, Text: `#FFFFFF 13pt Bold`
+
+---
+
+### Archetype 9: `demo_pivot` (alias `demo`)
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ (Navy #1E2761 background)                                                   │
+│ Y=92pt  [▶ LIVE DEMO]            (12pt bold white on #C5221F, 150×26)        │
+│ Y=130pt Agents fix a bug end to end        (40/32/26pt bold white)          │
+│ Y=230pt From ticket to merged PR in four minutes   (16pt #CADCFC)           │
+│ Y=288pt WATCH FOR                                   (10pt bold #CADCFC)     │
+│ Y=308pt [ Plan step ]  [ Test run ]  [ PR link ]    (3 chips, #2D3A8C)      │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+* **Use it** right before switching to a live demo. It resets attention and tells the
+  audience what to look for.
+* `title` of 30 chars or fewer renders at 40pt. 31–55 chars renders at 32pt, and longer text at 26pt.
+* `watch_for`: up to 3 chips (208pt wide each), 28 chars or fewer each.
+* Exempt from the assertion-subtitle lint.
+
+---
+
+### Archetype 10: `image_split` (aliases `image`, `diagram`)
+
+```
+Y=28pt ┌─────────────────────────────────────────────────────────────┐
+       │ [KICKER] / TITLE / takeaway subtitle (standard header)       │
+Y=100pt├──────────────────────┬──────────────────────────────────────┤
+       │ ▌ bullets card       │ ┌──────────────────────────────────┐ │
+       │ • Single ingress     │ │                                  │ │
+       │ • Regional failover  │ │        diagram / screenshot      │ │
+       │ • mTLS end to end    │ │     (aspect ratio preserved)     │ │
+       │                      │ │           Figure 2 (caption)     │ │
+       │  W=256pt             │ └──────── W=368pt ─────────────────┘ │
+Y=375pt└──────────────────────┴──────────────────────────────────────┘
+```
+
+* **The escape hatch.** Use it for Mermaid or draw.io diagrams rendered to PNG, product
+  screenshots, and charts that no archetype can express.
+* `image_layout: split` puts the bullets card (256pt, 4 bullets or fewer) next to a framed image
+  panel (368pt) with 8pt padding. `image_side: left|right` controls which side the image is on.
+* `image_layout: full` frames the image across the whole content area (648×275pt).
+* `image.caption` is optional. It takes a 22pt italic strip inside the frame.
+* `image.url` goes through batch `add-image`. `image.path` is uploaded after the batch with
+  `gslides mutate insert-image-from-file` and targets the resolved slide ID.
+* Export diagrams at about 2× (for example 1600px wide) on a white background so they stay crisp.

@@ -24,13 +24,16 @@ chapters:
   - chapter_number: integer      # [Required] 1-based chapter index (1..99)
     title: string                # [Required] Chapter name
     subtitle: string             # [Optional] Chapter aphorism or thesis
-    speaker_notes: string        # [Required] Narrative speaker notes (min 15 chars)
+    speaker_notes: string        # [Optional] Notes for the auto divider (missing -> visible TODO)
+    include_divider: bool        # [Optional] Auto-insert a chapter_divider (default: true)
     slides:                      # [Required] List of slides in this chapter
       - archetype: string        # [Required] Archetype identifier (see below)
         title: string            # [Required] Slide headline
-        subtitle: string         # [Optional] Slide subtitle / context
+        subtitle: string         # [Expected] One-sentence takeaway (>= 4 words; lint warns otherwise)
         kicker: string           # [Optional] Small uppercase category tag
-        speaker_notes: string    # [Required] Slide speaker notes (min 15 chars)
+        speaker_notes: string    # [Optional] Authored notes; missing -> "TODO: write speaker notes for this slide."
+        tier: string             # [Optional] core (default) | explain | detail | appendix
+        skip: bool               # [Optional] Build the slide but hide it (skip-slide)
         # Archetype-specific fields...
 ```
 
@@ -43,7 +46,7 @@ chapters:
 * `title`: `string` (Max 45 chars)
 * `subtitle`: `string` (Max 80 chars)
 * `kicker`: `string` (Default: `"CHAPTER"`)
-* `speaker_notes`: `string` (Min 15 chars)
+* `speaker_notes`: `string` (Optional)
 
 #### 2. `split_cards` (`card_split_2` / `card_split_3`)
 * `cards`: `list[CardSpec]` (Strictly 2 or 3 items)
@@ -104,14 +107,43 @@ chapters:
   * `milestones` / `steps`: `list[string]` (4 weekly milestone items)
   * `cta_button_text`: `string` (e.g. `"START THE FACTORY"`)
 
+#### 9. `demo_pivot` (alias `demo`)
+* `title`: `string` (What the demo proves; 30 chars or fewer renders at 40pt, longer text steps down to 32/26pt)
+* `subtitle`: `string` (Optional one-liner)
+* `kicker`: `string` (Default `"LIVE DEMO"`, rendered as `▶ LIVE DEMO`)
+* `watch_for`: `list[string]` (Up to 3 chips, 28 chars or fewer each)
+
+#### 10. `image_split` (aliases `image`, `diagram`)
+* `image`: `{path | url, alt, caption}` (Required. `path` resolves relative to the spec file and is uploaded after the batch. `url` goes through batch `add-image`.)
+* `bullets`: `list[string]` (Up to 4, used only when `image_layout: split`)
+* `image_side`: `left` | `right` (default `right`)
+* `image_layout`: `split` (bullets card + image) | `full` (image across the content area)
+
 ---
 
-### 3. Character Capacity Limits Matrix
+### 3. Tiers & Duration Cuts
 
-| Element | Max Characters / Lines | Consequence if Exceeded |
+| Tier | Visible at `--duration` | Typical content |
 | :--- | :--- | :--- |
-| **Slide Title** | 50 characters | Text wraps to 3 lines, colliding with subtitle |
-| **Slide Subtitle** | 75 characters | Text collides with content cards at $Y=100\text{ pt}$ |
-| **Card Bullets** | 3-4 bullets, max 90 chars/bullet | Overflow beyond bottom card margin ($Y=375\text{ pt}$) |
-| **Code Lines** | 12 lines, max 50 chars/line | Horizontal wrapping and code truncation |
-| **Speaker Notes** | Min 15 chars, recommended 100-300 | QA error if empty or too brief |
+| `core` (default) | 5, 15, 45, full | The storyline: thesis, key proof, ask |
+| `explain` | 15, 45, full | Mechanics, "how it works" |
+| `detail` | 45, full | Deep dives, code, edge cases |
+| `appendix` | never (always hidden) | Backup slides for Q&A |
+
+Hidden slides are still built, then marked with `skip-slide`, so presenters can
+unhide them in Slides. An auto chapter divider is hidden when every slide in its
+chapter is hidden.
+
+---
+
+### 4. Fit, Budgets & Lints
+
+- **Geometry is authoritative.** `preso build` (and `SpecValidator.validate(spec, geometry=True)`)
+  compiles the spec and reports `Geometry fit in '<element>' … (cut ~N chars; capacity ~M)`.
+  Run `preso budgets` for current per-slot capacities. For example, the one-line subtitle
+  holds about 94 chars, a 3-card title about 19, a 2-card title about 32, and a hero value about 5 (3 metrics) or 9 (2 metrics).
+- **Hard errors (block the build):** unknown archetype or tier, missing required archetype
+  content, and per-field budget overruns (strict mode).
+- **Warnings:** missing or TODO notes, a subtitle under 4 words, citation artifacts
+  (`[cite…]`, `[1]`, `[source]`, `(see doc)`, `【n】`), more than 2 consecutive slides with the same
+  archetype, and geometry fit.

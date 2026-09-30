@@ -1,178 +1,194 @@
 ---
 name: preso-builder
-description: >
-  Generates executive-ready Google Slides presentations matching "The AI Factory
-  Blueprint" visual style. Ingests codebases, existing slide decks, or markdown
-  docs into structured specs with automated visual QA and interactive HTML previews.
+description: >-
+  Builds executive-ready Google Slides decks in "The AI Factory Blueprint" visual
+  style from a YAML spec (preso_spec.yaml), ingesting codebases, existing decks, or
+  markdown docs, with geometry-aware text-fit checks, duration tiers, and a
+  render-audit loop on real thumbnails. Use when asked to create, restyle, or QA a
+  Blueprint-style slide deck, convert a repo or doc into slides, cut a 5/15/45-minute
+  version of a deck, or redesign a single slide.
 ---
 
-# The AI Factory Blueprint Presentation Builder Skill (`preso-builder`)
+# preso-builder: The AI Factory Blueprint deck builder
 
-The `preso-builder` skill enables AI agents to generate executive-ready, pixel-perfect Google Slides presentations matching the visual style guide, coordinate geometry, typography scales, color tokens, and layout archetypes of **"The AI Factory Blueprint"** (master template: `1FJ4wCMDlI1zW3XCbIXXn-ejOOjq5iQ1Mit_9MuGnO-U`).
+A spec-first engine: you author `preso_spec.yaml`. The engine
+([carlosmscabral/preso-builder](https://github.com/carlosmscabral/preso-builder))
+validates it, compiles it into one atomic `gslides batch`, builds the deck from the
+Blueprint template (`1FJ4wCMDlI1zW3XCbIXXn-ejOOjq5iQ1Mit_9MuGnO-U`), then exports
+thumbnails so you can audit what actually rendered.
 
----
+## When to use
 
-## When to Use This Skill
+- Build a Blueprint-style executive deck from docs, RFCs, notes, or a repo.
+- Restyle an existing Google Slides deck (`ingest --slides <deck_id>`).
+- Cut one deck to several talk lengths (`--duration 5|15|45|full`).
+- Redesign one slide, or QA/audit a built deck.
 
-### Positive Triggers
-- **Build executive Google Slides decks** from technical materials, architecture docs, or RFCs.
-- **Convert a codebase / GitHub repository** into an executive architectural briefing deck.
-- **Ingest an existing slide deck** (via Google Slides `deck_id` or export) and restyle it into the AI Factory Blueprint aesthetic.
-- **Convert Markdown documents or raw engineering notes** into structured slide presentations.
-- **Scaffold or validate a presentation manifest** (`preso_spec.yaml`).
-- **Run automated multimodal visual QA** (geometry clamping, text overflow checks, WCAG 2.1 AA/AAA contrast calculations, and HTML preview gallery generation).
+Not for: data charts or telemetry plots (`dataviz`), didactic diagrams/walkthroughs
+(`visual-docs`, though you can render its diagrams to PNG and place them with
+`image_split`), Docs/Sheets authoring.
 
-### Negative Triggers (When NOT to Use)
-- For data charts, numeric plots, or telemetry dashboards $\rightarrow$ use the **`dataviz`** skill.
-- For didactic technical documentation, sequence/flow diagrams, or ASCII packet walks $\rightarrow$ use the **`visual-docs`** skill.
-- For authoring or editing Google Docs or Google Sheets.
-
----
-
-## Prerequisites & Dual-Mode Environment Matrix
-
-| Capability | Cloudtop / Corp Linux | Non-Cloudtop / Portable |
-|---|---|---|
-| Ingest codebase / markdown / notes | ✅ Full Support | ✅ Full Support |
-| Spec Validation & Multimodal Visual QA | ✅ Full Support | ✅ Full Support |
-| Interactive HTML Preview Gallery (`preview.html`) | ✅ Full Support | ✅ Full Support |
-| Direct Google Slides Compilation (`preso build`) | ✅ Full (`gslides` binary) | ⚠️ Emits batch JSON payload |
-
-### Setup & Installation
-1. **Python 3.10+** with `pyyaml`:
-   ```bash
-   pip install -e ~/preso-builder
-   # Or install directly from git:
-   # pip install git+https://github.com/carlosmscabral/preso-builder.git
-   ```
-2. **Slides CLI (Cloudtop Mode)**:
-   Verify the Slides CLI binary exists on your Cloudtop:
-   ```bash
-   test -x /google/bin/releases/gemini-agents-gslides/gslides && echo "Cloudtop Slides CLI ready"
-   ```
-   *Note: On non-Cloudtop environments where `gslides` is not installed, the tool gracefully falls back to generating interactive visual previews (`preview.html`) and compiling offline Google Slides API batch update payloads (`--dry-run --output-batch`).*
-
----
-
-## Dual-Agent Maker-Checker Protocol & Sub-Agent Orchestration
-
-To guarantee zero visual defects, zero text truncation, and strict adherence to executive standards, presentation creation workflows follow a **Dual-Agent Maker-Checker Protocol**:
-
-```
- ┌─────────────────────────────────────────────────────────────┐
- │                       MAKER AGENT                           │
- │  1. Ingests source material (codebase / slides / markdown)  │
- │  2. Scaffolds & populates `preso_spec.yaml`                 │
- │  3. Selects optimal archetypes for each slide topic         │
- │  4. Drafts concise copy and substantial speaker notes       │
- └──────────────────────────────┬──────────────────────────────┘
-                                │
-                                ▼
- ┌─────────────────────────────────────────────────────────────┐
- │                      CHECKER AGENT                          │
- │  (Adversarial Auditor - Independent Verification)           │
- │  1. Validates spec schema & strict character length budgets │
- │  2. Verifies WCAG 2.1 AA/AAA contrast on all text elements  │
- │  3. Verifies canvas containment (720x405 pt) & safe margins │
- │  4. Inspects rendered `preview.html` and `qa_report.md`     │
- │  5. Blocks build on any violation; requests Maker revision  │
- └──────────────────────────────┬──────────────────────────────┘
-                                │ Approved
-                                ▼
- ┌─────────────────────────────────────────────────────────────┐
- │                   COMPILATION & DELIVERY                    │
- │  `preso build` -> Google Slides API / Batch Update          │
- └─────────────────────────────────────────────────────────────┘
-```
-
-### Maker Responsibilities:
-1. **Source Discovery**: Scan the input codebase AST, markdown notes, or slide deck.
-2. **Archetype Selection**: Map each topic to the most effective of the 8 Blueprint archetypes.
-3. **Spec Manifest Authoring**: Generate `preso_spec.yaml` adhering to character count guidelines.
-4. **Speaker Notes Generation**: Write high-context speaker notes for every slide (minimum 15 characters, ideally 2-3 substantive sentences providing narrative context).
-
-### Checker Responsibilities:
-1. **Schema & Rule Enforcement**: Execute `preso qa --spec <spec_file>` or `python3 [validate_spec.py](scripts/validate_spec.py) <spec_file>` to verify all fields.
-2. **Text Overflow Verification**: Ensure card titles (< 40 chars), bullet points (< 100 chars, max 3-4 bullets), and code snippets (< 12 lines) do not overflow bounding boxes.
-3. **Contrast Compliance**: Ensure all text elements meet WCAG 2.1 AA (contrast ratio $\ge 4.5:1$ for body text, $\ge 3.0:1$ for large headings).
-4. **Speaker Notes Audit**: Reject any slide missing speaker notes or containing generic placeholder text.
-
----
-
-## CLI Reference & Subcommands
-
-The presentation engine is executed via the `preso` CLI command (or `python3 -m preso`):
+## Setup
 
 ```bash
-preso <subcommand> [options]
+pip install -e ~/preso-builder            # gives you the `preso` command
+# or, without installing:
+alias preso="python3 ~/preso-builder/preso.py"
+test -x /google/bin/releases/gemini-agents-gslides/gslides && echo "live build OK"
 ```
 
-### Subcommand Matrix
+Without `gslides`, the engine still validates, previews (`preview.html`), and emits
+the batch JSON (`build --dry-run --output-batch ops.json`).
 
-| Command | Purpose | Key Arguments | Example |
-|---|---|---|---|
-| `preso spec` | Scaffold a new `preso_spec.yaml` skeleton | `--preset [minimal\|codebase\|economics\|full]`, `--title`, `--output` | `preso spec --preset full --title "Project Falcon" --output preso_spec.yaml` |
-| `preso ingest` | Ingest multi-modal source into spec | `--repo <path>`, `--slides <deck_id\|file>`, `--markdown <doc_path>`, `--output <path>` | `preso ingest --repo . --output preso_spec.yaml` |
-| `preso preview` | Compile spec into interactive HTML preview gallery | `--spec <file>`, `--output <file>` | `preso preview --spec preso_spec.yaml --output preview.html` |
-| `preso qa` | Run complete multimodal visual QA verification | `--spec <file>`, `--deck-id <id>`, `--output-dir <dir>` | `preso qa --spec preso_spec.yaml --output-dir ./qa_artifacts` |
-| `preso build` | Compile spec into Google Slides deck | `--spec <file>`, `--template-id <id>`, `--dry-run`, `--output-batch <file>` | `preso build --spec preso_spec.yaml` |
-| `preso inspect` | Print structural outline of spec or deck | `--spec <file>`, `--deck-id <id>` | `preso inspect --spec preso_spec.yaml` |
+## Workflow
 
----
+### 1. Intake gate (ask first, only what is missing)
 
-## Progressive Disclosure Reference Guides
+Before writing a spec, make sure you know these five things. If the user did not
+say, ask in **one** `ask_question` call. Do not ask about anything they already
+told you.
 
-Deep specifications, coordinate formulas, and design system tokens are modularized across reference documents:
+| Question | Why it matters |
+|---|---|
+| Audience (execs / engineers / customer / mixed) | Density, jargon, which archetypes |
+| Talk length (5 / 15 / 45 min) | Slide count and tiers (`--duration`) |
+| Language (EN / PT-BR / ES …) | All visible text and notes |
+| Tone (executive, technical deep-dive, workshop) | Titles, verbs, demo slides |
+| Source of truth (repo, doc, deck, or "from scratch") | `ingest` vs `spec` |
 
-* **[Layout Archetypes Guide](references/archetypes.md)**: Visual bounding boxes, parameters, and character capacity limits for all 8 layout archetypes (`chapter_divider`, `split_cards`, `code_terminal`, `hero_metrics`, `ladder_hierarchy`, `executive_grid`, `dodont_checklist`, `actionable_takeaways`).
-* **[Design Tokens & Canvas Geometry](references/design_tokens.md)**: Standard widescreen dimensions (720x405 pt, 16:9), safe margin clamping, core color palette tokens, and WCAG 2.1 AA/AAA contrast ratios.
-* **[Specification Manifest Schema](references/spec_schema.md)**: Complete `preso_spec.yaml` structure, archetype field mappings, and schema validation rules.
-* **[Narrative Framework & Storyline](references/narrative_framework.md)**: The 5-Act storyline arc for executive technical briefings (Context $\rightarrow$ Mental Model $\rightarrow$ Mechanics $\rightarrow$ Economics $\rightarrow$ Actionable Principles).
-* **[Google Slides Batch Operations](references/batch_operations.md)**: Single-pass atomic batch update compilation architecture and shape/connector definitions.
+Rough sizing: about 1 slide per minute for 5–15 minute talks, and about 0.7 per minute for 45 minutes.
 
----
-
-## Automated Multimodal QA Verification
-
-Execute automated visual QA before compiling any presentation:
+### 2. Draft the spec (Maker)
 
 ```bash
-preso qa --spec preso_spec.yaml --output-dir ./qa_artifacts
+preso ingest --repo <dir> | --markdown <doc.md> | --slides <deck_id> --output preso_spec.yaml
+preso spec --preset ai_factory --title "<Title>" --output preso_spec.yaml   # from scratch
 ```
 
-### Verification Checks Enforced:
-1. **Geometry Clamping**: Asserts every bounding box fits strictly inside $(36, 28) \dots (684, 375)$ pt.
-2. **Collision & Overlap Detection**: Verifies no two non-nested shape bounding boxes collide.
-3. **WCAG 2.1 AA/AAA Contrast Verification**: Relative luminance calculations for foreground/background colors (Pass threshold: $\ge 4.5:1$ for body text, $\ge 3.0:1$ for large headings).
-4. **Text Truncation Prevention**: Card titles < 40 chars, bullet points < 100 chars (max 3-4 bullets), code snippets < 12 lines.
-5. **Speaker Notes Completeness**: Mandatory 100% slide coverage with contextual notes.
-6. **Report & Preview Generation**: Emits `qa_report.md` (Markdown compliance audit) and `preview.html` (interactive visual gallery).
+Authoring rules:
 
----
+- **Titles are short labels, and the subtitle is the takeaway sentence.** Every
+  content slide needs a subtitle of at least 4 words that states the point
+  ("Agents cut review time from 2 days to 3 hours"), not a topic ("Review time").
+  The validator warns when it's missing.
+- **Vary the layout.** Don't use more than 2 slides in a row with the same archetype. The
+  validator warns. Rotate `split_cards` with `hero_metrics`, `ladder_hierarchy`,
+  `executive_grid`, and `image_split`.
+- **Tier every slide** for length variants: `core` (always shown), `explain` (15 min and up),
+  `detail` (45 min and up), or `appendix` (built but hidden). Use `skip: true` to hide one slide.
+- **Mark the demo.** Put a `demo_pivot` slide before any live demo, with up to 3
+  `watch_for` chips that tell the audience what to notice.
+- **Use images when no archetype fits.** See the escape hatch below.
+- **Speaker notes are optional.** Write them when you have real content. A slide
+  without notes gets a visible `TODO: write speaker notes for this slide.`
+  placeholder. Never pad notes with filler.
+- **No research residue.** Remove citation markers like `[cite: 3]`, `[1]`, and `【4】`.
+  The validator flags them.
 
-## Step-by-Step AI Agent Execution Playbook
+Archetypes are listed in [references/archetypes.md](references/archetypes.md), and the full
+schema is in [references/spec_schema.md](references/spec_schema.md).
 
+### 3. Validate and fit (Checker)
+
+```bash
+preso inspect --spec preso_spec.yaml          # outline, tiers, notes coverage
+preso budgets                                 # per-slot capacity from real geometry
+preso qa --spec preso_spec.yaml -o dist/qa    # full offline QA + preview.html
 ```
-[Phase 1: Discovery & Scaffolding]
-  1. Determine intent: codebase ingestion, doc conversion, or fresh deck.
-  2. If ingesting codebase/doc: `preso ingest --repo <dir> --output preso_spec.yaml`
-     If starting fresh: `preso spec --preset full --title "<Title>" --output preso_spec.yaml`
 
-[Phase 2: Spec Refinement (Maker Role)]
-  3. Consult references/archetypes.md to select archetypes matching the narrative.
-  4. Author punchy titles, concise bullet points, and real code snippets in `preso_spec.yaml`.
-  5. Write high-context speaker notes for every slide (2-3 sentences per slide).
+`preso build` runs the validator's **geometry pass**. It compiles the spec and
+reports each overflowing box as `Geometry fit in '<element>' … (cut ~N chars;
+capacity ~M)`. Cut exactly that much and don't guess. Geometry numbers are authoritative
+over the flat per-field budgets. Roughly: a 3-card title holds about 19 chars, a 2-card
+title about 32, the one-line subtitle about 94, and a hero value about 5 (3 metrics) or 9 (2 metrics). Check with `preso budgets`.
 
-[Phase 3: Adversarial Validation (Checker Role)]
-  6. Run `preso qa --spec preso_spec.yaml --output-dir ./qa_artifacts`.
-  7. Run `preso preview --spec preso_spec.yaml --output preview.html`.
-  8. Inspect `qa_artifacts/qa_report.md`. If any violation occurs, correct `preso_spec.yaml` immediately.
+### 4. Build
 
-[Phase 4: Compilation & Delivery]
-  9. If Cloudtop (`gslides` available):
-       `preso build --spec preso_spec.yaml`
-       Return Google Slides URL to user.
-     If portable mode (non-Cloudtop):
-       `preso build --spec preso_spec.yaml --dry-run --output-batch slides_batch.json`
-       Provide `preview.html` and `slides_batch.json` to user.
+```bash
+preso build --spec preso_spec.yaml [--duration 15] [--deck-id <existing>]
 ```
+
+- The build copies the template, runs the batch, prunes the template's own slides, uploads any
+  local `image_split` images, exports **fresh** thumbnails (stale ones are deleted),
+  and writes `dist/qa/audit_checklist.md`.
+- `--deck-id` rebuilds in place. Previous slides are pruned after the new ones are
+  added.
+
+### 5. Render audit (look at the pixels)
+
+The heuristics can't see the rendered slide, so you have to. Open **every** PNG listed in
+`dist/qa/audit_checklist.md` (use `view_file` on the path) and check each one against the rubric:
+overflow/clipping, padding/alignment, the bottom-left footer zone, collisions,
+contrast, leftover template shapes, and whether the subtitle lands as a takeaway.
+
+- Fix issues in the spec and rebuild.
+- **Stop after 2 fix rounds.** Show the user the deck URL, the remaining issues,
+  and the thumbnails. Don't loop forever.
+- To re-audit a deck without rebuilding:
+  `preso audit --deck-id <ID> --spec preso_spec.yaml -o dist/qa`.
+
+### 6. Deliver
+
+Return the Slides URL, the tier/duration you built, the notes TODO count
+(`preso inspect`), and any open audit items.
+
+## Single-slide redesign: offer 3 options
+
+When the user wants to improve **one** slide, don't jump straight to an edit. Propose
+**3 distinct directions**, each with a different archetype or structure (for example
+`split_cards` → `hero_metrics` → `image_split` with a diagram). Give a one-line
+rationale for each and show them as spec snippets or a quick `preview.html`. Build
+only the one they pick.
+
+## Escape hatch (when the archetypes don't fit)
+
+Try these in order:
+
+1. **Pathway A (use an archetype).** Almost everything fits one of the 10 archetypes. Rephrase
+   the content before you reach for anything else.
+2. **Pathway B (render a diagram).** Author Mermaid (`mmdc -i d.mmd -o d.png -w 1600 -b white`)
+   or draw.io (the `drawio-skill`, export PNG), or take a screenshot. Place it with
+   `image_split`:
+   ```yaml
+   - archetype: image_split
+     title: Request path
+     subtitle: One gateway fronts all three regional backends
+     image: {path: diagrams/request_path.png, alt: "Gateway → 3 regions", caption: "Figure 2"}
+     bullets: [Single ingress policy, Regional failover, mTLS end to end]
+     image_side: right        # or left
+     image_layout: split      # or full (no bullets)
+   ```
+   Relative paths resolve against the spec file. URLs go through batch `add-image`.
+   Local files are uploaded after the batch.
+3. **Pathway C (surgical edit).** For a tweak on a built deck, use `gslides` batch or
+   mutate commands directly on the element IDs (`gslides read-all <deck>`). Then
+   re-run `preso audit`. Remember that the next `preso build` overwrites the change, so
+   put durable changes back into the spec.
+
+## Gotchas
+
+- Run commands as `preso …` only if the package is installed. Otherwise use
+  `python3 ~/preso-builder/preso.py …`.
+- `--clean-placeholders` returns **400** on the Blueprint template because it has no `i0`/`i1`.
+  Leave it off, since template slides are pruned automatically.
+- Hero metric values overflow at 54pt beyond about 5 chars with 3 metrics, or about 9 with 2. Move the qualifier into `unit`.
+- Avoid emoji outside the Basic Multilingual Plane (😀 and similar) in visible text. Slides uses UTF-16
+  ranges and the compiler doesn't adjust for them. BMP symbols like `▶ ✓ ✗ →` are fine.
+- In raw `gslides` batch edits (Pathway C), note these quirks: `style-text` ignores `line_spacing`,
+  `resize-element` takes a scale factor rather than points, `move-element` resets scale,
+  `skip-slide`/`unskip-slide` exist even though `--help` doesn't list them, and
+  `--json` returns `resolved_ids` (placeholder → real object ID).
+- The chapter divider is **white** with a rainbow bar, not navy. `demo_pivot` is the
+  navy slide.
+- The validator blocks the build on errors (unknown archetype or tier, missing
+  required content, budget overruns in strict mode). Everything else is a warning. Use
+  `--force` only when you understand the warning.
+
+## References
+
+- [references/archetypes.md](references/archetypes.md): the 10 archetypes, fields, and capacities
+- [references/spec_schema.md](references/spec_schema.md): the `preso_spec.yaml` schema, tiers, and images
+- [references/design_tokens.md](references/design_tokens.md): canvas, palette, and type scale
+- [references/batch_operations.md](references/batch_operations.md): batch ops, IDs, and gslides quirks
+- [references/narrative_framework.md](references/narrative_framework.md): the 5-act storyline
+- [scripts/validate_spec.py](scripts/validate_spec.py): standalone validator wrapper

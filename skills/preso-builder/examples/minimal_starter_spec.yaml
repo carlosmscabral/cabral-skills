@@ -28,7 +28,7 @@ chapters:
           - title: "Deterministic Pipelines"
             category_pill: "PRIORITY 1"
             bullets:
-              - "Standardize on 8 Blueprint layout archetypes"
+              - "Standardize on 10 Blueprint layout archetypes"
               - "Enforce 100% WCAG 2.1 AA accessibility compliance"
               - "Automate visual QA with headless preview galleries"
             theme: "#1A73E8"
