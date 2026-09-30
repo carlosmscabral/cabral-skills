@@ -79,9 +79,9 @@ Authoring rules:
 - **Mark the demo.** Put a `demo_pivot` slide before any live demo, with up to 3
   `watch_for` chips that tell the audience what to notice.
 - **Use images when no archetype fits.** See the escape hatch below.
-- **Speaker notes are optional.** Write them when you have real content. A slide
-  without notes gets a visible `TODO: write speaker notes for this slide.`
-  placeholder. Never pad notes with filler.
+- **Speaker notes are optional.** Write them only when the user wants them and you
+  have real content. Nothing is generated, placeholdered, or flagged when a slide
+  has none. Never pad notes with filler.
 - **No research residue.** Remove citation markers like `[cite: 3]`, `[1]`, and `【4】`.
   The validator flags them.
 
@@ -91,7 +91,7 @@ schema is in [references/spec_schema.md](references/spec_schema.md).
 ### 3. Validate and fit (Checker)
 
 ```bash
-preso inspect --spec preso_spec.yaml          # outline, tiers, notes coverage
+preso inspect --spec preso_spec.yaml          # outline, tiers, per-slide notes word count
 preso budgets                                 # per-slot capacity from real geometry
 preso qa --spec preso_spec.yaml -o dist/qa    # full offline QA + preview.html
 ```
@@ -129,8 +129,7 @@ contrast, leftover template shapes, and whether the subtitle lands as a takeaway
 
 ### 6. Deliver
 
-Return the Slides URL, the tier/duration you built, the notes TODO count
-(`preso inspect`), and any open audit items.
+Return the Slides URL, the tier/duration you built, and any open audit items.
 
 ## Single-slide redesign: offer 3 options
 

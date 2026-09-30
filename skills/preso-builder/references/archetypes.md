@@ -34,7 +34,7 @@ This document provides visual diagrams, coordinate bounding box formulas, field 
 #### Character Capacity & Budget
 * `title`: 22 chars or fewer keeps it on one line at 56pt. The practical max is about 45.
 * `subtitle`: Max 120 characters.
-* `speaker_notes`: Optional (a missing note becomes a visible TODO). Chapter-level `speaker_notes` feed the auto divider.
+* `speaker_notes`: Optional (nothing is written when absent). Chapter-level `speaker_notes` feed the auto divider.
 
 ---
 

@@ -24,14 +24,14 @@ chapters:
   - chapter_number: integer      # [Required] 1-based chapter index (1..99)
     title: string                # [Required] Chapter name
     subtitle: string             # [Optional] Chapter aphorism or thesis
-    speaker_notes: string        # [Optional] Notes for the auto divider (missing -> visible TODO)
+    speaker_notes: string        # [Optional] Notes for the auto divider (none written if absent)
     include_divider: bool        # [Optional] Auto-insert a chapter_divider (default: true)
     slides:                      # [Required] List of slides in this chapter
       - archetype: string        # [Required] Archetype identifier (see below)
         title: string            # [Required] Slide headline
         subtitle: string         # [Expected] One-sentence takeaway (>= 4 words; lint warns otherwise)
         kicker: string           # [Optional] Small uppercase category tag
-        speaker_notes: string    # [Optional] Authored notes; missing -> "TODO: write speaker notes for this slide."
+        speaker_notes: string    # [Optional] Authored notes; none written if absent
         tier: string             # [Optional] core (default) | explain | detail | appendix
         skip: bool               # [Optional] Build the slide but hide it (skip-slide)
         # Archetype-specific fields...
@@ -144,6 +144,6 @@ chapter is hidden.
   holds about 94 chars, a 3-card title about 19, a 2-card title about 32, and a hero value about 5 (3 metrics) or 9 (2 metrics).
 - **Hard errors (block the build):** unknown archetype or tier, missing required archetype
   content, and per-field budget overruns (strict mode).
-- **Warnings:** missing or TODO notes, a subtitle under 4 words, citation artifacts
+- **Warnings:** a subtitle under 4 words, citation artifacts
   (`[cite…]`, `[1]`, `[source]`, `(see doc)`, `【n】`), more than 2 consecutive slides with the same
   archetype, and geometry fit.

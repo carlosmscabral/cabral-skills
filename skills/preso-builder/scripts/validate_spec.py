@@ -71,7 +71,7 @@ def main():
                 print(f"  {i}. {warn}")
 
     if not report.errors and not report.warnings:
-        print("🎉 All schema checks, character limits, and speaker notes rules passed cleanly!")
+        print("🎉 All schema checks and character limits passed cleanly!")
 
     print("=" * 80)
     sys.exit(0 if report.is_valid else 1)
