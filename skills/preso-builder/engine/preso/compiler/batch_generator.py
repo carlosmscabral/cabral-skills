@@ -325,6 +325,9 @@ class BatchResult:
     # (batch `add-image` only accepts URLs). Each entry carries slide id,
     # absolute file path, and x/y/width/height in points.
     pending_images: list[dict[str, Any]] = field(default_factory=list)
+    # Native diagrams: raw Slides API requests per slide ({"slide", "requests"}),
+    # sent with `gslides mutate raw-batch` after the batch resolves slide IDs.
+    raw_requests: list[dict[str, Any]] = field(default_factory=list)
     skipped_slide_ids: list[str] = field(default_factory=list)
 
     def to_json(self, indent: int = 2) -> str:
@@ -538,6 +541,7 @@ class BatchCompiler:
 
         # Step 3: Slide Compilation Loop
         pending_images: list[dict[str, Any]] = []
+        raw_requests: list[dict[str, Any]] = []
         skipped_ids: list[str] = []
         for idx, raw_slide in enumerate(slides_to_process, start=1):
             slide_data = self._normalize_slide(raw_slide, idx)
@@ -556,6 +560,8 @@ class BatchCompiler:
             for op in slide_ops:
                 if op.get("op") == "_pending-image":
                     pending_images.append({k: v for k, v in op.items() if k != "op"})
+                elif op.get("op") == "_raw-requests":
+                    raw_requests.append({"slide": op["slide"], "requests": op.get("requests") or []})
                 else:
                     all_ops.append(op)
 
@@ -573,11 +579,13 @@ class BatchCompiler:
             "archetypes": archetype_counts,
             "skipped_slides": len(skipped_ids),
             "pending_images": len(pending_images),
+            "raw_requests": sum(len(r["requests"]) for r in raw_requests),
         }
 
         return BatchResult(
             operations=all_ops,
             pending_images=pending_images,
+            raw_requests=raw_requests,
             skipped_slide_ids=skipped_ids,
             slide_count=len(slide_ids),
             slide_ids=slide_ids,
@@ -607,4 +615,5 @@ class BatchCompiler:
             slide_spec=slide_data,
             slide_index=slide_index,
         )
-        return [op for op in _drop_empty_textboxes(ops) if op.get("op") != "_pending-image"]
+        return [op for op in _drop_empty_textboxes(ops)
+                if op.get("op") not in ("_pending-image", "_raw-requests")]

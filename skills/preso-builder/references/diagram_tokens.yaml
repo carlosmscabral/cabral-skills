@@ -1,0 +1,49 @@
+# Design tokens for native diagrams (flow_diagram archetype and
+# examples/diagram_slide_rawbatch.py). Source of truth in code:
+# engine/preso/engine/diagrams.py — keep the two in sync.
+
+font: Google Sans
+
+palette:
+  # name: [accent fill, accessible text on light, tint]
+  red:    ["#EA4335", "#C5221F", "#FCE8E6"]
+  yellow: ["#FBBC04", "#E37400", "#FEF7E0"]   # never white text on yellow fill (dark text instead)
+  blue:   ["#4285F4", "#1967D2", "#E8F0FE"]
+  green:  ["#34A853", "#137333", "#E6F4EA"]
+  grey:   ["#80868B", "#3C4043", "#F1F3F4"]
+  text: {primary: "#202124", muted: "#5F6368", faint: "#9AA0A6"}
+  surface: {background: "#F8F9FA", card: "#FFFFFF", rule: "#DADCE0", loop_panel: "#E8F0FE"}
+
+status_chips:            # label, fill, text
+  done:   ["✓ Done", "#E6F4EA", "#137333"]
+  active: ["● In progress", "#E8F0FE", "#1967D2"]
+  next:   ["○ Next", "#F1F3F4", "#5F6368"]
+  risk:   ["! At risk", "#FCE8E6", "#C5221F"]
+
+type_scale_pt:
+  kicker: 8          # bold, accent text colour
+  card_title: 13     # 12 when the card is narrower than 112pt
+  lead: 9            # bold
+  body: 8.5
+  node_title: 9.5    # bold
+  node_body: 7.5
+  pill: 8            # bold white on red
+  chip: 8.5          # bold
+  note: 7.5
+  section_label: 8   # bold caps
+  paragraph: {line_spacing: 105, space_below: 5}
+
+grid_pt:
+  canvas: [720, 405]
+  diagram_region: {x: [36, 684], y: [100, 376]}   # under the standard deck header
+  card_bar: 5
+  marker_pill_height: 20
+  cycle: {mid_y: 240, top_node_y: 158, bottom_node_y: 322, node: [86, 50], node_wide: [112, 50]}
+  # Compact header used by the standalone script:
+  dense_header: {margin: 24, kicker_y: 12, title_y: 27, subtitle_y: 56, footer_y: 386}
+
+connection_sites:        # RECTANGLE / ROUND_RECTANGLE
+  top: 0
+  left: 1
+  bottom: 2
+  right: 3

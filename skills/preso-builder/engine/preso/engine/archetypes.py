@@ -143,6 +143,9 @@ class PrincipleSpec:
 # =============================================================================
 
 
+from preso.engine.diagrams import generate_flow_diagram  # noqa: E402
+
+
 def _format_bullets(bullets: list[str] | str) -> str:
     """Formats bullet items into a newline-separated bullet string."""
     if isinstance(bullets, str):
@@ -2261,7 +2264,15 @@ _ENGINE_ALIASES = {
     "demo": "demo_pivot",
     "image": "image_split",
     "diagram": "image_split",
+    "flow": "flow_diagram",
+    "native_diagram": "flow_diagram",
+    "cycle": "flow_diagram",
+    "timeline": "flow_diagram",
+    "funnel": "flow_diagram",
 }
+
+# Archetype aliases that also pick the flow_diagram layout.
+_FLOW_LAYOUT_HINTS = {"cycle": "cycle", "timeline": "timeline", "funnel": "funnel"}
 
 
 class ArchetypeEngine:
@@ -2282,6 +2293,7 @@ class ArchetypeEngine:
         "actionable_takeaways": generate_actionable_takeaways,
         "demo_pivot": generate_demo_pivot,
         "image_split": generate_image_split,
+        "flow_diagram": generate_flow_diagram,
     }
 
     @classmethod
@@ -2316,6 +2328,7 @@ class ArchetypeEngine:
         archetype = data.get("archetype", "").strip().lower()
         # Handle kebab-case and snake_case
         archetype = archetype.replace("-", "_")
+        layout_hint = _FLOW_LAYOUT_HINTS.get(archetype, "")
         archetype = _ENGINE_ALIASES.get(archetype, archetype)
         slide_id = data.get("id") or f"SLIDE_{slide_index:02d}_{archetype.upper()}"
         notes = data.get("notes") or data.get("speaker_notes", "")
@@ -2473,6 +2486,20 @@ class ArchetypeEngine:
                 image_side=str(data.get("image_side", "right")),
                 image_layout=str(data.get("image_layout", "split")),
                 speaker_notes=notes,
+            )
+
+        elif archetype == "flow_diagram":
+            slide_idx = _extract_slide_idx(slide_id, slide_index)
+            return generate_flow_diagram(
+                slide_id=slide_id,
+                title=title,
+                subtitle=subtitle,
+                kicker=kicker,
+                diagram=data.get("diagram") or {},
+                speaker_notes=notes,
+                layout_hint=layout_hint,
+                header_ops=_build_header_ops(slide_id, slide_idx, title, subtitle, kicker),
+                slide_idx=slide_idx,
             )
 
         else:

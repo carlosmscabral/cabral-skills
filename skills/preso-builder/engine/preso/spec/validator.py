@@ -82,6 +82,7 @@ CANONICAL_ARCHETYPES = {
     "actionable_takeaways",
     "demo_pivot",
     "image_split",
+    "flow_diagram",
 }
 
 ARCHETYPE_ALIASES = {
@@ -95,6 +96,11 @@ ARCHETYPE_ALIASES = {
     "demo": "demo_pivot",
     "image": "image_split",
     "diagram": "image_split",
+    "flow": "flow_diagram",
+    "native_diagram": "flow_diagram",
+    "cycle": "flow_diagram",
+    "timeline": "flow_diagram",
+    "funnel": "flow_diagram",
 }
 
 
@@ -468,6 +474,9 @@ class SpecValidator:
             cls._validate_demo_pivot(parsed, slide_index, result, strict)
         elif normalized_arch == "image_split":
             cls._validate_image_split(parsed, slide_index, result, strict)
+        elif normalized_arch == "flow_diagram":
+            raw_arch = str(parsed.archetype or "").strip().lower().replace("-", "_")
+            cls._validate_flow_diagram(parsed, slide_index, result, raw_arch)
 
         return result
 
@@ -814,6 +823,21 @@ class SpecValidator:
                     result.add_error(msg)
                 else:
                     result.add_warning(msg)
+
+    @classmethod
+    def _validate_flow_diagram(
+        cls, slide: SlideSpec, idx: int, result: ValidationResult, raw_arch: str = ""
+    ) -> None:
+        """Structure + fit checks for native diagrams (raw-batch rendered)."""
+        from preso.engine.diagrams import validate_diagram  # pylint: disable=g-import-not-at-top
+
+        hint = raw_arch if raw_arch in ("cycle", "timeline", "funnel") else ""
+        diagram = (slide.raw_content or {}).get("diagram")
+        errors, warnings = validate_diagram(diagram, hint)
+        for e in errors:
+            result.add_error(f"Slide {idx} (flow_diagram) {e}.")
+        for w in warnings:
+            result.add_warning(f"Slide {idx} (flow_diagram) {w}.")
 
     @classmethod
     def _validate_image_split(

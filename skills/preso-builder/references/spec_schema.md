@@ -119,6 +119,41 @@ chapters:
 * `image_side`: `left` | `right` (default `right`)
 * `image_layout`: `split` (bullets card + image) | `full` (image across the content area)
 
+#### 11. `flow_diagram` (aliases `cycle`, `timeline`, `funnel`, `flow`)
+* `diagram`: required block.
+  * `layout`: `timeline` | `cycle` | `funnel` (optional; inferred from the alias or from which of `steps` / `cycle` / `stages` is present)
+  * `label`: section label above the stages/steps (optional)
+  * `stages[]`: `{kicker, title, lead, body (string | list), status, status_label, color}` — timeline cards, or ≤2 foundation cards left of a cycle
+  * `cycle`: `{label, entry: {title, body}, feeder: {title, body}, nodes: [{title, body}] (3–4, clockwise from left), center: {icon, text}}`
+  * `steps[]`: `{label (chevron), title, lead, body, status, color}`; `active`: 1-based step to highlight
+  * `marker`: `{text, at: entry | stage:N | node:N | step:N}` (or a plain string)
+  * `note`: one-line honesty note under the diagram
+  * `status_labels`: `{done, active, next, risk}` overrides (e.g. `{done: "✓ Concluído"}`)
+
+```yaml
+- archetype: cycle
+  kicker: QUALITY PROGRAM
+  title: "Where we are: from listening to continuous improvement"
+  subtitle: Strategy comes from real conversations, becomes tests and improves in short loops
+  diagram:
+    label: Foundation
+    stages:
+      - {kicker: "01 · DIAGNOSE", title: Reference calls, lead: 800 calls reviewed, body: "Signals, objections, what top agents do.", status: done, color: red}
+      - {kicker: "02 · STRATEGY", title: Conversation playbook, lead: Framework + rules, body: "Welcome → Fit → Offer → Close.", status: done, color: yellow}
+    cycle:
+      label: "03 · Continuous validation loop"
+      entry: {title: Write tests, body: "personas, scenarios\nand criteria"}
+      feeder: {title: New capability, body: needs new tests}
+      nodes:
+        - {title: Run tests, body: full suite incl. regression}
+        - {title: Analyse results, body: where it fails and why}
+        - {title: Adjust the agent, body: instructions · rules · tools}
+        - {title: Re-test, body: confirm before moving on}
+      center: {text: each turn brings the agent closer to the strategy}
+    marker: {text: "WE ARE HERE · first loops", at: entry}
+    note: "Today: transactional checks mature · strategy tests in progress"
+```
+
 ---
 
 ### 3. Tiers & Duration Cuts

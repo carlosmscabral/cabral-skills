@@ -108,3 +108,40 @@ For Archetype 5 (`ladder_hierarchy`), directional flow is created using connecte
   * Text ranges (`start`/`end`) are **UTF-16** code units. Characters outside the BMP (most emoji)
     count as 2. Avoid them in visible text.
   * The next `preso build` overwrites manual edits, so put durable changes back into the spec.
+
+---
+
+### 7. Native diagrams (raw-batch)
+
+`flow_diagram` slides need things the `batch` op schema can't express: several text
+styles in one box, paragraph spacing, and connectors glued to shapes. So the build runs in
+two atomic steps:
+
+1. `gslides batch` creates the slide, header and notes (`resolved_ids` maps the slide).
+2. `gslides mutate raw-batch <deck> -f req.json` draws the diagram with raw Slides API
+   requests: `createShape` + `updateShapeProperties`, `insertText` + `updateTextStyle`
+   (one per run, UTF-16 ranges) + `updateParagraphStyle`, `createLine` (`CURVED` for loops)
+   + `updateLineProperties` with `startConnection`/`endConnection`.
+
+The compiler emits a `_raw-requests` marker per slide → `BatchResult.raw_requests`; the CLI
+retargets `pageObjectId` to the resolved slide ID and suffixes every element ID per build
+(`retarget_requests`), so rebuilding into an existing deck can't collide.
+
+Rules that make it work (learned the hard way):
+
+* **Choose your own objectIds** (≥5 chars, `[A-Za-z0-9_-:]`), so one batch can create and then
+  style/connect elements with no read-back pass. The batch is **atomic**: one bad request
+  (e.g. a 4-char ID, or styling an empty text box) and nothing is applied.
+* **Connection sites** on `RECTANGLE`/`ROUND_RECTANGLE`: 0 top, 1 left, 2 bottom, 3 right.
+  Glued `CURVED` lines render along the connection, so the line's own box only needs to be
+  approximate. No `rerouteLine` needed.
+* **UTF-16 indices.** Measure runs with `len(s.encode("utf-16-le")) // 2`. Emoji outside the BMP
+  (📍) count as 2 and render unreliably (invisible on a same-colour fill), so the engine strips
+  them. Use `✓ ● ○ → ↻`.
+* **Fresh decks:** `mutate create --json` prints plain text, so parse `(ID: …)`. The first slide
+  is `p`, with placeholders `i0`/`i1`. Prepend `deleteObject` for both to the same batch.
+* **Notes** go via `set-notes` (or the deck batch), not raw requests.
+* **Incremental patch:** to fix one element, send `deleteObject` + only the requests whose
+  `objectId` is that element (`diagrams.filter_requests_for`, or `--patch` in
+  [examples/diagram_slide_rawbatch.py](../examples/diagram_slide_rawbatch.py)). No full redraw.
+* **Never edit someone else's shared deck.** Create a new deck and offer the copy.

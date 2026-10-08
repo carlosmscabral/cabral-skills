@@ -303,3 +303,45 @@ Y=375pt└──────────────────────┴�
 * `image.url` goes through batch `add-image`. `image.path` is uploaded after the batch with
   `gslides mutate insert-image-from-file` and targets the resolved slide ID.
 * Export diagrams at about 2× (for example 1600px wide) on a white background so they stay crisp.
+
+---
+
+### Archetype 11: `flow_diagram` (aliases `cycle`, `timeline`, `funnel`, `flow`)
+
+Native, **editable** process diagrams drawn with raw Slides API requests: multi-run
+styled text, connector lines glued to shapes (`startConnection`/`endConnection`),
+dashed outlines. Use it instead of a PNG when the story is a flow, a loop, or
+a "where we are" status, and you want the audience (or the next editor) to be able to
+change the shapes.
+
+```
+cycle (with 2 foundation stages)                 timeline                     funnel
+┌────┐ ┌────┐ ┌──────────────────────────────┐   [WE ARE HERE]                ▶BOAS▶ FIT ▶OFERTA▶ FECH ▶
+│▀▀▀▀│ │▀▀▀▀│ │ 03 · LOOP          ┌──────┐  │   ┌───┐ ┌───┐ ┌───┐ ┌───┐       ┌───┐ ┌───┐ ┌───┐ ┌───┐
+│kick│→│kick│→│[WE ARE HERE]  ↗    │ node │↘ │   │▀▀▀│→│▀▀▀│→│▀▀▀│→│▀▀▀│       │▀▀▀│ │▀▀▀│ │███│ │▀▀▀│
+│titl│ │titl│ │┌─────┐→┌────┐  ↻  ┌────┐   │   │ … │ │ … │ │ … │ │ … │       │ … │ │ … │ │ … │ │ … │
+│lead│ │lead│ ││entry│ │node│ text │node│   │   │✓ D│ │● P│ │○ N│ │○ N│       └───┘ └───┘ └───┘ └───┘
+│body│ │body│ │└─────┘ └────┘↖    └────┘↙  │   └───┘ └───┘ └───┘ └───┘
+│✓ OK│ │✓ OK│ │┆feeder┆      ┌──────┐      │                 note →                         note →
+└────┘ └────┘ └──────────────────── note ──┘
+```
+
+| Layout | Content | Limits |
+|---|---|---|
+| `timeline` | `stages[]` → cards (colour bar, kicker, title, lead, body, status chip) joined by arrows | 2–5 stages |
+| `cycle` | `cycle.nodes[]` clockwise from the left (left → top → right → bottom), curved connectors, `center` caption, optional `entry` (solid blue) + dashed `feeder`; optional `stages[]` on the left | 3–4 nodes, ≤2 stages |
+| `funnel` | `steps[]` → chevron strip (`label`) + a card per step (`title`, `lead`, `body`); `active: N` colours one chevron and tints the rest | 3–6 steps |
+
+Shared: `marker: {text, at: entry | stage:N | node:N | step:N}` (red pill),
+`note` (honesty line, e.g. "Today: X mature · Y in progress"), `label` (section label),
+`status: done | active | next | risk` per stage/step, `status_labels` to localise chips,
+`color: red | yellow | blue | green | grey` per stage/step (default order red → yellow → blue → green).
+
+* The slide uses the **standard deck header** (kicker/title/subtitle), so it sits in the deck
+  like any other archetype. The diagram body occupies y=100–376pt.
+* Cards size to their content (top-anchored). Keep each card to kicker + ≤4-word title +
+  one lead line + ≤2 body lines; node bodies ≤~35 chars.
+* The validator lays out the diagram offline and warns on overflow, pills/chips/labels that
+  would wrap, and emoji (stripped at render). `marker.text` ≤ ~30 chars for the cycle entry pill.
+* Design tokens: [diagram_tokens.yaml](diagram_tokens.yaml). Raw-request recipe and gotchas:
+  [batch_operations.md §7](batch_operations.md#7-native-diagrams-raw-batch).

@@ -93,6 +93,7 @@ An automated, executive-grade Google Slides builder and agent skill engine that 
 | 8 | `actionable_takeaways` | Asymmetric split: 3 numbered action principles on left (58%), Dark Navy roadmap card + Blue CTA button on right (42%). | Closing summaries, 30-day execution roadmaps, leadership calls to action. |
 | 9 | `demo_pivot` (`demo`) | Dark Navy slide, red `▶ LIVE DEMO` pill, large white title, optional subtitle, up to 3 "watch for" chips. | Switching to a live demo; telling the audience what to notice. |
 | 10 | `image_split` (`image`, `diagram`) | Header + bullets card (≤4) beside a framed image, or `image_layout: full`. Local PNGs are uploaded after the batch; URLs go through `add-image`. | Mermaid/draw.io diagrams rendered to PNG, product screenshots, charts. |
+| 11 | `flow_diagram` (`cycle`, `timeline`, `funnel`) | Native editable diagram under the standard header: stage cards with status chips, a curved-connector loop with entry/feeder, or a chevron funnel; red "we are here" pill and honesty note. Drawn with one `gslides mutate raw-batch` after the deck batch. | "Where we are" status, roadmaps, continuous-improvement loops, staged journeys. |
 
 ---
 

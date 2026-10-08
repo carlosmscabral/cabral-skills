@@ -16,6 +16,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import secrets
 from pathlib import Path
 import sys
 from typing import Any, Optional, Sequence
@@ -26,6 +27,7 @@ from preso.ingest.codebase import CodebaseIngestor
 from preso.ingest.markdown import MarkdownIngestor
 from preso.ingest.slides import SlidesIngestor
 from preso.engine import text_fit
+from preso.engine.diagrams import retarget_requests
 from preso.engine.design_tokens import (
     FONT_SIZE_CARD_HEADER,
     FONT_SIZE_HERO_STAT,
@@ -96,6 +98,20 @@ def _resolved_ids(batch_exec_res: Any) -> dict[str, str]:
     if isinstance(batch_exec_res, dict):
         return dict(batch_exec_res.get("resolved_ids") or {})
     return dict(getattr(batch_exec_res, "resolved_ids", None) or {})
+
+
+def _retarget_raw_requests(batch_result: BatchResult, resolved: dict[str, str]) -> list[dict[str, Any]]:
+    """Flattens per-slide diagram requests, mapped to real slide IDs.
+
+    Element IDs get a per-build suffix so rebuilding into an existing deck
+    never collides with elements of slides that are about to be pruned.
+    """
+    suffix = "_" + secrets.token_hex(2)
+    page_map = {r["slide"]: resolved.get(r["slide"], r["slide"]) for r in batch_result.raw_requests}
+    flat: list[dict[str, Any]] = []
+    for r in batch_result.raw_requests:
+        flat.extend(r["requests"])
+    return retarget_requests(flat, page_map, suffix)
 
 
 def _resolve_image_paths(batch_result: BatchResult, base_dir: Path) -> None:
@@ -229,6 +245,11 @@ def handle_build(args: argparse.Namespace) -> int:
                     )
                 except GSlidesError as img_err:
                     print(f"   ⚠️ Could not insert {img['path']} on {target_slide}: {img_err}", file=sys.stderr)
+
+        if batch_result.raw_requests:
+            raw = _retarget_raw_requests(batch_result, _resolved_ids(batch_exec_res))
+            print(f"📐 Drawing {len(batch_result.raw_requests)} native diagram(s) ({len(raw)} raw requests)...")
+            client.raw_batch(deck_id, raw)
 
     except GSlidesError as e:
         print(f"❌ Error during Google Slides API execution: {e}", file=sys.stderr)

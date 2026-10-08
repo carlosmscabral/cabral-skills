@@ -1,0 +1,72 @@
+version: "1.0"
+
+# flow_diagram examples: one slide per layout. Build with:
+#   preso build --spec flow_diagram_spec.yaml
+# Single slide without a deck build:
+#   examples/diagram_slide_rawbatch.py <file with kicker/title/subtitle/diagram>
+
+metadata:
+  title: "Native diagrams"
+  subtitle: "Cycle, timeline and funnel drawn with real connectors"
+  target_audience: "Executives"
+  core_thesis: "Editable diagrams with hand-made quality, generated from a spec."
+
+slides:
+  - archetype: cycle
+    kicker: QUALITY PROGRAM
+    title: "Where we are: from listening to improving"
+    subtitle: Strategy comes from real conversations, becomes tests and improves in short loops
+    diagram:
+      label: Foundation
+      stages:
+        - kicker: "01 · DIAGNOSE"
+          title: Reference calls
+          lead: 800 calls reviewed
+          body: Customer signals, objections and what top agents do differently.
+          status: done
+          color: red
+        - kicker: "02 · STRATEGY"
+          title: Conversation playbook
+          lead: Framework + business rules
+          body: "Welcome → Fit → Offer → Close, plus an objection engine."
+          status: done
+          color: yellow
+      cycle:
+        label: "03 · Continuous validation loop"
+        entry: {title: Write tests, body: "personas, scenarios\nand criteria"}
+        feeder: {title: New capability, body: needs new tests}
+        nodes:
+          - {title: Run tests, body: full suite incl. regression}
+          - {title: Analyse results, body: where it fails and why}
+          - {title: Adjust the agent, body: instructions · rules · tools}
+          - {title: Re-test, body: confirm before moving on}
+        center: {icon: "↻", text: each turn brings the agent closer to the strategy}
+      marker: {text: "WE ARE HERE · first loops", at: entry}
+      note: "Today: transactional checks mature · strategy tests in progress"
+
+  - archetype: timeline
+    kicker: ROADMAP
+    title: Four milestones to assisted operations
+    subtitle: Each milestone starts only when the previous one has measured evidence
+    diagram:
+      stages:
+        - {kicker: "Q1 · BASE", title: Data ready, lead: Catalog and history, body: Sources connected and quality checked., status: done}
+        - {kicker: "Q2 · PILOT", title: Pilot agent, lead: One channel, one audience, body: Automated tests on every change., status: active}
+        - {kicker: "Q3 · SCALE", title: More channels, lead: Voice + chat, body: Same quality bar on both channels., status: next}
+        - {kicker: "Q4 · OPERATE", title: Assisted operations, lead: Business team in charge, body: Changes without waiting on engineering., status: next}
+      marker: {text: WE ARE HERE, at: "stage:2"}
+      note: "Indicative dates · reviewed at the end of each milestone"
+
+  - archetype: funnel
+    kicker: CONVERSATION JOURNEY
+    title: The agent leads the conversation in four steps
+    subtitle: Every step has one goal and a testable exit criterion
+    diagram:
+      active: 3
+      steps:
+        - {label: Welcome, title: Open well, body: [Confirms identity, Understands the reason for contact]}
+        - {label: Fit, title: Understand the customer, body: [Usage profile, Budget constraints]}
+        - {label: Offer, title: Recommend, lead: Current test focus, body: [One main offer, Alternative on objection], status: active}
+        - {label: Close, title: Confirm, body: [Clear summary, Agreed next step]}
+      status_labels: {active: "● Under test"}
+      note: Each step's exit criteria become test cases

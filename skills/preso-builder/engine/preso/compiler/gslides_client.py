@@ -608,3 +608,23 @@ class GSlidesClient:
         ]
         self._run_command(args)
         return True
+
+    def raw_batch(self, presentation_id: str, requests: list[dict[str, Any]]) -> bool:
+        """Sends raw Slides API requests in one atomic `mutate raw-batch` call.
+
+        Used for native diagrams (multi-run text, paragraph spacing, connector
+        lines glued to shapes) that the `batch` op schema cannot express.
+        """
+        if not requests or self.dry_run:
+            return True
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".json", prefix="gslides_raw_", delete=False, encoding="utf-8"
+        ) as tmp_file:
+            json.dump(requests, tmp_file, ensure_ascii=False)
+            tmp_path = tmp_file.name
+        try:
+            self._run_command(["mutate", "raw-batch", presentation_id, "-f", tmp_path])
+        finally:
+            if os.path.exists(tmp_path):
+                os.remove(tmp_path)
+        return True

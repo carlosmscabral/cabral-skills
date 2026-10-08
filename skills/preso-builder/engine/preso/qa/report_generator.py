@@ -1706,6 +1706,37 @@ class QAReportGenerator:
             </div>
             """
 
+        elif arch in ("flow_diagram", "flow", "native_diagram", "cycle", "timeline", "funnel"):
+            raw = slide.raw_content if isinstance(slide.raw_content, dict) else {}
+            d = raw.get("diagram") if isinstance(raw.get("diagram"), dict) else {}
+            colors = ["#EA4335", "#FBBC04", "#4285F4", "#34A853"]
+
+            def chip(text: str, i: int, round_: bool = False) -> str:
+                return (f'<div style="flex:1;background:#fff;border:1px solid #DADCE0;'
+                        f'{"border-radius:10px;border-color:#4285F4" if round_ else "border-top:5px solid " + colors[i % 4]};'
+                        f'padding:8px;font-size:11px;font-weight:600;color:#202124;">{html.escape(text)}</div>')
+
+            stages = [s for s in (d.get("stages") or []) if isinstance(s, dict)]
+            steps = [s for s in (d.get("steps") or []) if isinstance(s, dict)]
+            nodes = [n for n in ((d.get("cycle") or {}).get("nodes") or []) if isinstance(n, dict)]
+            row = [chip(str(s.get("title", "")), i) for i, s in enumerate(stages or steps)]
+            if nodes:
+                loop = " ↻ ".join(html.escape(str(n.get("title", ""))) for n in nodes)
+                row.append(f'<div style="flex:2.2;background:#E8F0FE;border-radius:14px;padding:10px;'
+                           f'font-size:11px;color:#1967D2;font-weight:600;">{loop}</div>')
+            marker = d.get("marker")
+            marker_text = marker.get("text", "") if isinstance(marker, dict) else str(marker or "")
+            marker_html = (f'<div style="display:inline-block;background:#EA4335;color:#fff;border-radius:8px;'
+                           f'font-size:10px;font-weight:700;padding:2px 8px;margin:0 36px 6px;">'
+                           f'{html.escape(marker_text)}</div>') if marker_text else ""
+            return f"""
+            <div class="mockup-slide arch-flow-diagram">
+                {header_html}
+                {marker_html}
+                <div style="display:flex;gap:12px;padding:0 36px;align-items:stretch;">{''.join(row)}</div>
+            </div>
+            """
+
         # Default fallback
         return f"""
         <div class="mockup-slide">
