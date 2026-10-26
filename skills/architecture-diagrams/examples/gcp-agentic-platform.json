@@ -1,0 +1,124 @@
+{
+  "title": "Enterprise Agentic Platform — Runtime & Multi-Cloud Governance",
+  "subtitle": "Google Cloud · southamerica-east1 · Production Blueprint",
+  "eyebrow": "REFERENCE ARCHITECTURE",
+  "theme": "editorial-light",
+  "layout": "pipeline-lr",
+  "routing": "orthogonal",
+  "boundaries": [
+    {
+      "id": "gcp-prod",
+      "label": "Google Cloud Project · prd",
+      "kind": "project",
+      "children": ["apigee", "ces", "adk", "vertex", "bq"]
+    },
+    {
+      "id": "aws-ext",
+      "label": "AWS Account · External Core",
+      "kind": "external",
+      "children": ["aws-orders"]
+    }
+  ],
+  "nodes": [
+    {
+      "id": "user",
+      "name": "End User",
+      "sublabel": "WhatsApp & Mobile App",
+      "icon": "user",
+      "tier": "actor",
+      "description": "Customer interacting via omnichannel voice and chat",
+      "evidence": "examples/gcp-agentic-platform.json"
+    },
+    {
+      "id": "apigee",
+      "name": "Apigee X",
+      "sublabel": "API Gateway · mTLS & Auth",
+      "icon": "gcp:apigee",
+      "tier": "ingress",
+      "description": "Edge API gateway enforcing OAuth2, rate limits, and mTLS",
+      "evidence": "examples/gcp-agentic-platform.json"
+    },
+    {
+      "id": "ces",
+      "name": "Customer Engagement Suite",
+      "sublabel": "Conversational Orchestrator",
+      "icon": "gcp:agents",
+      "tier": "compute",
+      "focal": true,
+      "description": "Stateful multi-agent orchestrator managing turn state and guardrails",
+      "evidence": "examples/gcp-agentic-platform.json"
+    },
+    {
+      "id": "adk",
+      "name": "Cloud Run — ADK Workers",
+      "sublabel": "Tool Proxies · FastAPI",
+      "icon": "gcp:cloud-run",
+      "tier": "compute",
+      "focal": true,
+      "description": "Serverless Python ADK tool proxies and domain subagents",
+      "evidence": "examples/gcp-agentic-platform.json"
+    },
+    {
+      "id": "vertex",
+      "name": "Model Garden in Gemini platform",
+      "sublabel": "Gemini 2.5 Flash & Pro",
+      "icon": "gcp:gemini-platform",
+      "tier": "ai",
+      "description": "Managed foundation models with Provisioned Throughput",
+      "evidence": "examples/gcp-agentic-platform.json"
+    },
+    {
+      "id": "bq",
+      "name": "BigQuery",
+      "sublabel": "Conversation Analytics",
+      "icon": "gcp:bigquery",
+      "tier": "data",
+      "description": "Near-real-time analytical store for turn telemetry and quality evals",
+      "evidence": "examples/gcp-agentic-platform.json"
+    },
+    {
+      "id": "wif",
+      "name": "Workload Identity Federation",
+      "sublabel": "Keyless Token Exchange",
+      "icon": "gcp:wif",
+      "tier": "external",
+      "description": "Identity federation from Google Cloud to AWS without static keys",
+      "evidence": "examples/gcp-agentic-platform.json"
+    },
+    {
+      "id": "aws-orders",
+      "name": "Legacy Billing API",
+      "sublabel": "AWS ECS Backend",
+      "icon": "aws",
+      "tier": "external",
+      "description": "External system of record hosted in AWS",
+      "evidence": "examples/gcp-agentic-platform.json"
+    }
+  ],
+  "edges": [
+    {"from": "user", "to": "apigee", "label": "HTTPS"},
+    {"from": "apigee", "to": "ces", "label": "gRPC", "focal": true},
+    {"from": "ces", "to": "adk", "label": "OpenAPI Tools", "focal": true},
+    {"from": "ces", "to": "vertex", "label": "LLM Inference"},
+    {"from": "ces", "to": "bq", "label": "Turn Export", "style": "dashed"},
+    {"from": "adk", "to": "wif", "label": "OIDC Token"},
+    {"from": "wif", "to": "aws-orders", "label": "AssumeRole"}
+  ],
+  "chapters": [
+    {
+      "title": "1. Ingress & Edge Governance",
+      "nodes": ["user", "apigee", "ces"],
+      "summary": "Customer traffic is authenticated at Apigee X and routed over mTLS to the Customer Engagement Suite orchestrator."
+    },
+    {
+      "title": "2. Agentic Reasoning & Telemetry",
+      "nodes": ["ces", "vertex", "bq"],
+      "summary": "CES coordinates reasoning with Gemini 2.5 in Model Garden and streams turn logs asynchronously to BigQuery."
+    },
+    {
+      "title": "3. Multi-Cloud Tool Execution via WIF",
+      "nodes": ["ces", "adk", "wif", "aws-orders"],
+      "summary": "Cloud Run ADK workers exchange Google OIDC tokens via Workload Identity Federation to invoke AWS backend APIs without static credentials."
+    }
+  ]
+}

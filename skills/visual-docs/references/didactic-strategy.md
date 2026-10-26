@@ -124,9 +124,10 @@ Fast mappings from a request to a plan:
 - **"Explain this function/module"** → annotated code block (callout comments) + a
   call graph + one execution-trace walk. See [`code-explanation.md`](./code-explanation.md)
   and [`examples/04-code-explainer.md`](../examples/04-code-explainer.md).
-- **"Explain this architecture"** → C4 progression (context → container → component),
-  driven from one model so views stay consistent. See
-  [`architecture-c4.md`](./architecture-c4.md).
+- **"Explain this architecture"** → progressive zoom (context → container → component)
+  using canonical component names across views (or delegate to the
+  `architecture-diagrams` skill when generating interactive HTML, SVG, or Draw.io
+  deliverables).
 - **"Explain this lifecycle/state"** → `stateDiagram-v2` with events on the edges +
   narration of the terminal states.
 

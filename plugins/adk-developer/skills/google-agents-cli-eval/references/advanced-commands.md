@@ -20,7 +20,9 @@ agents-cli eval analyze \
 
 ## `eval optimize`
 
-Runs ADK GEPA prompt optimization against a target metric. Suitable after an eval run identifies prompt-only failures (wording, not tool/orchestration logic). `--dataset` and `--target-metric` override values in `--config` when both are passed. **Long-running and expensive, see Stage 4 of the Quality Flywheel for usage guidance.**
+> **ADK Python projects.** It wraps `adk optimize` via `uv` and loads the agent through ADK.
+
+Runs GEPA prompt optimization against a target metric. Suitable after an eval run identifies prompt-only failures (wording, not tool/orchestration logic). `--dataset` and `--target-metric` override values in `--config` when both are passed. **Long-running and expensive, see Stage 4 of the Quality Flywheel for usage guidance.**
 
 ```bash
 # Basic: optimize against a single metric on a dataset
@@ -32,7 +34,7 @@ agents-cli eval optimize --config tests/eval/optimization_config.json
 
 ## `eval submit` / `eval results` (cloud-side)
 
-The managed, asynchronous counterpart to the local path, for large or CI-driven runs: `eval submit` hands the dataset and metrics to the Agent Platform Eval Service, and `eval results` polls and downloads the scores. Pass `--resource-name <agent>` to also run inference server-side (managed `generate` + `grade`); omit it to grade an existing trace (managed `grade`).
+The managed, asynchronous counterpart to the local path, for large or CI-driven runs: `eval submit` hands the dataset and metrics to the Eval Service in Gemini platform, and `eval results` polls and downloads the scores. Pass `--resource-name <agent>` to also run inference server-side (managed `generate` + `grade`); omit it to grade an existing trace (managed `grade`).
 
 ```bash
 # Grade an existing trace server-side; returns a run resource name to poll

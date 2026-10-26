@@ -128,11 +128,11 @@ Cardinality crib: `||` exactly one, `o{` zero-or-many, `|{` one-or-many.
 
 ---
 
-## System / architecture → C4 (context zoom)
+## System / component overview → inline flowchart subgraphs
 
-Use for architecture. Prefer a real C4 model for multi-view consistency
-([`architecture-c4.md`](./architecture-c4.md)); for a single inline view a flowchart
-with subgraphs works:
+For a quick inline component overview inside a Markdown doc, a flowchart with subgraphs
+works well (for presentation-grade cloud/C4 architecture diagrams in SVG, interactive
+HTML, or Draw.io, use the `architecture-diagrams` skill instead):
 
 ```mermaid
 flowchart LR

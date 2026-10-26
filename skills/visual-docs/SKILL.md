@@ -1,14 +1,15 @@
 ---
 name: visual-docs
 description: >
-  Use when documenting anything visually and didactically — explaining a system,
-  a flow, a protocol, or code so a reader learns it. Covers flow/sequence/state
-  diagrams, ASCII packet & byte walks, and annotated code explanation, plus a
-  deterministic compile-to-validate step so diagrams actually render. Triggers:
-  "diagram this", "add an architecture diagram", "make a visual explainer",
+  Use when documenting code, protocols, or flows didactically in Markdown — explaining a
+  request flow, sequence handshake, state lifecycle, wire protocol, or code module so a
+  reader learns it. Covers Mermaid flow/sequence/state/ER diagrams, ASCII packet & byte
+  walks, and annotated code explanation with a deterministic local validator. Triggers:
   "explain this code visually", "walk me through the request/flow", "packet walk",
-  "step-by-step diagram", "teach / onboard with docs". (For data charts/plots use
-  the `dataviz` skill instead.)
+  "step-by-step diagram", "teach / onboard with docs". Don't use for standalone cloud or
+  system architecture diagrams, C4 models, interactive HTML architecture viewers, or
+  Draw.io (.drawio / .drawio.svg) exports (use `architecture-diagrams` instead), or for
+  data charts/plots (use `dataviz`).
 ---
 
 # Visual documentation that teaches — and actually renders
@@ -18,17 +19,19 @@ Two properties, always together:
 
 1. **Didactic** — every diagram is chosen to teach one idea, narrated in prose, and
    built for progressive understanding (big picture → detail).
-2. **Correct** — diagram-as-code is deterministic, so it's **validated by compiling,
-   not by eyeballing**. A diagram that doesn't parse is a bug.
+2. **Correct** — diagram-as-code is deterministic, so it's **validated deterministically,
+   not by eyeballing**. A diagram that fails GitHub or Markdown rendering is a bug.
 
-**This skill covers:** teaching-oriented flow, sequence, and state diagrams; ASCII
-packet/byte/memory walks; annotated code explanation (call graphs, execution traces);
-choosing the right diagram *type* for a concept; the Mermaid + ASCII authoring rules;
-and the deterministic validation loop. It also covers architecture diagrams (C4).
+**This skill covers:** teaching-oriented flow, sequence, state, and ER diagrams in
+Markdown; ASCII packet/byte/memory walks; annotated code explanation (call graphs,
+execution traces); choosing the right diagram *type* for a concept; the Mermaid + ASCII
+authoring rules; and the deterministic validation loop.
 
-**This skill does NOT cover:** data charts/plots (bar/line/scatter/dashboards) → use
-the **`dataviz`** skill. Auto-generating a whole codebase's architecture doc end to
-end → use the **`visual-explainer`** agent (it reuses this skill for the mechanics).
+**This skill does NOT cover:**
+- Standalone cloud, system, or agent architecture diagrams, C4 models, interactive HTML
+  architecture explorers, or Draw.io (`.drawio` / `.drawio.svg`) exports → use the
+  **`architecture-diagrams`** skill.
+- Data charts/plots (bar/line/scatter/dashboards) → use the **`dataviz`** skill.
 
 ## 1. Didactic strategy — the spine
 
@@ -60,47 +63,46 @@ ASCII equivalent) for each are in
 | A lifecycle / status machine | **State** (`stateDiagram-v2`) | Nodes = states, edges = transitions/events |
 | A wire format, packet, byte/bit or memory layout | **ASCII packet walk** | See [`references/packet-walks.md`](./references/packet-walks.md) |
 | Data shape & relationships | **ER diagram** (`erDiagram`) | Entities + cardinality |
-| System/architecture layers | **C4** | See [`references/architecture-c4.md`](./references/architecture-c4.md) |
 | How a piece of code executes | **Annotated code + call graph/trace** | See [`references/code-explanation.md`](./references/code-explanation.md) |
+| Cloud / system architecture, C4, or Draw.io export | **`architecture-diagrams` skill** | Produces SVG, interactive HTML, `.drawio`, `.drawio.svg` |
 
 ## 3. Pick the format & author cleanly
 
 | Need | Use | Why |
 |---|---|---|
-| Default, GitHub-native | **Mermaid** | Renders inline on GitHub; no build step |
+| Default in Markdown / PRs | **Mermaid** | Renders inline on GitHub and Markdown viewers; no build step |
 | Wire formats, bytes, memory, terminal/diff-friendly | **ASCII** | Renders everywhere, diffs cleanly, teaches layout |
-| Nicer layout/aesthetics | **D2** (d2lang.com) | Deterministic compile (build step) |
-| Multi-view architecture that must not drift | **C4 / Structurizr** | One model → many views |
 
 **Always keep an ASCII fallback** alongside complex diagrams for plain-text/terminal
 readability — and prefer ASCII outright for packets/bytes/memory (it teaches the
 layout better than a box-and-arrow diagram).
 
-**Mermaid gotchas (GitHub-targeted).** In `sequenceDiagram`, message text must be
-plain ASCII — **no backticks, no `--`, no `<br/>`, no unicode arrows** — and **no `()`
-in `participant ... as` aliases**. Each breaks GitHub rendering. Flowchart labels are
-more permissive; quote labels with special chars. (Also: never leave a bare `~` before
-a value in prose — a pair becomes strikethrough. Use `≈`.)
+**Mermaid gotchas (GitHub & Chat UI targeted):**
+- Always wrap node labels containing special characters or parentheses in double quotes:
+  `A["API Gateway (v2)"]` (unquoted `[API (v2)]` breaks GitHub's parser).
+- Always quote pipe edge labels that contain parentheses or special characters:
+  `A -->|"POST /orders (JSON)"| B`.
+- Never link directly to or from a `subgraph` ID (`NodeA --> SubgraphID` fails in
+  standard parsers); always connect node-to-node inside the subgraph.
+- In `sequenceDiagram`, message text must be plain ASCII — **no backticks, no `--`,
+  no `;`, no `<br/>`, no unicode arrows** — and **no `()` in `participant ... as`
+  aliases**. Each breaks GitHub rendering.
+- Never leave a bare `~` before a value in prose — a pair becomes strikethrough. Use `≈`.
 
 ## 4. Validate deterministically (the important part)
 
-**Compile every diagram before committing.** Run the co-located validator:
+**Validate every diagram before committing.** Run the co-located zero-dependency validator:
 
 ```bash
-# from the repo root; validates all Mermaid blocks, exit!=0 on any failure
+# from the repo root; validates all Mermaid blocks in Markdown/mmd files, exit!=0 on any failure
 skills/visual-docs/scripts/validate-diagrams.sh skills/visual-docs/examples/ skills/visual-docs/references/
 ```
 
-Backends (auto-detected, in order): local **`mmdc`** → **`npx` mmdc** → **Kroki HTTP**
-(`curl`, zero-install; set `KROKI_URL` to self-host for private content). On a FAIL,
-read the compiler error, fix the source, re-run until `failed: 0`.
-
-Caveats (verified): source→syntax is deterministic but **pixel** output varies by
-renderer — validate structure, not byte-identical images. And **"compiles" ≠ "GitHub
-will render it"**: Kroki/some `mmdc` versions accept diagrams GitHub rejects, so the §3
-token rules are the GitHub-targeted guard and the compile step catches broader
-structural errors — use **both**. ASCII diagrams need no compiler; keep them in fenced
-code blocks so spacing is preserved.
+The validator runs an offline Python structural & GitHub-compatibility linter on every
+fenced `mermaid` block (catching unquoted parentheses, invalid `sequenceDiagram` tokens,
+subgraph-ID edge links, and unbalanced brackets), plus local `mmdc` compilation when
+installed. On a FAIL, read the diagnostic line, fix the source, and re-run until
+`failed: 0`.
 
 ## 5. Available Resources
 
@@ -114,8 +116,6 @@ code blocks so spacing is preserved.
   step-by-step walks.
 - [`references/code-explanation.md`](./references/code-explanation.md) — load to
   explain code: annotated blocks, call graphs, execution traces, data pipelines.
-- [`references/architecture-c4.md`](./references/architecture-c4.md) — load for
-  multi-view architecture with guaranteed consistency (Structurizr/C4, MCP).
 - [`examples/`](./examples/) — four validated, narrated worked examples (request flow,
   auth sequence, TCP packet walk, code explainer). Read `examples/README.md` first.
 
@@ -126,5 +126,6 @@ code blocks so spacing is preserved.
 3. Author it: narration + legend + numbered steps + an **ASCII fallback** for complex
    Mermaid (or ASCII outright for packets/bytes).
 4. **Validate** (§4); fix on failure; re-run until clean.
-5. Keep component names **canonical** across diagrams; for multi-view architecture,
-   drive it from a C4 model (§ `architecture-c4.md`) so views can't drift.
+5. Keep component names **canonical** across diagrams. If the user asks for an
+   editorial cloud/system architecture diagram, C4 model, interactive HTML viewer, or
+   Draw.io export, switch to the `architecture-diagrams` skill.

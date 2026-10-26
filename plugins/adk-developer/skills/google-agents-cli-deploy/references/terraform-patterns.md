@@ -44,6 +44,7 @@ resource "google_eventarc_trigger" "storage_trigger" {
     cloud_run_service {
       service = google_cloud_run_v2_service.app.name
       region  = var.region
+      # ADK trigger-source route; on other frameworks point this at your app's own path
       path    = "/apps/${var.project_name}/trigger/eventarc"
     }
   }
@@ -105,12 +106,14 @@ resource "google_pubsub_topic_iam_member" "app_publisher" {
 
 ```bash
 # For single-project infrastructure
-agents-cli infra single-project  # Runs terraform apply in deployment/terraform/single-project/
+agents-cli infra single-project --apply  # Runs terraform apply in deployment/terraform/single-project/
 
 # For CI/CD, infrastructure is applied automatically on push
 ```
 
 ## Common Patterns
+
+> The `/apps/{app_name}/trigger/*` paths below are ADK's trigger-source routes. The Terraform is the same on any framework — point it at whatever path your app serves.
 
 **Cloud Storage trigger (Eventarc):**
 - Create bucket in Terraform
@@ -121,6 +124,11 @@ agents-cli infra single-project  # Runs terraform apply in deployment/terraform/
 - Create topic and push subscription in Terraform
 - Point subscription to `/apps/{app_name}/trigger/pubsub` endpoint
 - Grant `iam.serviceAccountTokenCreator` role for push auth
+
+> **Go trigger endpoints are not enabled by default, and sit under `/api`.** The scaffolded `main.go`
+> already registers the `pubsub` and `eventarc` sub-launchers, but the container `ENTRYPOINT` omits
+> their keywords, so the routes are not served. Each trigger launcher keeps its own `-path_prefix`.
+> The launcher prints both URLs at startup; point the subscription at those.
 
 **BigQuery Remote Function:**
 - Create BigQuery connection in Terraform

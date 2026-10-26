@@ -1,10 +1,10 @@
 {
   "google-agents-cli": {
     "repo": "google/agents-cli",
-    "tag": "v1.4.1",
-    "commit": "24846cf6a08cd6abc9cd13104256f11197c2209d",
+    "tag": "v1.11.0",
+    "commit": "e0859dfd8e5b263581b79be5b695072a321639f1",
     "license": "Apache-2.0",
-    "synced": "2026-08-25",
+    "synced": "2026-10-26",
     "note": "Third-party vendored skills. Do not hand-edit; re-run scripts/vendor-agents-cli.sh.",
     "skills": [
       "google-agents-cli-adk-code",
@@ -16,13 +16,13 @@
       "google-agents-cli-workflow"
     ],
     "digests": {
-      "google-agents-cli-adk-code": "f131495c83c623bdfbb199c18d985bedd0b7b1f14a761c34d5cc4905936ebd03",
-      "google-agents-cli-deploy": "a3811ee8b12db0fc4f099d2124def8d5f3f2bc666b69e6f447325d8ff03e158c",
-      "google-agents-cli-eval": "08582c34c423485191d2ee8e24400b2ab1d6c7071e9d37c92eeebc4c908d309f",
-      "google-agents-cli-observability": "1b27ad4c469310e75bfe1611f163683471e66444daa22c5e258cae4e224be09c",
-      "google-agents-cli-publish": "b482b490b77c551ca1c37eb1e116192d1e88141a686e830bbcf3801be60208f1",
-      "google-agents-cli-scaffold": "dfc0499110ce79500a5b1ebac5dc56a8acc4bac9fad1170e59d04a62cb9fe525",
-      "google-agents-cli-workflow": "4cbe1f45a845bc9e627dfe82679048ae80dce8563da0efeb92b67c93e83e5692"
+      "google-agents-cli-adk-code": "33e1fd5c97078c35be2198b858be6a6817a4b784f6bcaeabeb2737513e624c46",
+      "google-agents-cli-deploy": "c2af23f2f225dbdbcfa7a610b2a7adfef4a5a1da3a39c9318539b5aa192c82e8",
+      "google-agents-cli-eval": "e3a39864ae6f767274735995e458846eeced6608b20db9679a60c16e24c8c02a",
+      "google-agents-cli-observability": "9452f07a3faa6c1c59b966a69489b495fbb83de45898d26874838893af9a6d42",
+      "google-agents-cli-publish": "66c692ceda0e46f8789466addb77fd7adff63725a1d75778287cc5cd9dde1577",
+      "google-agents-cli-scaffold": "5686eb4a6e929ad634e7b94b58f4e3d3922eaa46bffcb4400c3b756c9612656f",
+      "google-agents-cli-workflow": "5a555d7d21d1012191ed879995f2d7e26469ebe7c2c0ea46f36b0562f9b6c3dd"
     }
   }
 }

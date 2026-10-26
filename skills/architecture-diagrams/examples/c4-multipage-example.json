@@ -1,0 +1,48 @@
+{
+  "theme": "editorial-light",
+  "pages": [
+    {
+      "page_name": "1 - System Context (L1)",
+      "title": "Order Platform — L1 System Context",
+      "subtitle": "C4 Level 1 · System Context View",
+      "boundaries": [
+        {"id": "corp-scope", "label": "Enterprise Cloud Boundary", "kind": "c4-system", "children": ["order-sys"]}
+      ],
+      "nodes": [
+        {"id": "customer", "name": "Retail Customer", "sublabel": "Person · Mobile & Web", "icon": "user", "tier": "actor"},
+        {"id": "order-sys", "name": "Agentic Order Platform", "sublabel": "Software System · Google Cloud", "icon": "gcp:google-cloud", "tier": "compute", "focal": true},
+        {"id": "erp", "name": "SAP ERP Core", "sublabel": "External System", "icon": "onprem", "tier": "external"}
+      ],
+      "edges": [
+        {"from": "customer", "to": "order-sys", "label": "Places orders", "focal": true},
+        {"from": "order-sys", "to": "erp", "label": "Syncs fulfillment"}
+      ],
+      "chapters": [
+        {"title": "1. End-to-End Context", "nodes": ["customer", "order-sys", "erp"], "summary": "High-level C4 Level 1 System Context showing actors and external dependencies."}
+      ]
+    },
+    {
+      "page_name": "2 - Containers (L2)",
+      "title": "Order Platform — L2 Container Diagram",
+      "subtitle": "C4 Level 2 · Independently Deployable Units",
+      "boundaries": [
+        {"id": "sys-l2", "label": "Agentic Order Platform", "kind": "c4-container", "children": ["apigee-gw", "order-agent", "spanner-db", "pubsub-bus"]}
+      ],
+      "nodes": [
+        {"id": "customer", "name": "Retail Customer", "sublabel": "Person", "icon": "user", "tier": "actor"},
+        {"id": "apigee-gw", "name": "API Gateway", "sublabel": "Container · Apigee X", "icon": "gcp:apigee", "tier": "ingress"},
+        {"id": "order-agent", "name": "Order ADK Service", "sublabel": "Container · Cloud Run", "icon": "gcp:cloud-run", "tier": "compute", "focal": true},
+        {"id": "spanner-db", "name": "Orders Ledger", "sublabel": "Container · Cloud Spanner", "icon": "gcp:spanner", "tier": "data"},
+        {"id": "pubsub-bus", "name": "Order Events Bus", "sublabel": "Container · Pub/Sub", "icon": "gcp:pubsub", "tier": "data"},
+        {"id": "erp", "name": "SAP ERP Core", "sublabel": "External System", "icon": "onprem", "tier": "external"}
+      ],
+      "edges": [
+        {"from": "customer", "to": "apigee-gw", "label": "HTTPS JSON"},
+        {"from": "apigee-gw", "to": "order-agent", "label": "gRPC", "focal": true},
+        {"from": "order-agent", "to": "spanner-db", "label": "SQL R/W"},
+        {"from": "order-agent", "to": "pubsub-bus", "label": "Publishes", "style": "dashed"},
+        {"from": "pubsub-bus", "to": "erp", "label": "Webhook Push", "style": "dashed"}
+      ]
+    }
+  ]
+}
