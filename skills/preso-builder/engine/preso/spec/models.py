@@ -298,10 +298,15 @@ class LadderStepSpec:
         if not isinstance(data, dict):
             return cls()
         num = data.get("step_number") if "step_number" in data else data.get("number", 1)
+        desc = data.get("description") or data.get("subtitle") or data.get("tagline") or ""
+        raw_bullets = data.get("bullets") or data.get("details") or []
+        if isinstance(raw_bullets, list) and raw_bullets:
+            bullet_str = "\n".join(f"• {b}" for b in raw_bullets if str(b).strip())
+            desc = f"{desc}\n{bullet_str}".strip() if desc else bullet_str
         return cls(
             step_number=num,
             title=str(data.get("title", "")),
-            description=str(data.get("description", "")),
+            description=str(desc),
             badge_color=str(data.get("badge_color", "")),
             badge=str(data.get("badge", "")),
         )
@@ -334,8 +339,8 @@ class QuadrantSpec:
         """Parses QuadrantSpec from dictionary."""
         if not isinstance(data, dict):
             return cls()
-        num = data.get("number", "01")
-        title = data.get("title", "")
+        num = data.get("number") or data.get("quadrant_number") or data.get("kicker") or "01"
+        title = data.get("title") or data.get("header") or ""
         narrative = data.get("narrative") or data.get("description") or data.get("body") or ""
         return cls(
             number=num,
@@ -664,11 +669,21 @@ class SlideSpec:
         metrics = [HeroMetricSpec.from_dict(m) if isinstance(m, dict) else m for m in metrics_raw]
 
         # 4. Ladder Steps
-        steps_raw = data.get("steps") or (content.get("steps") if isinstance(content, dict) else None) or []
+        steps_raw = (
+            data.get("steps")
+            or data.get("rungs")
+            or (content.get("steps") or content.get("rungs") if isinstance(content, dict) else None)
+            or []
+        )
         steps = [LadderStepSpec.from_dict(s) if isinstance(s, dict) else s for s in steps_raw]
 
         # 5. Quadrants
-        quads_raw = data.get("quadrants") or (content.get("quadrants") if isinstance(content, dict) else None) or []
+        quads_raw = (
+            data.get("quadrants")
+            or data.get("grid")
+            or (content.get("quadrants") or content.get("grid") if isinstance(content, dict) else None)
+            or []
+        )
         quadrants = [QuadrantSpec.from_dict(q) if isinstance(q, dict) else q for q in quads_raw]
 
         # 6. Checklist
@@ -715,7 +730,9 @@ class SlideSpec:
             "code_box",
             "metrics",
             "steps",
+            "rungs",
             "quadrants",
+            "grid",
             "checklist",
             "takeaway",
             "takeaways",

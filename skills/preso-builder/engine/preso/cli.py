@@ -14,6 +14,7 @@ Provides subcommands:
 from __future__ import annotations
 
 import argparse
+import concurrent.futures
 import json
 import os
 import secrets
@@ -226,17 +227,24 @@ def handle_build(args: argparse.Namespace) -> int:
         )
         if initial_template_slide_ids and not is_dry_run and client.runner is None:
             print(f"🧹 Pruning {len(initial_template_slide_ids)} previous/template slides...")
-            for sid in initial_template_slide_ids:
-                try:
-                    client.delete_slide(deck_id, sid)
-                except Exception:
-                    pass
+            try:
+                client.raw_batch(
+                    deck_id,
+                    [{"deleteObject": {"objectId": sid}} for sid in initial_template_slide_ids],
+                )
+            except Exception:
+                for sid in initial_template_slide_ids:
+                    try:
+                        client.delete_slide(deck_id, sid)
+                    except Exception:
+                        pass
         print(f"✅ Batch update executed successfully on deck '{deck_id}'.")
 
         if batch_result.pending_images:
             resolved = _resolved_ids(batch_exec_res)
-            print(f"🖼️ Inserting {len(batch_result.pending_images)} local image(s)...")
-            for img in batch_result.pending_images:
+            print(f"🖼️ Inserting {len(batch_result.pending_images)} local image(s) in parallel...")
+
+            def _upload_one(img: dict[str, Any]) -> None:
                 target_slide = resolved.get(img["slide"], img["slide"])
                 try:
                     client.insert_image_from_file(
@@ -245,6 +253,9 @@ def handle_build(args: argparse.Namespace) -> int:
                     )
                 except GSlidesError as img_err:
                     print(f"   ⚠️ Could not insert {img['path']} on {target_slide}: {img_err}", file=sys.stderr)
+
+            with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:
+                list(pool.map(_upload_one, batch_result.pending_images))
 
         if batch_result.raw_requests:
             raw = _retarget_raw_requests(batch_result, _resolved_ids(batch_exec_res))
@@ -273,12 +284,26 @@ def handle_build(args: argparse.Namespace) -> int:
         report_dir.mkdir(parents=True, exist_ok=True)
 
         verifier = QAVerifier(gslides_client=client)
-        thumb_dir = report_dir / "thumbnails" if deck_id and not is_dry_run else None
+        no_thumbs = getattr(args, "no_thumbnails", False)
+        raw_audit_slides = getattr(args, "audit_slides", None)
+        slide_indices: Optional[set[int]] = None
+        if raw_audit_slides:
+            slide_indices = {
+                int(part.strip())
+                for part in str(raw_audit_slides).split(",")
+                if part.strip().isdigit()
+            }
+        thumb_dir = (
+            report_dir / "thumbnails"
+            if (deck_id and not is_dry_run and not no_thumbs)
+            else None
+        )
         qa_report = verifier.verify(
             spec=spec,
             batch_result=batch_result,
             presentation_id=deck_id if not is_dry_run else None,
             thumbnail_dir=thumb_dir,
+            slide_indices=slide_indices,
         )
 
         print(qa_report.summary())
@@ -570,7 +595,17 @@ def handle_audit(args: argparse.Namespace) -> int:
 
     client = GSlidesClient(dry_run=getattr(args, "dry_run", False))
     verifier = QAVerifier(gslides_client=client)
-    paths, warns, metrics = verifier.verify_live_deck_thumbnails(deck_id, thumb_dir)
+    raw_audit_slides = getattr(args, "audit_slides", None)
+    slide_indices: Optional[set[int]] = None
+    if raw_audit_slides:
+        slide_indices = {
+            int(part.strip())
+            for part in str(raw_audit_slides).split(",")
+            if part.strip().isdigit()
+        }
+    paths, warns, metrics = verifier.verify_live_deck_thumbnails(
+        deck_id, thumb_dir, slide_indices=slide_indices
+    )
     for w in warns:
         print(f"⚠️ {w['message']}", file=sys.stderr)
     checklist = write_audit_checklist(
@@ -662,6 +697,8 @@ def build_parser() -> argparse.ArgumentParser:
     build_parser.add_argument("--output-batch", "--out-batch", help="Save compiled atomic batch operations JSON to file")
     build_parser.add_argument("--output-deck-id", "--out-deck-id", help="Save generated presentation ID to file")
     build_parser.add_argument("--no-qa", action="store_true", help="Skip automated multimodal visual QA verification loop")
+    build_parser.add_argument("--no-thumbnails", action="store_true", help="Run QA checks without exporting slide PNG thumbnails (avoids Slides API 429 rate limits on large rebuilds)")
+    build_parser.add_argument("--audit-slides", help="Comma-separated 1-based slide numbers to export thumbnails for (e.g. '1,2,10')")
     build_parser.add_argument("--export-report", "--out-report", help="Destination path for Markdown QA report")
     build_parser.add_argument("--preview", "--out-preview", help="Destination path for interactive HTML preview gallery")
     build_parser.add_argument("--clean-placeholders", action="store_true", help="Remove default template placeholder elements (i0, i1)")
@@ -711,6 +748,7 @@ def build_parser() -> argparse.ArgumentParser:
     audit_parser.add_argument("-d", "--deck-id", "--deck", required=True, help="Live presentation ID")
     audit_parser.add_argument("-s", "--spec", help="Optional spec YAML for slide context and predicted overflow hotspots")
     audit_parser.add_argument("-o", "--output-dir", default="dist/qa", help="Destination directory (default: dist/qa)")
+    audit_parser.add_argument("--audit-slides", help="Comma-separated 1-based slide numbers to export thumbnails for (e.g. '1,2,10')")
     audit_parser.add_argument("--dry-run", action="store_true", help="Run without invoking live gslides CLI")
     audit_parser.set_defaults(handler=handle_audit)
 

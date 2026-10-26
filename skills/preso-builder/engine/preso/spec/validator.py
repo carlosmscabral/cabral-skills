@@ -83,6 +83,7 @@ CANONICAL_ARCHETYPES = {
     "demo_pivot",
     "image_split",
     "flow_diagram",
+    "workstream_card",
 }
 
 ARCHETYPE_ALIASES = {
@@ -101,6 +102,11 @@ ARCHETYPE_ALIASES = {
     "cycle": "flow_diagram",
     "timeline": "flow_diagram",
     "funnel": "flow_diagram",
+    "layered_cake": "flow_diagram",
+    "cake": "flow_diagram",
+    "initiative_card": "workstream_card",
+    "frente_card": "workstream_card",
+    "workstream": "workstream_card",
 }
 
 
@@ -273,7 +279,11 @@ class SpecValidator:
             if arch == run_arch:
                 run_titles.append(title)
                 continue
-            if len(run_titles) > MAX_CONSECUTIVE_SAME_ARCHETYPE and run_arch not in ("chapter_divider", "__end__"):
+            if len(run_titles) > MAX_CONSECUTIVE_SAME_ARCHETYPE and run_arch not in (
+                "chapter_divider",
+                "workstream_card",
+                "__end__",
+            ):
                 result.add_warning(
                     f"{len(run_titles)} consecutive '{run_arch}' slides "
                     f"('{run_titles[0][:30]}' … '{run_titles[-1][:30]}'). Vary the layout "
@@ -477,6 +487,8 @@ class SpecValidator:
         elif normalized_arch == "flow_diagram":
             raw_arch = str(parsed.archetype or "").strip().lower().replace("-", "_")
             cls._validate_flow_diagram(parsed, slide_index, result, raw_arch)
+        elif normalized_arch == "workstream_card":
+            cls._validate_workstream_card(parsed, slide_index, result, strict)
 
         return result
 
@@ -831,7 +843,11 @@ class SpecValidator:
         """Structure + fit checks for native diagrams (raw-batch rendered)."""
         from preso.engine.diagrams import validate_diagram  # pylint: disable=g-import-not-at-top
 
-        hint = raw_arch if raw_arch in ("cycle", "timeline", "funnel") else ""
+        hint = (
+            "layered_cake"
+            if raw_arch in ("layered_cake", "cake")
+            else (raw_arch if raw_arch in ("cycle", "timeline", "funnel") else "")
+        )
         diagram = (slide.raw_content or {}).get("diagram")
         errors, warnings = validate_diagram(diagram, hint)
         for e in errors:
@@ -846,15 +862,18 @@ class SpecValidator:
         image = slide.raw_content.get("image")
         if isinstance(image, str):
             image = {"path": image}
-        if not isinstance(image, dict) or not (image.get("path") or image.get("url")):
+        if not isinstance(image, dict) or not (
+            image.get("path") or image.get("url") or image.get("placeholder") or image.get("hint")
+        ):
             result.add_error(
-                f"Slide {idx} (image_split) requires `image: {{path: ..., alt: ...}}` or `image: {{url: ...}}`."
+                f"Slide {idx} (image_split) requires `image: {{path: ..., alt: ...}}`, "
+                f"`image: {{url: ...}}`, or `image: {{placeholder: ...}}`."
             )
             return
         path = image.get("path")
         if path and not str(path).startswith(("http://", "https://")) and not Path(str(path)).expanduser().exists():
             result.add_warning(f"Slide {idx} (image_split) image path not found: {path}")
-        if not image.get("alt"):
+        if (image.get("path") or image.get("url")) and not image.get("alt"):
             result.add_warning(f"Slide {idx} (image_split) image has no `alt` text (used in audit + notes).")
         caption = str(image.get("caption", "") or "")
         if len(caption) > BUDGET_IMAGE_CAPTION:
@@ -879,3 +898,28 @@ class SpecValidator:
                     result.add_error(msg)
                 else:
                     result.add_warning(msg)
+
+    @classmethod
+    def _validate_workstream_card(
+        cls, slide: SlideSpec, idx: int, result: ValidationResult, strict: bool
+    ) -> None:
+        raw = slide.raw_content or {}
+        ws = raw.get("workstream") if isinstance(raw.get("workstream"), dict) else raw
+        desafios = ws.get("desafios") or ws.get("challenges") or ws.get("risks") or []
+        diferenciais = ws.get("diferenciais") or ws.get("differentiators") or ws.get("strengths") or []
+        acoes = ws.get("acoes") or ws.get("actions") or ws.get("next_steps") or []
+        if not desafios and not diferenciais:
+            result.add_error(
+                f"Slide {idx} (workstream_card) requires `desafios`/`challenges` and `diferenciais`/`differentiators`."
+            )
+        for section_name, items in (("desafios", desafios), ("diferenciais", diferenciais), ("acoes", acoes)):
+            item_list = [items] if isinstance(items, str) else list(items or [])
+            if len(item_list) > 4:
+                result.add_warning(f"Slide {idx} (workstream_card) {section_name} has > 4 bullets ({len(item_list)}).")
+            for b_idx, b in enumerate(item_list, start=1):
+                if len(str(b)) > BUDGET_CARD_BULLET:
+                    msg = f"Slide {idx} (workstream_card) {section_name}[{b_idx}] exceeds {BUDGET_CARD_BULLET} chars."
+                    if strict:
+                        result.add_error(msg)
+                    else:
+                        result.add_warning(msg)

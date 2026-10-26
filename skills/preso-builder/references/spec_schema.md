@@ -114,21 +114,30 @@ chapters:
 * `watch_for`: `list[string]` (Up to 3 chips, 28 chars or fewer each)
 
 #### 10. `image_split` (aliases `image`, `diagram`)
-* `image`: `{path | url, alt, caption}` (Required. `path` resolves relative to the spec file and is uploaded after the batch. `url` goes through batch `add-image`.)
+* `image`: `{path | url | placeholder, alt, caption}` (Required. `path` resolves relative to the spec file and is uploaded in parallel after the batch. `url` goes through batch `add-image`. `placeholder` draws a grey drop-zone rectangle with no external file needed.)
 * `bullets`: `list[string]` (Up to 4, used only when `image_layout: split`)
 * `image_side`: `left` | `right` (default `right`)
 * `image_layout`: `split` (bullets card + image) | `full` (image across the content area)
 
-#### 11. `flow_diagram` (aliases `cycle`, `timeline`, `funnel`, `flow`)
+#### 11. `flow_diagram` (aliases `cycle`, `timeline`, `funnel`, `layered_cake`, `cake`, `flow`)
 * `diagram`: required block.
-  * `layout`: `timeline` | `cycle` | `funnel` (optional; inferred from the alias or from which of `steps` / `cycle` / `stages` is present)
+  * `layout`: `timeline` | `cycle` | `funnel` | `layered_cake` (optional; inferred from the alias or from which of `layers` / `base` / `steps` / `cycle` / `stages` is present)
   * `label`: section label above the stages/steps (optional)
   * `stages[]`: `{kicker, title, lead, body (string | list), status, status_label, color}` — timeline cards, or ≤2 foundation cards left of a cycle
   * `cycle`: `{label, entry: {title, body}, feeder: {title, body}, nodes: [{title, body}] (3–4, clockwise from left), center: {icon, text}}`
   * `steps[]`: `{label (chevron), title, lead, body, status, color}`; `active`: 1-based step to highlight
+  * `layers[]`: list of 2–4 tiers ordered **bottom-to-top** (`layers[0]` = base foundation, `layers[1]` = middle workstreams, `layers[2]` = top frontier). Each tier is a list of box dicts `[{kicker, title, body, color, fill}]` (or a single box dict). Also accepts top-level `base:`, `middle:`, `top:` keys.
   * `marker`: `{text, at: entry | stage:N | node:N | step:N}` (or a plain string)
   * `note`: one-line honesty note under the diagram
   * `status_labels`: `{done, active, next, risk}` overrides (e.g. `{done: "✓ Concluído"}`)
+
+#### 12. `workstream_card` (aliases `initiative_card`, `frente_card`, `workstream`)
+* `image`: `{path | url | placeholder, alt}` (Optional; defaults to a grey drop-zone on the left `X=36, W=220, H=264`)
+* `tempo` / `horizon` / `maturity`: `string` (Top-left KPI pill text, e.g. `"Agora (Curto Prazo) · Em Escala"`)
+* `receita` / `revenue`: `string` (Top-right KPI pill text, e.g. `"Alto · Expansão de Seats"`)
+* `desafios` / `challenges` / `risks`: `list[string]` (3–4 concise bullets for the red-striped middle-left card)
+* `diferenciais` / `differentiators` / `strengths`: `list[string]` (3–4 concise bullets for the green-striped middle-right card)
+* `acoes` / `actions` / `next_steps`: `list[string]` (3–4 concise bullets for the bottom full-width yellow action & open-questions card)
 
 ```yaml
 - archetype: cycle

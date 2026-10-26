@@ -95,9 +95,12 @@ Authoring rules:
   `detail` (45 min and up), or `appendix` (built but hidden). Use `skip: true` to hide one slide.
 - **Mark the demo.** Put a `demo_pivot` slide before any live demo, with up to 3
   `watch_for` chips that tell the audience what to notice.
-- **Draw flows natively.** Loops, roadmaps, staged journeys and "where we are" slides use
-  `flow_diagram` (`cycle` / `timeline` / `funnel`): editable shapes, curved connectors,
-  status chips, a red marker pill. Use images only for diagrams no layout covers.
+- **Draw flows & stacked architectures natively.** Loops, roadmaps, staged journeys, "where we are" slides, and bottom-up architectures use
+  `flow_diagram` (`cycle` / `timeline` / `funnel` / `layered_cake`): editable shapes, curved connectors,
+  status chips, a red marker pill. Never use `funnel` or `ladder_hierarchy` when the user asks for a **Layered Cake** (bottom-up stacked foundation → platforms → frontier).
+- **Use `workstream_card` for initiative / workstream catalogues.** When building 1 slide per workstream/frente (with an image or placeholder drop-zone on the left + Tempo/Maturidade, Potencial de Receita, Riscos & Desafios vs. Diferenciais, and Ações on the right), use `archetype: workstream_card`.
+- **Self-explanatory roadmap labels (no ambiguous `H1/H2/H3`).** In executive decks and roadmaps, never use `H1 / H2 / H3` (which confuses Three Horizons with 1st/2nd Half of the year). Always write self-explanatory labels: `Agora (Curto Prazo)`, `Médio Prazo`, `Longo Prazo (Futuro)`.
+- **Fast image & placeholder workflow.** When the user wants a quick draft ("vou dar um tapa manualmente") or an image space to fill later, pass `image: {placeholder: "Descrição do diagrama..."}` on `workstream_card` or `image_split` (instant grey drop-zone, zero upload calls). When rendering multiple Mermaid/draw.io diagrams to PNG, compile all diagrams in parallel (`ThreadPoolExecutor`) before calling `preso build`.
 - **Speaker notes are optional.** Write them only when the user wants them and you
   have real content. Nothing is generated, placeholdered, or flagged when a slide
   has none. Never pad notes with filler. When you do write them, lead with the slide's
@@ -127,14 +130,15 @@ overflows, or when a pill, chip, or label would wrap onto a second line.
 ### 5. Build
 
 ```bash
-preso build --spec preso_spec.yaml [--duration 15] [--deck-id <existing>]
+preso build --spec preso_spec.yaml [--duration 15] [--deck-id <existing>] [--audit-slides 1,2,10] [--no-thumbnails]
 ```
 
-- The build copies the template, runs the batch, prunes the template's own slides, uploads any
-  local `image_split` images, draws `flow_diagram` bodies in one atomic `mutate raw-batch`,
-  exports **fresh** thumbnails (stale ones are deleted), and writes `dist/qa/audit_checklist.md`.
-- `--deck-id` rebuilds in place. Previous slides are pruned after the new ones are
+- The build copies the template, runs the batch, prunes the template's own slides in a single atomic `deleteObject` raw-batch, uploads any
+  local `image_split` / `workstream_card` images in parallel (`ThreadPoolExecutor`), draws `flow_diagram` bodies in one atomic `mutate raw-batch`,
+  exports **fresh** thumbnails (with automatic backoff on HTTP 429), and writes `dist/qa/audit_checklist.md`.
+- `--deck-id` rebuilds in place. Previous slides are pruned atomically after the new ones are
   added.
+- `--audit-slides 1,2,10` exports thumbnails only for the listed 1-based slides (ideal when slides 3–9 share the same `workstream_card` template, avoiding the 300 req/min Slides API quota). Use `--no-thumbnails` on intermediate rebuilds when you only need offline geometry/contrast QA.
 
 ### 6. Render audit (look at the pixels)
 

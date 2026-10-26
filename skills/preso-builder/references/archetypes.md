@@ -331,6 +331,7 @@ cycle (with 2 foundation stages)                 timeline                     fu
 | `timeline` | `stages[]` → cards (colour bar, kicker, title, lead, body, status chip) joined by arrows | 2–5 stages |
 | `cycle` | `cycle.nodes[]` clockwise from the left (left → top → right → bottom), curved connectors, `center` caption, optional `entry` (solid blue) + dashed `feeder`; optional `stages[]` on the left | 3–4 nodes, ≤2 stages |
 | `funnel` | `steps[]` → chevron strip (`label`) + a card per step (`title`, `lead`, `body`); `active: N` colours one chevron and tints the rest | 3–6 steps |
+| `layered_cake` | `layers[]` (bottom-to-top: `layers[0]` full-width base foundation, `layers[1]` 2–4 middle pillars, `layers[2]` 1–3 top frontier boxes) or `base` / `middle` / `top` keys | 2–4 layers |
 
 Shared: `marker: {text, at: entry | stage:N | node:N | step:N}` (red pill),
 `note` (honesty line, e.g. "Today: X mature · Y in progress"), `label` (section label),
@@ -345,3 +346,30 @@ Shared: `marker: {text, at: entry | stage:N | node:N | step:N}` (red pill),
   would wrap, and emoji (stripped at render). `marker.text` ≤ ~30 chars for the cycle entry pill.
 * Design tokens: [diagram_tokens.yaml](diagram_tokens.yaml). Raw-request recipe and gotchas:
   [batch_operations.md §7](batch_operations.md#7-native-diagrams-raw-batch).
+
+---
+
+### Archetype 12: `workstream_card` (aliases `initiative_card`, `frente_card`, `workstream`)
+
+```
+Y=28pt ┌─────────────────────────────────────────────────────────────────────────┐
+       │ [KICKER] / TITLE / takeaway subtitle (standard header)                  │
+Y=106pt├───────────────────────────┬─────────────────────┬───────────────────────┤
+       │ ┌───────────────────────┐ │ [TEMPO / MATURIDADE]│ [POTENCIAL DE RECEITA]│
+       │ │                       │ ├─────────────────────┼───────────────────────┤
+       │ │  ESPAÇO PARA IMAGEM   │ │ ▀▀▀▀ (Red #EA4335)  │ ▀▀▀▀ (Green #34A853)  │
+       │ │     / DIAGRAMA        │ │ RISCOS & DESAFIOS   │ DIFERENCIAIS GOOGLE   │
+       │ │  (ou imagem real)     │ │ • Bullet 1          │ • Bullet 1            │
+       │ │                       │ │ • Bullet 2          │ • Bullet 2            │
+       │ │                       │ ├─────────────────────┴───────────────────────┤
+       │ │                       │ │ ▀▀▀▀▀▀▀▀▀▀▀▀ (Yellow #FBBC04)               │
+       │ │       W=220pt         │ │ AÇÕES / O QUE FAZER? (PLANO & EM ABERTO)    │
+       │ └───────────────────────┘ │ • Ação 1  • Ação 2  • [Em aberto] Decisão X │
+Y=370pt└───────────────────────────┴─────────────────────────────────────────────┘
+```
+
+* **Use it** for executive initiative/workstream deep-dive slides where each workstream needs:
+  * **Left (`X=36, Y=106, W=220, H=264`):** A framed image (`image: {path | url}`) or a clean grey drop-zone (`image: {placeholder: "Inserir diagrama..."}`).
+  * **Right Top (`X=270..684, Y=106, H=40`):** Two KPI pills side by side (`tempo` / `horizon` and `receita` / `revenue`).
+  * **Right Middle (`X=270..684, Y=154, H=114`):** Side-by-side comparison of `desafios` (`challenges` / `risks`) vs. `diferenciais` (`differentiators` / `strengths`), up to 3–4 short bullets each.
+  * **Right Bottom (`X=270..684, Y=276, H=94`):** Full-width yellow action card (`acoes` / `actions` / `next_steps`) for concrete actions and open questions (`[Em aberto]`).

@@ -90,7 +90,7 @@ X0, X1 = 36.0, 684.0
 Y0, Y1 = 100.0, 376.0
 MID_Y = 240.0
 
-LAYOUTS = ("timeline", "cycle", "funnel")
+LAYOUTS = ("timeline", "cycle", "funnel", "layered_cake")
 PILL_CHAR_W = 0.56  # em-fraction per char for bold, caps-heavy single-line labels
 MAX_STAGES = {"timeline": 5, "cycle": 2}
 MIN_OBJECT_ID_LEN = 5
@@ -350,8 +350,12 @@ def _marker(diagram: dict[str, Any]) -> tuple[str, str, int]:
 
 def infer_layout(diagram: dict[str, Any], hint: str = "") -> str:
     layout = _s(diagram.get("layout") or diagram.get("type")).lower() or hint
+    if layout == "cake":
+        layout = "layered_cake"
     if layout in LAYOUTS:
         return layout
+    if diagram.get("layers") or diagram.get("base"):
+        return "layered_cake"
     if diagram.get("steps"):
         return "funnel"
     if diagram.get("cycle"):
@@ -654,7 +658,106 @@ def _layout_funnel(c: RawCanvas, d: dict[str, Any], labels: dict[str, str]) -> N
     _note(c, _s(d.get("note")), X0, min(356.0, card_y + card_h + 6), X1 - X0)
 
 
-_LAYOUT_FN = {"timeline": _layout_timeline, "cycle": _layout_cycle, "funnel": _layout_funnel}
+def _normalize_cake_layers(d: dict[str, Any]) -> list[list[dict[str, Any]]]:
+    """Normalizes `layers` (bottom-to-top) or `base`/`middle`/`top` into a list of box-lists."""
+    raw_layers = d.get("layers")
+    if not raw_layers:
+        raw_layers = [tier for tier in (d.get("base"), d.get("middle"), d.get("top")) if tier]
+    if not isinstance(raw_layers, list):
+        return []
+    tiers: list[list[dict[str, Any]]] = []
+    for tier in raw_layers:
+        if isinstance(tier, list):
+            boxes = [b for b in tier if isinstance(b, dict)]
+        elif isinstance(tier, dict):
+            sub = tier.get("items") or tier.get("boxes") or tier.get("cards")
+            if isinstance(sub, list):
+                boxes = [b for b in sub if isinstance(b, dict)]
+            else:
+                boxes = [tier]
+        else:
+            boxes = []
+        if boxes:
+            tiers.append(boxes)
+    return tiers
+
+
+def _layout_layered_cake(c: RawCanvas, d: dict[str, Any], labels: dict[str, str]) -> None:
+    """Renders a 2-to-4 tier bottom-up stacked architecture ('Layered Cake').
+
+    `layers[0]` is the bottom foundation (Tier 1); `layers[-1]` is the top tier.
+    """
+    tiers = _normalize_cake_layers(d)
+    num_tiers = max(1, len(tiers))
+    gap_y = 16.0 if num_tiers <= 3 else 10.0
+    usable_h = (Y1 - Y0 - 6.0) - (num_tiers - 1) * gap_y
+    # Bottom foundation can be slightly more compact when 3 tiers are present
+    if num_tiers == 3:
+        heights = [70.0, 96.0, 74.0]  # [bottom, middle, top]
+    else:
+        h_each = round(usable_h / num_tiers, 2)
+        heights = [h_each] * num_tiers
+
+    # Compute y positions from top (last tier) to bottom (tier 0)
+    tier_ys: list[float] = [0.0] * num_tiers
+    cur_y = Y0 + 2.0
+    for t_idx in range(num_tiers - 1, -1, -1):
+        tier_ys[t_idx] = cur_y
+        cur_y += heights[t_idx] + gap_y
+
+    for t_idx, boxes in enumerate(tiers):
+        ty = tier_ys[t_idx]
+        th = heights[t_idx]
+        k = max(1, len(boxes))
+        gap_x = 8.0
+        bw = (X1 - X0 - (k - 1) * gap_x) / k
+        is_base = (t_idx == 0)
+
+        for b_idx, box in enumerate(boxes):
+            bx = X0 + b_idx * (bw + gap_x)
+            accent, accent_text, tint = _accent(box, t_idx + b_idx)
+            bg_fill = _s(box.get("fill")) or ("#1A237E" if is_base and not box.get("color") else (tint if t_idx == num_tiers - 1 else C_WHITE))
+            dark_bg = bg_fill.upper() in ("#1A237E", "#202124", "#0D47A1")
+            title_col = C_WHITE if dark_bg else C_DARK
+            body_col = "#E8EAED" if dark_bg else C_GREY
+            kicker_col = "#8AB4F8" if dark_bg else accent_text
+
+            c.shape(f"cake_t{t_idx + 1}_b{b_idx + 1}", "RECTANGLE", bx, ty, bw, th,
+                    fill=bg_fill, outline=accent if not dark_bg else "#3949AB", weight=1.0)
+            c.shape(f"cake_t{t_idx + 1}_b{b_idx + 1}_bar", "RECTANGLE", bx, ty, bw, 4.0,
+                    fill=accent if not dark_bg else "#4285F4")
+
+            runs: list[Run] = []
+            kicker_txt = _s(box.get("kicker") or box.get("layer") or box.get("category"))
+            title_txt = _s(box.get("title"))
+            body_txt = _body_text(box.get("body") or box.get("bullets") or box.get("description"))
+            if kicker_txt:
+                runs.append((kicker_txt.upper() + "\n", 7.5, True, kicker_col))
+            if title_txt:
+                runs.append((title_txt + "\n", 10.5 if k <= 2 else 9.5, True, title_col))
+            if body_txt:
+                runs.append((body_txt, 8.0 if k <= 2 else 7.5, False, body_col))
+
+            c.box(f"cake_t{t_idx + 1}_b{b_idx + 1}_txt", bx + 6.0, ty + 6.0, bw - 12.0, th - 10.0,
+                  runs, spacing=105, space_below=2, label=f"layer {t_idx + 1} box {b_idx + 1}")
+
+        # Draw upward support label between this tier and the tier above it
+        if t_idx < num_tiers - 1:
+            sep_y = ty - gap_y + 1.0
+            conn_label = _s(d.get("connector_label")) or "▲  HABILITA / SUPORTA A CAMADA SUPERIOR  ▲"
+            c.box(f"cake_conn_{t_idx + 1}", X0, sep_y, X1 - X0, gap_y - 2.0,
+                  [(conn_label, 7.5, True, ACCENTS["blue"][1])],
+                  align="CENTER", valign="MIDDLE", label=f"tier {t_idx + 1} connector", single_line=True)
+
+    _note(c, _s(d.get("note")), X0, min(362.0, tier_ys[0] + heights[0] + 4.0), X1 - X0)
+
+
+_LAYOUT_FN = {
+    "timeline": _layout_timeline,
+    "cycle": _layout_cycle,
+    "funnel": _layout_funnel,
+    "layered_cake": _layout_layered_cake,
+}
 
 
 def build_diagram_canvas(page_id: str, diagram: dict[str, Any], prefix: str = "dg01",
@@ -730,6 +833,10 @@ def validate_diagram(diagram: Any, layout_hint: str = "") -> tuple[list[str], li
         steps = diagram.get("steps") or []
         if not 3 <= len(steps) <= 6:
             errors.append(f"funnel needs 3-6 steps, got {len(steps)}")
+    elif layout == "layered_cake":
+        tiers = _normalize_cake_layers(diagram)
+        if not 2 <= len(tiers) <= 4:
+            errors.append(f"layered_cake needs 2-4 layers (bottom-to-top), got {len(tiers)}")
 
     m_text, m_kind, m_idx = _marker(diagram)
     if m_text and m_kind and m_kind not in ("stage", "node", "step", "entry"):

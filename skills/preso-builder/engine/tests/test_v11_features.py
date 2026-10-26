@@ -172,5 +172,93 @@ class TestResolvedIds(unittest.TestCase):
         self.assertEqual(_resolved_ids(None), {})
 
 
+class TestV12RetroFeatures(unittest.TestCase):
+    """Tests for schema aliases, layered_cake, workstream_card, and placeholder images."""
+
+    def test_ladder_and_quadrant_schema_aliases(self) -> None:
+        slide_ladder = SlideSpec.from_dict({
+            "archetype": "ladder_hierarchy",
+            "title": "Jornada",
+            "subtitle": "Evolucao em quatro degraus claros.",
+            "rungs": [
+                {"step_number": 1, "title": "Base", "subtitle": "Terraform", "bullets": ["LZ GCP", "IAM"]},
+                {"step_number": 2, "title": "IARA", "bullets": ["Vertex AI"]},
+                {"step_number": 3, "title": "AGY", "bullets": ["Devs"]},
+            ],
+        })
+        self.assertEqual(len(slide_ladder.steps), 3)
+        self.assertIn("Terraform", slide_ladder.steps[0].description)
+        self.assertIn("• LZ GCP", slide_ladder.steps[0].description)
+
+        slide_grid = SlideSpec.from_dict({
+            "archetype": "executive_grid",
+            "title": "Grid",
+            "subtitle": "Quatro quadrantes bem numerados.",
+            "grid": [
+                {"quadrant_number": "01 · DESAFIOS", "header": "Incumbencia", "body": "Claude Code"},
+                {"quadrant_number": "02 · FORCAS", "header": "Governanca", "body": "Zero Data Retention"},
+                {"quadrant_number": "03 · CROSS", "header": "GE App", "body": "Ideacao"},
+                {"quadrant_number": "04 · RECEITA", "header": "Alto", "body": "Seats"},
+            ],
+        })
+        self.assertEqual(len(slide_grid.quadrants), 4)
+        self.assertEqual(slide_grid.quadrants[1].number, "02 · FORCAS")
+        self.assertEqual(slide_grid.quadrants[1].title, "Governanca")
+
+    def test_layered_cake_diagram_compiles_and_validates(self) -> None:
+        slide = {
+            "archetype": "layered_cake",
+            "title": "Arquitetura em Camadas",
+            "subtitle": "Fundacao por baixo, plataformas no meio e vanguarda no topo.",
+            "diagram": {
+                "layers": [
+                    {"kicker": "CAMADA 1 · BASE", "title": "Fundacao GCP", "body": "Terraform + IAM + SantoDigital"},
+                    [
+                        {"kicker": "MODELOS", "title": "IARA", "body": "Gemini + Claude"},
+                        {"kicker": "RUNTIME", "title": "Gemini Platform", "body": "GKE + Cloud Run"},
+                    ],
+                    [
+                        {"kicker": "AGENTIC SDLC", "title": "Zup / Agent Factory", "body": "Scion + komply"},
+                    ],
+                ],
+            },
+        }
+        val = SpecValidator.validate_slide(slide, slide_index=1)
+        self.assertTrue(val.is_valid, val.summary())
+        res = BatchCompiler().compile_slides([slide])
+        self.assertEqual(len(res.raw_requests), 1)
+        self.assertGreater(len(res.raw_requests[0]["requests"]), 10)
+
+    def test_workstream_card_and_image_placeholder(self) -> None:
+        ws_slide = {
+            "archetype": "workstream_card",
+            "kicker": "FRENTE 3 · IDE AGÊNTICA",
+            "title": "Antigravity (AGY)",
+            "subtitle": "Governança enterprise e multi-modelo para vencer Claude Code e Devin.",
+            "image": {"placeholder": "Inserir print do Antigravity"},
+            "tempo": "Agora (Curto Prazo) · Em Escala",
+            "receita": "Alto · Expansão de Seats",
+            "desafios": ["Incumbência de Claude Code e Devin", "Comparação de UX com IDEs nativas"],
+            "diferenciais": ["Governança Itaú e Zero Data Retention", "Multi-modelo (Gemini + Claude)"],
+            "acoes": ["Vencer benchmark no Projeto Aurora", "[Em aberto] Pacote comercial AGY + GE App"],
+        }
+        val = SpecValidator.validate_slide(ws_slide, slide_index=1)
+        self.assertTrue(val.is_valid, val.summary())
+        ops = ArchetypeEngine.generate_slide_ops(ws_slide, slide_index=1)
+        texts = [o.get("text", "") for o in ops if o.get("op") == "add-textbox"]
+        self.assertTrue(any("AÇÕES / O QUE FAZER?" in t for t in texts))
+        self.assertTrue(any("ESPAÇO PARA IMAGEM" in t for t in texts))
+
+        img_ph_slide = {
+            "archetype": "image_split",
+            "title": "Arquitetura",
+            "subtitle": "Diagrama será colado manualmente depois.",
+            "image": {"placeholder": "Colar diagrama do Draw.io aqui"},
+            "bullets": ["Ponto 1", "Ponto 2"],
+        }
+        val_img = SpecValidator.validate_slide(img_ph_slide, slide_index=2)
+        self.assertTrue(val_img.is_valid, val_img.summary())
+
+
 if __name__ == "__main__":
     unittest.main()

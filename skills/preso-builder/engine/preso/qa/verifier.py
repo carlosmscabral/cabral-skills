@@ -789,12 +789,14 @@ class QAVerifier:
         self,
         presentation_id: str,
         output_dir: Union[str, Path],
+        slide_indices: Optional[set[int]] = None,
     ) -> tuple[list[Path], list[dict[str, Any]], dict[str, Any]]:
         """Exports slide thumbnails via GSlidesClient and verifies image artifacts.
 
         Args:
             presentation_id: Google Slides deck ID.
             output_dir: Target directory to save PNG thumbnails.
+            slide_indices: Optional set of 1-based slide indices to export (exports all if None).
 
         Returns:
             Tuple of (exported_paths, warnings, metrics).
@@ -817,6 +819,8 @@ class QAVerifier:
                 slides = [{"objectId": "p", "index": 0}]
 
             for idx, s in enumerate(slides, start=1):
+                if slide_indices and idx not in slide_indices:
+                    continue
                 slide_id = str(s.get("objectId", s.get("id", f"slide_{idx}")))
                 dest_file = out_path / f"slide_{idx:02d}_{slide_id}.png"
                 exported = self.gslides_client.export_thumbnail(
@@ -854,6 +858,7 @@ class QAVerifier:
         batch_result: Optional[Union[BatchResult, list[dict[str, Any]]]] = None,
         presentation_id: Optional[str] = None,
         thumbnail_dir: Optional[Union[str, Path]] = None,
+        slide_indices: Optional[set[int]] = None,
     ) -> QAReport:
         """Executes the complete multimodal visual QA battery.
 
@@ -950,6 +955,7 @@ class QAVerifier:
             _, thumb_warns, thumb_metrics = self.verify_live_deck_thumbnails(
                 presentation_id=presentation_id,
                 output_dir=thumbnail_dir,
+                slide_indices=slide_indices,
             )
             all_warnings.extend(thumb_warns)
             combined_metrics.update(thumb_metrics)

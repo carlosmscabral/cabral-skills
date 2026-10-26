@@ -2202,6 +2202,7 @@ def generate_image_split(
 
     # Image frame
     frame_id = f"FRAME_S{slide_idx}_IMG"
+    has_real_image = bool(img.get("url") or img.get("path"))
     ops.append({
         "op": "add-shape",
         "slide": slide_id,
@@ -2210,7 +2211,7 @@ def generate_image_split(
         "y": img_box.y,
         "width": img_box.width,
         "height": img_box.height,
-        "background_color": COLOR_CARD_WHITE,
+        "background_color": COLOR_CARD_WHITE if has_real_image else "#F1F3F4",
         "id": frame_id,
     })
     ops.append({
@@ -2232,6 +2233,40 @@ def generate_image_split(
     elif img.get("path"):
         ops.append({"op": "_pending-image", "slide": slide_id, "path": str(img["path"]),
                     "alt": str(img.get("alt", "")), **inner})
+    else:
+        placeholder_hint = str(img.get("placeholder") or img.get("hint") or "Inserir diagrama ou screenshot").strip()
+        ops.append({
+            "op": "add-textbox",
+            "slide": slide_id,
+            "text": "ESPAÇO PARA IMAGEM / DIAGRAMA",
+            "x": round(img_box.x + 16.0, 2),
+            "y": round(img_box.y + img_box.height / 2 - 26.0, 2),
+            "width": round(img_box.width - 32.0, 2),
+            "height": 22.0,
+            "font_size": 8.5,
+            "bold": True,
+            "color": COLOR_TEXT_MUTED,
+            "background_color": "#E8EAED",
+            "font_family": FONT_FAMILY_HEADING,
+            "alignment": "center",
+            "id": f"PH_TAG_S{slide_idx}",
+        })
+        ops.append({
+            "op": "add-textbox",
+            "slide": slide_id,
+            "text": placeholder_hint,
+            "x": round(img_box.x + 16.0, 2),
+            "y": round(img_box.y + img_box.height / 2 + 2.0, 2),
+            "width": round(img_box.width - 32.0, 2),
+            "height": 64.0,
+            "font_size": 9.5,
+            "italic": True,
+            "color": COLOR_TEXT_MUTED,
+            "font_family": FONT_FAMILY_BODY,
+            "alignment": "center",
+            "line_spacing": 120,
+            "id": f"PH_TXT_S{slide_idx}",
+        })
 
     if caption:
         ops.append({
@@ -2257,6 +2292,211 @@ def generate_image_split(
 
 
 # =============================================================================
+# Archetype 12: Workstream Card (Initiative Template: Image/Placeholder + Grid)
+# =============================================================================
+
+
+def generate_workstream_card(
+    slide_id: str,
+    title: str,
+    subtitle: str,
+    kicker: str,
+    image: Optional[Union[dict[str, Any], str]] = None,
+    tempo: str = "",
+    receita: str = "",
+    desafios: Optional[Union[list[str], str]] = None,
+    diferenciais: Optional[Union[list[str], str]] = None,
+    acoes: Optional[Union[list[str], str]] = None,
+    speaker_notes: str = "",
+) -> list[dict[str, Any]]:
+    """Generates gslides batch operations for Archetype 12: Workstream Card.
+
+    Left panel (`X=36, W=220, H=264`): Image (`url` or `path`) or grey placeholder drop-zone.
+    Right panel (`X=270, W=414`):
+      - Top row: 2 compact KPI pills (`TEMPO / MATURIDADE` + `POTENCIAL DE RECEITA`).
+      - Middle row: 2 side-by-side cards (`RISCOS & DESAFIOS` vs. `DIFERENCIAIS GOOGLE`).
+      - Bottom row: Full-width action card (`AÇÕES / O QUE FAZER? (PLANO & QUESTÕES EM ABERTO)`).
+    """
+    slide_idx = _extract_slide_idx(slide_id)
+    img = _normalize_image(image) if image else {}
+
+    ops: list[dict[str, Any]] = [
+        {"op": "add-slide", "layout": "BLANK", "id": slide_id},
+        {"op": "set-background", "slide": slide_id, "color": COLOR_BG_LIGHT},
+    ]
+    ops.extend(_build_header_ops(slide_id, slide_idx, title, subtitle, kicker))
+
+    # 1. Left Panel: Image or Placeholder Drop-Zone (X=36, Y=106, W=220, H=264)
+    img_x, img_y, img_w, img_h = 36.0, 106.0, 220.0, 264.0
+    has_real_img = bool(img.get("url") or img.get("path"))
+    frame_id = f"WS_IMG_S{slide_idx}"
+    ops.append({
+        "op": "add-shape",
+        "slide": slide_id,
+        "shape_type": "RECTANGLE",
+        "x": img_x,
+        "y": img_y,
+        "width": img_w,
+        "height": img_h,
+        "background_color": COLOR_CARD_WHITE if has_real_img else "#F1F3F4",
+        "id": frame_id,
+    })
+    ops.append({
+        "op": "style-shape",
+        "element": frame_id,
+        "outline_color": COLOR_CARD_BORDER,
+        "outline_weight": 1.0,
+    })
+    if img.get("url"):
+        ops.append({
+            "op": "add-image", "slide": slide_id, "url": img["url"],
+            "x": img_x + 8.0, "y": img_y + 8.0, "width": img_w - 16.0, "height": img_h - 16.0,
+        })
+    elif img.get("path"):
+        ops.append({
+            "op": "_pending-image", "slide": slide_id, "path": str(img["path"]),
+            "alt": str(img.get("alt", "")),
+            "x": img_x + 8.0, "y": img_y + 8.0, "width": img_w - 16.0, "height": img_h - 16.0,
+        })
+    else:
+        ph_text = str(img.get("placeholder") or img.get("hint") or "Inserir diagrama de arquitetura ou print").strip()
+        ops.append({
+            "op": "add-textbox",
+            "slide": slide_id,
+            "text": "ESPAÇO PARA IMAGEM / DIAGRAMA",
+            "x": 50.0,
+            "y": 196.0,
+            "width": 192.0,
+            "height": 22.0,
+            "font_size": 8.0,
+            "bold": True,
+            "color": COLOR_TEXT_MUTED,
+            "background_color": "#E8EAED",
+            "font_family": FONT_FAMILY_HEADING,
+            "alignment": "center",
+            "id": f"WS_PHTAG_S{slide_idx}",
+        })
+        ops.append({
+            "op": "add-textbox",
+            "slide": slide_id,
+            "text": ph_text,
+            "x": 48.0,
+            "y": 224.0,
+            "width": 196.0,
+            "height": 64.0,
+            "font_size": 9.0,
+            "italic": True,
+            "color": COLOR_TEXT_MUTED,
+            "font_family": FONT_FAMILY_BODY,
+            "alignment": "center",
+            "line_spacing": 120,
+            "id": f"WS_PHTXT_S{slide_idx}",
+        })
+
+    # 2. Right Top Row: 2 KPI Pills (Y=106, H=40, W=201 each)
+    for idx_p, (px, lbl, val, bg, fg, brd) in enumerate([
+        (270.0, "TEMPO / MATURIDADE", tempo or "Agora (Curto Prazo)", COLOR_BLUE_LIGHT, COLOR_BLUE_TEXT, "#AECBFA"),
+        (483.0, "POTENCIAL DE RECEITA", receita or "A dimensionar", "#E6F4EA", "#137333", "#A8DAB5"),
+    ], start=1):
+        pid = f"WS_PILL_S{slide_idx}_{idx_p}"
+        ops.append({
+            "op": "add-shape", "slide": slide_id, "shape_type": "RECTANGLE",
+            "x": px, "y": 106.0, "width": 201.0, "height": 40.0,
+            "background_color": bg, "id": pid,
+        })
+        ops.append({
+            "op": "style-shape", "element": pid, "outline_color": brd, "outline_weight": 1.0,
+        })
+        ops.append({
+            "op": "add-textbox", "slide": slide_id, "text": lbl,
+            "x": px + 10.0, "y": 109.0, "width": 181.0, "height": 13.0,
+            "font_size": 7.5, "bold": True, "color": fg,
+            "font_family": FONT_FAMILY_HEADING, "alignment": "left",
+            "id": f"WS_PLBL_S{slide_idx}_{idx_p}",
+        })
+        ops.append({
+            "op": "add-textbox", "slide": slide_id, "text": str(val),
+            "x": px + 10.0, "y": 121.0, "width": 181.0, "height": 22.0,
+            "font_size": 9.0, "bold": True, "color": COLOR_TEXT_PRIMARY,
+            "font_family": FONT_FAMILY_BODY, "alignment": "left",
+            "id": f"WS_PVAL_S{slide_idx}_{idx_p}",
+        })
+
+    # 3. Right Middle Row: Desafios vs. Diferenciais (Y=154, H=114, W=201 each)
+    for idx_c, (cx, stripe, hdr_col, hdr_txt, items) in enumerate([
+        (270.0, "#EA4335", "#C5221F", "RISCOS & DESAFIOS", desafios or []),
+        (483.0, "#34A853", "#137333", "DIFERENCIAIS GOOGLE", diferenciais or []),
+    ], start=1):
+        cid = f"WS_CARD_S{slide_idx}_{idx_c}"
+        ops.append({
+            "op": "add-shape", "slide": slide_id, "shape_type": "RECTANGLE",
+            "x": cx, "y": 154.0, "width": 201.0, "height": 114.0,
+            "background_color": COLOR_CARD_WHITE, "id": cid,
+        })
+        ops.append({
+            "op": "style-shape", "element": cid, "outline_color": COLOR_CARD_BORDER, "outline_weight": 1.0,
+        })
+        ops.append({
+            "op": "add-shape", "slide": slide_id, "shape_type": "RECTANGLE",
+            "x": cx, "y": 154.0, "width": 201.0, "height": 4.0,
+            "background_color": stripe, "id": f"WS_BAR_S{slide_idx}_{idx_c}",
+        })
+        ops.append({
+            "op": "add-textbox", "slide": slide_id, "text": hdr_txt,
+            "x": cx + 10.0, "y": 162.0, "width": 181.0, "height": 16.0,
+            "font_size": 8.5, "bold": True, "color": hdr_col,
+            "font_family": FONT_FAMILY_HEADING, "alignment": "left",
+            "id": f"WS_CHDR_S{slide_idx}_{idx_c}",
+        })
+        b_list = [items] if isinstance(items, str) else list(items)
+        ops.append({
+            "op": "add-textbox", "slide": slide_id, "text": _format_bullets(b_list[:4]),
+            "x": cx + 10.0, "y": 179.0, "width": 181.0, "height": 84.0,
+            "font_size": 8.5, "color": COLOR_TEXT_PRIMARY,
+            "font_family": FONT_FAMILY_BODY, "alignment": "left", "line_spacing": 118,
+            "id": f"WS_CBDY_S{slide_idx}_{idx_c}",
+        })
+
+    # 4. Right Bottom Row: Ações / O que fazer? (X=270, Y=276, W=414, H=94)
+    act_id = f"WS_ACT_S{slide_idx}"
+    ops.append({
+        "op": "add-shape", "slide": slide_id, "shape_type": "RECTANGLE",
+        "x": 270.0, "y": 276.0, "width": 414.0, "height": 94.0,
+        "background_color": "#FEF7E0", "id": act_id,
+    })
+    ops.append({
+        "op": "style-shape", "element": act_id, "outline_color": "#FDE293", "outline_weight": 1.0,
+    })
+    ops.append({
+        "op": "add-shape", "slide": slide_id, "shape_type": "RECTANGLE",
+        "x": 270.0, "y": 276.0, "width": 414.0, "height": 4.0,
+        "background_color": "#FBBC04", "id": f"WS_ACTBAR_S{slide_idx}",
+    })
+    ops.append({
+        "op": "add-textbox", "slide": slide_id,
+        "text": "AÇÕES / O QUE FAZER? (PLANO & QUESTÕES EM ABERTO)",
+        "x": 280.0, "y": 283.0, "width": 394.0, "height": 15.0,
+        "font_size": 8.0, "bold": True, "color": "#B06000",
+        "font_family": FONT_FAMILY_HEADING, "alignment": "left",
+        "id": f"WS_ACTHDR_S{slide_idx}",
+    })
+    act_list = [acoes] if isinstance(acoes, str) else list(acoes or [])
+    ops.append({
+        "op": "add-textbox", "slide": slide_id,
+        "text": _format_bullets(act_list[:4]),
+        "x": 280.0, "y": 299.0, "width": 394.0, "height": 68.0,
+        "font_size": 8.5, "color": COLOR_TEXT_PRIMARY,
+        "font_family": FONT_FAMILY_BODY, "alignment": "left", "line_spacing": 116,
+        "id": f"WS_ACTBDY_S{slide_idx}",
+    })
+
+    if speaker_notes:
+        ops.append({"op": "set-notes", "slide": slide_id, "text": speaker_notes})
+
+    return ops
+
+
+# =============================================================================
 # ArchetypeEngine: Unified Dispatcher Interface
 # =============================================================================
 
@@ -2269,10 +2509,21 @@ _ENGINE_ALIASES = {
     "cycle": "flow_diagram",
     "timeline": "flow_diagram",
     "funnel": "flow_diagram",
+    "layered_cake": "flow_diagram",
+    "cake": "flow_diagram",
+    "initiative_card": "workstream_card",
+    "frente_card": "workstream_card",
+    "workstream": "workstream_card",
 }
 
 # Archetype aliases that also pick the flow_diagram layout.
-_FLOW_LAYOUT_HINTS = {"cycle": "cycle", "timeline": "timeline", "funnel": "funnel"}
+_FLOW_LAYOUT_HINTS = {
+    "cycle": "cycle",
+    "timeline": "timeline",
+    "funnel": "funnel",
+    "layered_cake": "layered_cake",
+    "cake": "layered_cake",
+}
 
 
 class ArchetypeEngine:
@@ -2294,6 +2545,7 @@ class ArchetypeEngine:
         "demo_pivot": generate_demo_pivot,
         "image_split": generate_image_split,
         "flow_diagram": generate_flow_diagram,
+        "workstream_card": generate_workstream_card,
     }
 
     @classmethod
@@ -2500,6 +2752,22 @@ class ArchetypeEngine:
                 layout_hint=layout_hint,
                 header_ops=_build_header_ops(slide_id, slide_idx, title, subtitle, kicker),
                 slide_idx=slide_idx,
+            )
+
+        elif archetype == "workstream_card":
+            ws = data.get("workstream") if isinstance(data.get("workstream"), dict) else data
+            return generate_workstream_card(
+                slide_id=slide_id,
+                title=title,
+                subtitle=subtitle,
+                kicker=kicker,
+                image=ws.get("image") or data.get("image") or {},
+                tempo=str(ws.get("tempo") or ws.get("horizon") or ws.get("maturity") or ""),
+                receita=str(ws.get("receita") or ws.get("revenue") or ""),
+                desafios=ws.get("desafios") or ws.get("challenges") or ws.get("risks") or [],
+                diferenciais=ws.get("diferenciais") or ws.get("differentiators") or ws.get("strengths") or [],
+                acoes=ws.get("acoes") or ws.get("actions") or ws.get("next_steps") or [],
+                speaker_notes=notes,
             )
 
         else:

@@ -16,6 +16,7 @@ import re
 import shutil
 import subprocess
 import tempfile
+import time
 from typing import Any, Callable, Optional, Union
 
 # =============================================================================
@@ -435,7 +436,16 @@ class GSlidesClient:
             return dest_path
 
         args = ["export-thumbnail", presentation_id, str(dest_path), "--slide", slide_id]
-        self._run_command(args)
+        for attempt in range(3):
+            try:
+                self._run_command(args)
+                break
+            except GSlidesCLIError as err:
+                msg = f"{err.stderr}\n{err.stdout}"
+                if attempt < 2 and ("429" in msg or "RATE_LIMIT" in msg or "Quota exceeded" in msg):
+                    time.sleep(2.5 * (attempt + 1))
+                    continue
+                raise
         return dest_path
 
     def read_all(self, presentation_id: str) -> dict[str, Any]:
