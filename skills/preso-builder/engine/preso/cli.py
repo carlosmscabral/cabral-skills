@@ -254,7 +254,7 @@ def handle_build(args: argparse.Namespace) -> int:
                 except GSlidesError as img_err:
                     print(f"   ⚠️ Could not insert {img['path']} on {target_slide}: {img_err}", file=sys.stderr)
 
-            with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
                 list(pool.map(_upload_one, batch_result.pending_images))
 
         if batch_result.raw_requests:

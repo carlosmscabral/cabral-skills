@@ -7,9 +7,9 @@ description: >
   walks, and annotated code explanation with a deterministic local validator. Triggers:
   "explain this code visually", "walk me through the request/flow", "packet walk",
   "step-by-step diagram", "teach / onboard with docs". Don't use for standalone cloud or
-  system architecture diagrams, C4 models, interactive HTML architecture viewers, or
-  Draw.io (.drawio / .drawio.svg) exports (use `architecture-diagrams` instead), or for
-  data charts/plots (use `dataviz`).
+  system architecture diagrams, C4 models, interactive architecture studios, or
+  Draw.io (.drawio) exports (use `dendrite` or a dedicated architecture diagramming
+  tool instead), or for data charts/plots (use `dataviz`).
 ---
 
 # Visual documentation that teaches — and actually renders
@@ -28,9 +28,9 @@ execution traces); choosing the right diagram *type* for a concept; the Mermaid 
 authoring rules; and the deterministic validation loop.
 
 **This skill does NOT cover:**
-- Standalone cloud, system, or agent architecture diagrams, C4 models, interactive HTML
-  architecture explorers, or Draw.io (`.drawio` / `.drawio.svg`) exports → use the
-  **`architecture-diagrams`** skill.
+- Standalone cloud, system, or agent architecture diagrams, interactive Bento matrices,
+  or SVG / Draw.io (`.drawio`) exports → use **`dendrite`** (or your active architecture
+  diagramming plugin).
 - Data charts/plots (bar/line/scatter/dashboards) → use the **`dataviz`** skill.
 
 ## 1. Didactic strategy — the spine
@@ -64,7 +64,7 @@ ASCII equivalent) for each are in
 | A wire format, packet, byte/bit or memory layout | **ASCII packet walk** | See [`references/packet-walks.md`](./references/packet-walks.md) |
 | Data shape & relationships | **ER diagram** (`erDiagram`) | Entities + cardinality |
 | How a piece of code executes | **Annotated code + call graph/trace** | See [`references/code-explanation.md`](./references/code-explanation.md) |
-| Cloud / system architecture, C4, or Draw.io export | **`architecture-diagrams` skill** | Produces SVG, interactive HTML, `.drawio`, `.drawio.svg` |
+| Cloud / system architecture, Bento, or Draw.io export | **`dendrite` skill** | Produces 16:9 Bento SVG, interactive studio widget, and `.drawio` |
 
 ## 3. Pick the format & author cleanly
 

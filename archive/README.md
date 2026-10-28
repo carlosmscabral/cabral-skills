@@ -13,9 +13,12 @@ still browse without digging through git.
 to cabral-skills `v1.0.x`–`v1.3.0`); these plugins stay only as examples of the plugin shape
 (rules/hooks/agents/scripts).
 
-### `skills/` — scaffolding skills
-`pytest-linter`, `sec-auditor`, `gcp-iam-troubleshooter`, `gcp-network-troubleshooter` were thin
-stubs created to exercise the DHC, superseded by the personal setup.
+### `skills/` — scaffolding & retired skills
+- `pytest-linter`, `sec-auditor`, `gcp-iam-troubleshooter`, `gcp-network-troubleshooter` were thin
+  stubs created to exercise the DHC, superseded by the personal setup.
+- `architecture-diagrams` (`arch_engine.py`) was our custom Python SVG/HTML/Draw.io diagramming
+  engine, retired in favor of dedicated DSL + interactive studio plugins (such as Dendrite) while
+  keeping didactic Markdown/Mermaid/ASCII explanations in `skills/visual-docs/`.
 
 ### `superpowers/` + `vendor-superpowers.sh` — the old full vendoring of obra/superpowers
 We briefly vendored the whole `obra/superpowers` methodology here (pinned at **v6.1.1**, commit

@@ -125,9 +125,8 @@ Fast mappings from a request to a plan:
   call graph + one execution-trace walk. See [`code-explanation.md`](./code-explanation.md)
   and [`examples/04-code-explainer.md`](../examples/04-code-explainer.md).
 - **"Explain this architecture"** → progressive zoom (context → container → component)
-  using canonical component names across views (or delegate to the
-  `architecture-diagrams` skill when generating interactive HTML, SVG, or Draw.io
-  deliverables).
+  using canonical component names across views (or delegate to `dendrite` when
+  generating 16:9 Bento architecture diagrams, SVG, or Draw.io deliverables).
 - **"Explain this lifecycle/state"** → `stateDiagram-v2` with events on the edges +
   narration of the terminal states.
 

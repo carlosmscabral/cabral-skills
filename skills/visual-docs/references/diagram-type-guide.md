@@ -131,8 +131,8 @@ Cardinality crib: `||` exactly one, `o{` zero-or-many, `|{` one-or-many.
 ## System / component overview → inline flowchart subgraphs
 
 For a quick inline component overview inside a Markdown doc, a flowchart with subgraphs
-works well (for presentation-grade cloud/C4 architecture diagrams in SVG, interactive
-HTML, or Draw.io, use the `architecture-diagrams` skill instead):
+works well (for presentation-grade cloud/Bento architecture diagrams in SVG, interactive
+studio widgets, or Draw.io, use `dendrite` instead):
 
 ```mermaid
 flowchart LR

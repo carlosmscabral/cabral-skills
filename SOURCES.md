@@ -30,8 +30,8 @@ npx skills add google/skills                 # all
 npx skills add google/skills --skill <name>  # one
 ```
 
-### External diagramming references (consolidated into `skills/architecture-diagrams/`)
-Core system/cloud architecture diagramming, Dual-Mode `.drawio.svg` / multi-page C4 `.drawio` XML generation, and interactive HTML exploration are now natively handled by our own zero-dependency [`skills/architecture-diagrams/`](skills/architecture-diagrams/) skill (while didactic Markdown/Mermaid/ASCII explanations live in [`skills/visual-docs/`](skills/visual-docs/)). The external community projects below served as design inspiration and remain useful references:
+### External diagramming references
+Didactic Markdown/Mermaid/ASCII explanations live in [`skills/visual-docs/`](skills/visual-docs/), while standalone cloud/system architecture diagrams are handled by dedicated interactive DSL/studio plugins (our retired custom Python engine snapshot lives in [`archive/skills/architecture-diagrams/`](archive/skills/architecture-diagrams/)). Useful open-source community diagramming references:
 
 - **[Agents365-ai/drawio-skill](https://github.com/Agents365-ai/drawio-skill)** — Multi-page C4 (L1–L4) `.drawio` conventions, port separation (`exitX`/`exitY`/`entryX`/`entryY`), and Draw.io Desktop CLI export patterns (`npx skills add Agents365-ai/365-skills -g`).
 - **[tt-a1i/archify](https://github.com/tt-a1i/archify)** — Interactive HTML architecture explorer patterns (guided walkthrough chapters, node click inspector, upstream/downstream path highlighting, and evidence badges).

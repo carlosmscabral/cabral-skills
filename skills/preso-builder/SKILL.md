@@ -100,7 +100,7 @@ Authoring rules:
   status chips, a red marker pill. Never use `funnel` or `ladder_hierarchy` when the user asks for a **Layered Cake** (bottom-up stacked foundation → platforms → frontier).
 - **Use `workstream_card` for initiative / workstream catalogues.** When building 1 slide per workstream/frente (with an image or placeholder drop-zone on the left + Tempo/Maturidade, Potencial de Receita, Riscos & Desafios vs. Diferenciais, and Ações on the right), use `archetype: workstream_card`.
 - **Self-explanatory roadmap labels (no ambiguous `H1/H2/H3`).** In executive decks and roadmaps, never use `H1 / H2 / H3` (which confuses Three Horizons with 1st/2nd Half of the year). Always write self-explanatory labels: `Agora (Curto Prazo)`, `Médio Prazo`, `Longo Prazo (Futuro)`.
-- **Fast image & placeholder workflow.** When the user wants a quick draft ("vou dar um tapa manualmente") or an image space to fill later, pass `image: {placeholder: "Descrição do diagrama..."}` on `workstream_card` or `image_split` (instant grey drop-zone, zero upload calls). When rendering multiple Mermaid/draw.io diagrams to PNG, compile all diagrams in parallel (`ThreadPoolExecutor`) before calling `preso build`.
+- **Fast image & placeholder workflow.** When the user wants a quick draft ("vou dar um tapa manualmente") or an image space to fill later, pass `image: {placeholder: "Descrição do diagrama..."}` on `workstream_card` or `image_split` (instant grey drop-zone, zero upload calls). When embedding architecture diagrams (such as Dendrite `.svg` exports) into `image_split`, rasterize them via [`scripts/svg_to_slide_png.py`](scripts/svg_to_slide_png.py) (`<slug>.slide.png`, calibrated at `<=1999px` Skia vector width so Google Slides' `=s2048` server cap never downscales/blurs text) and prefer `image_layout: full`. When rendering multiple diagrams, pass all `.svg` files in a single call so they rasterize in parallel before `preso build`.
 - **Speaker notes are optional.** Write them only when the user wants them and you
   have real content. Nothing is generated, placeholdered, or flagged when a slide
   has none. Never pad notes with filler. When you do write them, lead with the slide's
@@ -176,8 +176,11 @@ Try these in order:
    reach for anything else. For a one-off diagram slide outside a deck build, use
    [examples/diagram_slide_rawbatch.py](examples/diagram_slide_rawbatch.py) (new deck,
    one raw-batch, thumbnail, `--patch` to redo single elements).
-2. **Pathway B (render a diagram).** Author Mermaid (`mmdc -i d.mmd -o d.png -w 1600 -b white`)
-   or draw.io (the `drawio-skill`, export PNG), or take a screenshot. Place it with
+2. **Pathway B (render an architecture diagram).** Generate a 16:9 Bento `.svg` with `dendrite`
+   (omit root `title`/`subtitle` or use `@Ghost` on the root zone so it doesn't duplicate the
+   slide's header, and keep `<=4` columns), then rasterize at `<=1999px` width via
+   `python3 <skill-dir>/scripts/svg_to_slide_png.py diagrams/<slug>.svg` to produce
+   `diagrams/<slug>.slide.png` without Google Slides `=s2048` downscale blur. Place it with
    `image_split`:
    ```yaml
    - archetype: image_split

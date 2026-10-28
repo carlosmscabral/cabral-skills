@@ -616,7 +616,21 @@ class GSlidesClient:
             "--width", f"{width:.1f}",
             "--height", f"{height:.1f}",
         ]
-        self._run_command(args)
+        for attempt in range(4):
+            try:
+                self._run_command(args)
+                return True
+            except GSlidesCLIError as err:
+                msg = f"{err.stderr}\n{err.stdout}"
+                if attempt < 3 and (
+                    "429" in msg
+                    or "rateLimitExceeded" in msg
+                    or "RATE_LIMIT" in msg
+                    or "Quota exceeded" in msg
+                ):
+                    time.sleep(2.5 * (attempt + 1))
+                    continue
+                raise
         return True
 
     def raw_batch(self, presentation_id: str, requests: list[dict[str, Any]]) -> bool:
