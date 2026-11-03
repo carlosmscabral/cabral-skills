@@ -1,8 +1,14 @@
 name: Check vendored upstreams
 
-# Alerts (does NOT auto-sync) when a vendored upstream publishes a release newer than the tag
-# pinned in vendored.json. Syncing stays a deliberate, pinned action — run the per-source sync
-# script and cut a release. See AGENTS.md. Covers every entry in the matrix below.
+# When a vendored upstream publishes a release newer than the tag pinned in vendored.json, this
+# workflow runs the per-source sync script at that exact tag, validates the repo, and opens (or
+# updates) a pull request. Nothing lands on main automatically — syncing stays a deliberate,
+# pinned action: review the PR, merge it, then cut a release tag. See AGENTS.md.
+#
+# If the sync or validation fails, a tracking issue is opened instead so drift is never silent.
+#
+# Requires repo setting: Settings → Actions → General → "Allow GitHub Actions to create and
+# approve pull requests".
 
 on:
   schedule:
@@ -10,11 +16,12 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
+  pull-requests: write
   issues: write
 
 jobs:
-  check:
+  sync:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -23,15 +30,24 @@ jobs:
           - key: google-agents-cli
             repo: google/agents-cli
             script: scripts/vendor-agents-cli.sh
+            plugin_json: plugins/adk-developer/plugin.json
+    env:
+      GH_TOKEN: ${{ github.token }}
+      KEY: ${{ matrix.key }}
+      UPSTREAM: ${{ matrix.repo }}
+      SCRIPT: ${{ matrix.script }}
+      PLUGIN_JSON: ${{ matrix.plugin_json }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # need tags to compute the next release version
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
 
       - name: Compare pinned vs latest upstream
         id: cmp
-        env:
-          GH_TOKEN: ${{ github.token }}
-          KEY: ${{ matrix.key }}
-          UPSTREAM: ${{ matrix.repo }}
         run: |
           set -euo pipefail
           PINNED=$(python3 -c "import json;print(json.load(open('vendored.json'))['$KEY']['tag'])")
@@ -49,35 +65,126 @@ jobs:
           fi
           echo "$UPSTREAM  pinned=$PINNED latest=$LATEST"
 
-      - name: Open or update tracking issue
+      - name: Run sync script at latest tag
         if: steps.cmp.outputs.outdated == 'true'
+        id: sync
         env:
-          GH_TOKEN: ${{ github.token }}
-          UPSTREAM: ${{ matrix.repo }}
-          SCRIPT: ${{ matrix.script }}
-          PINNED: ${{ steps.cmp.outputs.pinned }}
           LATEST: ${{ steps.cmp.outputs.latest }}
         run: |
           set -euo pipefail
-          TITLE="chore: vendored ${UPSTREAM} is behind upstream"
+          bash "$SCRIPT" "$LATEST"
+
+          # Next release = minor bump of max(latest repo tag, current plugin version).
+          NEXT=$(python3 - <<'PY'
+          import json, os, re, subprocess
+          def parse(v):
+              m = re.match(r"v?(\d+)\.(\d+)\.(\d+)", v or "")
+              return tuple(map(int, m.groups())) if m else (0, 0, 0)
+          tags = subprocess.run(["git", "tag", "--list", "v*"], capture_output=True, text=True).stdout.split()
+          repo_v = max((parse(t) for t in tags), default=(0, 0, 0))
+          path = os.environ["PLUGIN_JSON"]
+          data = json.load(open(path))
+          base = max(repo_v, parse(data.get("version")))
+          nxt = f"{base[0]}.{base[1] + 1}.0"
+          data["version"] = nxt
+          with open(path, "w") as f:
+              json.dump(data, f, indent=2)
+              f.write("\n")
+          print(nxt)
+          PY
+          )
+          echo "next=$NEXT" >> "$GITHUB_OUTPUT"
+
+          python3 scripts/validate_repo.py
+
+          if git diff --quiet && [ -z "$(git ls-files --others --exclude-standard)" ]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            {
+              echo 'stat<<STAT_EOF'
+              git add -A
+              git diff --cached --stat | tail -n 40
+              echo 'STAT_EOF'
+            } >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Open or update sync pull request
+        if: steps.cmp.outputs.outdated == 'true' && steps.sync.outputs.changed == 'true'
+        env:
+          PINNED: ${{ steps.cmp.outputs.pinned }}
+          LATEST: ${{ steps.cmp.outputs.latest }}
+          NEXT: ${{ steps.sync.outputs.next }}
+          STAT: ${{ steps.sync.outputs.stat }}
+        run: |
+          set -euo pipefail
+          BRANCH="bot/vendor-${KEY}"
+          TITLE="chore(vendor): sync ${UPSTREAM} to ${LATEST}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B "$BRANCH"
+          git add -A
+          git commit -q -m "$TITLE"
+          git push --force origin "$BRANCH"
+
           BODY=$(cat <<EOF
-          A newer **${UPSTREAM}** release is available.
+          Automated sync of vendored **${UPSTREAM}**: \`${PINNED}\` → \`${LATEST}\` via \`${SCRIPT} ${LATEST}\`.
 
-          - Pinned in \`vendored.json\`: \`$PINNED\`
-          - Latest upstream: \`$LATEST\`
+          - \`vendored.json\` provenance/digests regenerated.
+          - \`${PLUGIN_JSON}\` version → \`${NEXT}\`.
+          - \`python3 scripts/validate_repo.py\` passed in CI.
 
-          To adopt it:
+          **Review checklist:** skim the diff below, check for renamed/removed upstream skills or changed
+          \`description\` frontmatter (update README if so), then merge and cut the release:
+
           \`\`\`bash
-          ${SCRIPT} $LATEST
+          git checkout main && git pull
+          git tag -a v${NEXT} -m "v${NEXT}: sync ${UPSTREAM} to ${LATEST}"
+          git push origin v${NEXT}
           \`\`\`
-          Then review the diff, update docs if needed, run the validation checklist, and cut a new cabral-skills release tag. (See AGENTS.md.)
 
-          _Filed automatically by the check-vendored-upstreams workflow._
+          <details><summary>Diff stat</summary>
+
+          \`\`\`
+          ${STAT}
+          \`\`\`
+          </details>
+
+          _Opened automatically by the check-vendored-upstreams workflow._
+          EOF
+          )
+
+          EXISTING=$(gh pr list --state open --head "$BRANCH" --json number --jq '.[0].number' || true)
+          if [ -n "${EXISTING:-}" ]; then
+            gh pr edit "$EXISTING" --title "$TITLE" --body "$BODY"
+            echo "Updated PR #$EXISTING"
+          else
+            gh pr create --base main --head "$BRANCH" --title "$TITLE" --body "$BODY"
+          fi
+
+      - name: Open tracking issue on failure
+        if: failure() && steps.cmp.outputs.outdated == 'true'
+        env:
+          PINNED: ${{ steps.cmp.outputs.pinned }}
+          LATEST: ${{ steps.cmp.outputs.latest }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          TITLE="chore: vendored ${UPSTREAM} is behind upstream (auto-sync failed)"
+          BODY=$(cat <<EOF
+          Automatic sync of **${UPSTREAM}** \`${PINNED}\` → \`${LATEST}\` failed: ${RUN_URL}
+
+          Sync manually:
+          \`\`\`bash
+          ${SCRIPT} ${LATEST}
+          python3 scripts/validate_repo.py
+          \`\`\`
+          Then review the diff, bump the plugin version, and cut a release tag. (See AGENTS.md.)
           EOF
           )
           EXISTING=$(gh issue list --state open --search "$TITLE in:title" --json number --jq '.[0].number' || true)
           if [ -n "${EXISTING:-}" ]; then
-            gh issue edit "$EXISTING" --body "$BODY"; echo "Updated issue #$EXISTING"
+            gh issue edit "$EXISTING" --body "$BODY"
           else
             gh issue create --title "$TITLE" --body "$BODY"
           fi
