@@ -34,6 +34,7 @@ npx skills add google/skills --skill <name>  # one
 Didactic Markdown/Mermaid/ASCII explanations live in [`skills/visual-docs/`](skills/visual-docs/), while standalone cloud/system architecture diagrams are handled by dedicated interactive DSL/studio plugins (our retired custom Python engine snapshot lives in [`archive/skills/architecture-diagrams/`](archive/skills/architecture-diagrams/)). Useful open-source community diagramming references:
 
 - **[Agents365-ai/drawio-skill](https://github.com/Agents365-ai/drawio-skill)** — Multi-page C4 (L1–L4) `.drawio` conventions, port separation (`exitX`/`exitY`/`entryX`/`entryY`), and Draw.io Desktop CLI export patterns (`npx skills add Agents365-ai/365-skills -g`).
+- **[duboc/agy-skills (`cloud-architecture-diagram`)](https://github.com/duboc/agy-skills/tree/main/skills/cloud-architecture-diagram)** — Self-contained HTML reference architecture walkthroughs with stepped SVG camera framing (`focusBox` zoom + `0.14` dim), Google Cloud boundary/Pub-Sub semantics, and strict evidence/address sanitization rules.
 - **[tt-a1i/archify](https://github.com/tt-a1i/archify)** — Interactive HTML architecture explorer patterns (guided walkthrough chapters, node click inspector, upstream/downstream path highlighting, and evidence badges).
 - **[cathrynlavery/diagram-design](https://github.com/cathrynlavery/diagram-design)** — Bento Grid composition laws, orthogonal routing with rounded corners (`r=8px`), perpendicular arrowheads, and masked edge labels.
 

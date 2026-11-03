@@ -19,6 +19,10 @@ to cabral-skills `v1.0.x`–`v1.3.0`); these plugins stay only as examples of th
 - `architecture-diagrams` (`arch_engine.py`) was our custom Python SVG/HTML/Draw.io diagramming
   engine, retired in favor of dedicated DSL + interactive studio plugins (such as Dendrite) while
   keeping didactic Markdown/Mermaid/ASCII explanations in `skills/visual-docs/`.
+- `architecture-research-blueprint` was our multi-agent architecture research + Mermaid `web_report/`
+  SPA workflow, retired in favor of native multi-agent deep-research workflows, official Google Cloud
+  Well-Architected skills (`google/skills`), `dendrite` for 16:9 Bento architecture diagrams, and
+  `skills/preso-builder/` for executive slide decks.
 
 ### `superpowers/` + `vendor-superpowers.sh` — the old full vendoring of obra/superpowers
 We briefly vendored the whole `obra/superpowers` methodology here (pinned at **v6.1.1**, commit

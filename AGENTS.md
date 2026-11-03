@@ -112,7 +112,7 @@ rewrites `vendored.json`. Then: review the diff, update the README if descriptio
 ## Consuming this repo
 
 - **A standalone skill:** `npx skills add carlosmscabral/cabral-skills --skill <name>` (or omit
-  `--skill` for all four). Reads `skills/` only.
+  `--skill` for all five). Reads `skills/` only.
 - **The ADK plugin:** global via a remote **subfolder** URL
   (`agy plugin install https://github.com/carlosmscabral/cabral-skills/tree/main/plugins/adk-developer`)
   or workspace-local by copying/symlinking it into `.agents/plugins/` (auto-discovered). See README

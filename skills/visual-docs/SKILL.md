@@ -127,5 +127,5 @@ installed. On a FAIL, read the diagnostic line, fix the source, and re-run until
    Mermaid (or ASCII outright for packets/bytes).
 4. **Validate** (§4); fix on failure; re-run until clean.
 5. Keep component names **canonical** across diagrams. If the user asks for an
-   editorial cloud/system architecture diagram, C4 model, interactive HTML viewer, or
-   Draw.io export, switch to the `architecture-diagrams` skill.
+   editorial cloud/system architecture diagram, C4 model, interactive architecture studio, or
+   Draw.io export, switch to the `dendrite` skill.
