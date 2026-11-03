@@ -27,9 +27,9 @@ RUBRIC: tuple[tuple[str, str], ...] = (
     ("Padding & alignment", "Consistent inner padding; columns/cards aligned on a common grid."),
     ("Bottom-left zone", "Nothing collides with the footer / logo area in the bottom-left."),
     ("Collisions", "No overlapping shapes or text; header, subtitle and body do not touch."),
-    ("Contrast", "Text readable on its background (white on navy, navy on light)."),
+    ("Contrast", "Text readable on its background (white on charcoal/blue, dark on light)."),
     ("Leftovers", "No template placeholder text, empty shapes, or stray elements."),
-    ("Takeaway", "Subtitle states the slide's point as a sentence a skimmer would get."),
+    ("Visual hierarchy", "Title, optional subtitle, and body blocks scan cleanly without visual clutter."),
 )
 
 
@@ -40,7 +40,9 @@ def _deck_slide_rows(spec: Optional[PresentationSpec]) -> list[dict[str, Any]]:
         return rows
     for chapter in spec.chapters:
         has_divider = any(
-            (s.archetype or "").strip().lower() == "chapter_divider" for s in chapter.slides
+            (s.archetype or "").strip().lower().replace("-", "_")
+            in ("chapter_divider", "cover", "title_cover", "opening")
+            for s in chapter.slides
         )
         if getattr(chapter, "include_divider", True) and not has_divider and (chapter.title or chapter.number):
             rows.append({

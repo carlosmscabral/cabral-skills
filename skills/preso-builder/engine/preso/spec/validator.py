@@ -59,17 +59,7 @@ BUDGET_CTA_TEXT = 40
 BUDGET_WATCH_FOR_ITEM = 28
 BUDGET_WATCH_FOR_MAX = 3
 BUDGET_IMAGE_CAPTION = 90
-MIN_ASSERTION_SUBTITLE_WORDS = 4
 MAX_CONSECUTIVE_SAME_ARCHETYPE = 2
-
-# Archetypes that intentionally carry no assertion subtitle.
-SUBTITLE_EXEMPT_ARCHETYPES = {
-    "chapter_divider",
-    "demo_pivot",
-    "cover",
-    "statement_pivot",
-    "closing_ask",
-}
 
 # Ambiguous roadmap horizon tags forbidden by user style rules (prefer Agora / Médio Prazo / Longo Prazo).
 AMBIGUOUS_HORIZON_RE = re.compile(r"^\s*H[1-4]\b", re.IGNORECASE)
@@ -477,7 +467,7 @@ class SpecValidator:
             else:
                 result.add_warning(msg)
 
-        # 3. Tier / visibility (speaker notes are optional and never validated)
+        # 3. Tier / visibility (speaker notes and subtitles are optional)
         tier = (getattr(parsed, "tier", "") or "core").strip().lower()
         if tier not in SLIDE_TIERS:
             result.add_error(
@@ -485,17 +475,7 @@ class SpecValidator:
                 f"Supported tiers: {list(SLIDE_TIERS)}"
             )
 
-        # 5. Assertion subtitle: the subtitle carries the one-sentence takeaway.
-        if normalized_arch not in SUBTITLE_EXEMPT_ARCHETYPES:
-            words = len((parsed.subtitle or "").split())
-            if words < MIN_ASSERTION_SUBTITLE_WORDS:
-                result.add_warning(
-                    f"Slide {slide_index} ({normalized_arch}) '{parsed.title[:30]}': subtitle should state "
-                    f"the slide's takeaway as a full sentence (≥{MIN_ASSERTION_SUBTITLE_WORDS} words), "
-                    f"not a topic label."
-                )
-
-        # 6. Citation / research artifacts leaking into visible text
+        # 4. Citation / research artifacts leaking into visible text
         for field_path, text in cls._visible_text_fields(parsed):
             match = CITATION_ARTIFACT_RE.search(text)
             if match:

@@ -1,33 +1,37 @@
 ---
 name: preso-builder
 description: >-
-  Builds executive-ready Google Slides decks in clean Google Cloud Editorial visual
-  style from a YAML spec (preso_spec.yaml), ingesting codebases, existing decks, or
-  markdown docs, with 18 slide archetypes, native editable diagrams (cycle, timeline,
-  funnel, layered_cake, swimlanes with glued connectors), geometry-aware text-fit checks,
-  duration tiers, and a render-audit loop on real thumbnails. Use when asked to create,
-  restyle, or QA an executive Google Slides deck, convert a repo or doc into slides,
-  draw a "where we are" / roadmap / process / swimlane diagram slide, cut a 5/15/45-minute
-  version of a deck, or redesign a single slide.
+  Builds Google Slides decks in clean Google Cloud Editorial visual style from a YAML
+  spec (preso_spec.yaml), ingesting codebases, existing decks, or markdown docs, with
+  18 slide archetypes, native editable diagrams (cycle, timeline, funnel, layered_cake,
+  swimlanes with glued connectors), geometry-aware text-fit checks, WCAG AA contrast
+  validation, duration tiers, and a render-audit loop on real thumbnails. Agnostic of
+  topic or narrative structure — focused strictly on visual design and layout geometry.
+  Use when asked to create, restyle, or QA a Google Slides deck, convert a repo or doc
+  into slides, draw a roadmap / process / layered / swimlane diagram slide, cut a
+  5/15/45-minute version of a deck, or redesign a single slide.
 ---
 
-# preso-builder: Google Cloud Editorial deck builder
+# preso-builder: Google Cloud Editorial slide design engine
 
-A spec-first engine: you author `preso_spec.yaml`. The engine (bundled in
-[`engine/`](engine/README.md) next to this file) validates it, compiles it into one atomic `gslides batch`, builds a clean blank Google Slides deck (or clones `--template-id` when requested), prunes the default blank slide `p`, then exports
-thumbnails so you can audit what actually rendered.
+A spec-first visual layout engine: you author `preso_spec.yaml` in any structure or
+storyline your topic needs (from a single status slide to a multi-section deck). The
+engine (bundled in [`engine/`](engine/README.md) next to this file) validates geometry
+and WCAG contrast, compiles one atomic `gslides batch`, builds a clean blank Google
+Slides deck (or clones `--template-id` when requested), prunes the default blank slide
+`p`, and exports thumbnails so you can audit what actually rendered.
 
 ## When to use
 
-- Build a clean Google Cloud Editorial executive deck (`#FFFFFF` white, `#202124` charcoal, and `#1A73E8` blue canvases, top mini 4-color bar, `ROUND_RECTANGLE` hairline cards, `Google Sans` Regular titles) from docs, RFCs, notes, or a repo.
+- Design clean Google Cloud Editorial slides (`#FFFFFF` white, `#202124` charcoal, and `#1A73E8` blue canvases, top mini 4-color bar, `ROUND_RECTANGLE` hairline cards, `Google Sans` Regular titles) for any domain, audience, or deck structure.
 - Restyle an existing Google Slides deck (`ingest --slides <deck_id>`).
 - Cut one deck to several talk lengths (`--duration 5|15|45|full`).
-- Redesign one slide, or QA/audit a built deck.
+- Redesign one slide, or visually QA/audit a built deck.
 - Draw a native process or architecture diagram slide (`cycle`, `timeline`, `funnel`, `layered_cake`, `swimlanes`) that stays
   editable in Slides (`flow_diagram`).
 
 Not for: data charts or telemetry plots (`dataviz`), dense technical/architecture diagrams
-(render Mermaid/draw.io to PNG and place them with `image_split`), Docs/Sheets authoring.
+(render Dendrite/Mermaid/draw.io to PNG and place them with `image_split`), Docs/Sheets authoring.
 
 ## Setup
 
@@ -46,69 +50,62 @@ the batch JSON (`build --dry-run --output-batch ops.json`).
 
 ### 1. Intake gate (ask first, only what is missing)
 
-Before writing a spec, make sure you know these five things. If the user did not
-say, ask in **one** `ask_question` call. Do not ask about anything they already
-told you.
+Before writing a spec, make sure you know what is missing in **one** `ask_question` call
+(never ask what the user already told you):
 
-| Question | Why it matters |
+| Parameter | Why it matters for design |
 |---|---|
-| Audience (execs / engineers / customer / mixed) | Density, jargon, which archetypes |
-| Talk length (5 / 15 / 45 min) | Slide count and tiers (`--duration`) |
-| Language (EN / PT-BR / ES …) | All visible text and notes |
-| Tone (executive, technical deep-dive, workshop) | Titles, verbs, demo slides |
-| Source of truth (repo, doc, deck, or "from scratch") | `ingest` vs `spec` |
+| Slide count / duration (`1 slide`, `5 / 15 / 45 min`, `full`) | Density and tier filtering (`--duration`) |
+| Language (`PT-BR` / `EN` / `ES` …) | Visible text and labels |
+| Audience & density (executive scan vs. technical detail) | Archetype choice and text conciseness |
+| Source material (repo, doc, existing deck, or direct prompt) | `ingest` vs authoring `preso_spec.yaml` directly |
 
-Rough sizing: about 1 slide per minute for 5–15 minute talks, and about 0.7 per minute for 45 minutes.
+### 2. Map information shape to visual archetypes
 
-### 2. Content contract (before any layout)
+The skill imposes **no narrative arc or fixed slide order** — organize slides around whatever
+structure fits the user's goal. Pick each slide's archetype purely from the **shape of the
+information**:
 
-Decks look designed when the content was decided first. For every slide that carries the
-story (especially diagrams), write a two-line brief before picking an archetype:
+| Information shape | Best archetype(s) |
+|---|---|
+| Opening title / optional evolution pills (`A → B → [C]`) | `cover` |
+| Section break inside a longer deck | `chapter_divider` (`include_divider: false` on chapters that don't need one) |
+| High-contrast single statement, key thesis, or provocation | `statement_pivot` (`variant: blue` `#1A73E8` or `variant: dark` `#202124`) |
+| 2–3 side-by-side cards (optionally under a connected `flow_steps` strip or above a `foundation` bar) | `split_cards` |
+| 4 (`2×2`) or 6 (`2×3`) numbered pillars / summary cards | `executive_grid` |
+| Rows × columns option evaluation / heat-matrix | `capability_matrix` |
+| 1 hero KPI on the left + 2–4 leading indicators on the right | `kpi_spotlight` |
+| 2–3 peer headline stats side by side | `hero_metrics` |
+| 3–4 sequential horizontal steps | `ladder_hierarchy` |
+| 2–4 ascending maturity horizons (`Agora (Curto Prazo)` → `Médio Prazo` → `Longo Prazo (Futuro)`) | `horizon_staircase` |
+| Do vs. Don't comparison | `dodont_checklist` |
+| Code / config snippet in dark monospace frame | `code_terminal` |
+| Live demo transition + "watch for" chips | `demo_pivot` |
+| Principles + right-hand roadmap card, or dark multi-column decisions | `actionable_takeaways` or `closing_ask` |
+| Editable native loop, milestone row, funnel, bottom-up layered cake, or horizontal swimlanes | `flow_diagram` (`cycle` / `timeline` / `funnel` / `layered_cake` / `swimlanes`) |
+| Per-initiative / workstream catalogue card (left visual + right KPIs, risks vs. strengths, actions) | `workstream_card` |
+| External diagram PNG / screenshot (split with bullets or full-bleed) | `image_split` |
 
-- **What must this slide prove?** One sentence. It becomes the subtitle.
-- **Where does the story go from → to, and where is "we are here"?** That decides the
-  layout (`cycle` for a loop, `timeline` for milestones, `funnel` for a staged journey) and
-  the `marker`.
-
-Then **check every claim against the evidence** (data, gap analysis, status docs) before
-drawing it. If something isn't done, say so: status chips (`done`/`active`/`next`) and the
-honesty `note` ("Today: X mature · Y in progress") exist for that. Use executive language
-without jargon on the slide; method and caveats go in the notes when there are notes.
-
-### 3. Draft the spec (Maker)
+### 3. Draft the spec (Visual & Layout Rules)
 
 ```bash
 preso ingest --repo <dir> | --markdown <doc.md> | --slides <deck_id> --output preso_spec.yaml
-preso spec --preset ai_factory --title "<Title>" --output preso_spec.yaml   # from scratch
+preso spec --preset minimal --title "<Title>" --output preso_spec.yaml   # minimal starter skeleton
 ```
 
-Authoring rules:
+Visual authoring rules:
 
-- **Titles are short labels, and the subtitle is the takeaway sentence.** Every
-  content slide needs a subtitle of at least 4 words that states the point
-  ("Agents cut review time from 2 days to 3 hours"), not a topic ("Review time").
-  The validator warns when it's missing.
-- **Vary the layout across the 18 archetypes.** Don't use more than 2 slides in a row with the same archetype. The
-  validator warns. Open with `cover` (with `breadcrumbs` evolution trail when relevant), punctuate key theses or questions with `statement_pivot` (`variant: blue` or `dark`), compare options with `capability_matrix`, spotlight pilot impact with `kpi_spotlight`, frame maturity horizons with `horizon_staircase`, summarize 4 or 6 pillars with `executive_grid` (`2×2` or `2×3`), pair an end-to-end flow strip with role cards in `split_cards` (`flow_steps`), and close with `closing_ask`.
-- **Tier every slide** for length variants: `core` (always shown), `explain` (15 min and up),
-  `detail` (45 min and up), or `appendix` (built but hidden). Use `skip: true` to hide one slide.
-- **Mark the demo.** Put a `demo_pivot` slide before any live demo, with up to 3
-  `watch_for` chips that tell the audience what to notice.
-- **Draw flows, horizontal swimlanes & stacked architectures natively.** Loops, roadmaps, staged journeys, "where we are" slides, horizontal capability bands, and bottom-up architectures use
-  `flow_diagram` (`cycle` / `timeline` / `funnel` / `layered_cake` / `swimlanes`): editable rounded shapes, curved connectors,
-  status chips, co-build highlight outlines (`#E37400`), and a red marker pill. Never use `funnel` or `ladder_hierarchy` when the user asks for a **Layered Cake** (bottom-up stacked foundation → platforms → frontier); use `swimlanes` when showing horizontal capability bands stacked top-to-bottom.
-- **Use `workstream_card` for initiative / workstream catalogues.** When building 1 slide per workstream/frente (with an image or placeholder drop-zone on the left + Tempo/Maturidade, Potencial de Receita, Riscos & Desafios vs. Diferenciais, and Ações on the right), use `archetype: workstream_card`.
-- **Self-explanatory roadmap labels (no ambiguous `H1/H2/H3`).** In executive decks and roadmaps, never use `H1 / H2 / H3` (which confuses Three Horizons with 1st/2nd Half of the year). Always write self-explanatory labels: `Agora (Curto Prazo)`, `Médio Prazo`, `Longo Prazo (Futuro)`.
-- **Fast image & placeholder workflow.** When the user wants a quick draft ("vou dar um tapa manualmente") or an image space to fill later, pass `image: {placeholder: "Descrição do diagrama..."}` on `workstream_card` or `image_split` (instant grey drop-zone, zero upload calls). When embedding architecture diagrams (such as Dendrite `.svg` exports) into `image_split`, rasterize them via [`scripts/svg_to_slide_png.py`](scripts/svg_to_slide_png.py) (`<slug>.slide.png`, calibrated at `<=1999px` Skia vector width so Google Slides' `=s2048` server cap never downscales/blurs text) and prefer `image_layout: full`. When rendering multiple diagrams, pass all `.svg` files in a single call so they rasterize in parallel before `preso build`.
-- **Speaker notes are optional.** Write them only when the user wants them and you
-  have real content. Nothing is generated, placeholdered, or flagged when a slide
-  has none. Never pad notes with filler. When you do write them, lead with the slide's
-  main message, then one line per block (card, node, step).
-- **No research residue.** Remove citation markers like `[cite: 3]`, `[1]`, and `【4】`.
-  The validator flags them.
+- **Concise headers.** Keep `title` to a clean single-line headline (`<= 50–60` chars on content slides) and `subtitle` (optional) to a single supporting line (`<= 94` chars). Keep `kicker` short (`<= 20` chars) so it never wraps.
+- **Visual variety.** Avoid more than 2 consecutive slides with the exact same archetype (the validator warns so the deck doesn't look repetitive; intentional catalogues like `workstream_card` series are fine when requested).
+- **Tier slides when building multi-length decks:** `core` (always shown), `explain` (15 min+), `detail` (45 min+), or `appendix` (built but hidden via `skip-slide`). Use `skip: true` to hide an individual slide.
+- **Native diagrams (`flow_diagram`):** Choose `layered_cake` for bottom-up stacked architectures (foundation at base → platforms → top tier), `swimlanes` for top-to-bottom horizontal bands, `cycle` for continuous loops, `timeline` for milestone cards, and `funnel` for stage-by-stage chevrons.
+- **Self-explanatory horizon labels (never `H1/H2/H3`).** Whenever a slide shows time horizons, write `Agora (Curto Prazo)`, `Médio Prazo`, `Longo Prazo (Futuro)` instead of ambiguous `H1/H2/H3`.
+- **Fast image & placeholder workflow.** Pass `image: {placeholder: "Descrição..."}` on `workstream_card` or `image_split` for an instant grey drop-zone with zero upload calls. When embedding vector architecture diagrams (such as Dendrite `.svg` exports) into `image_split`, rasterize them via [`scripts/svg_to_slide_png.py`](scripts/svg_to_slide_png.py) (`<slug>.slide.png`, calibrated at `<=1999px` Skia width so Google Slides' `=s2048` server cap never downscales/blurs text) and prefer `image_layout: full`.
+- **Optional speaker notes.** Include `speaker_notes` only when requested; nothing is invented or flagged when omitted.
+- **Clean visible text.** Strip any leftover citation markers (`[cite: 3]`, `[1]`, `【4】`); the validator warns on them.
 
-Archetypes are listed in [references/archetypes.md](references/archetypes.md), and the full
-schema is in [references/spec_schema.md](references/spec_schema.md).
+Archetypes are documented in [references/archetypes.md](references/archetypes.md), and the full
+YAML schema is in [references/spec_schema.md](references/spec_schema.md).
 
 ### 4. Validate and fit (Checker)
 
@@ -144,7 +141,7 @@ preso build --spec preso_spec.yaml [--duration 15] [--deck-id <existing>] [--tem
 The heuristics can't see the rendered slide, so you have to. Open **every** PNG listed in
 `dist/qa/audit_checklist.md` (use `view_file` on the path) and check each one against the rubric:
 overflow/clipping, padding/alignment, the bottom-left footer zone, collisions,
-contrast, leftover template shapes, and whether the subtitle lands as a takeaway.
+contrast, leftover template shapes, and clean visual hierarchy.
 On diagram slides also check: pills/chips on one line, connectors not crossing text or the
 marker pill, arrowheads landing on the right node, nothing invisible (emoji, same-colour text).
 
@@ -228,5 +225,4 @@ Try these in order:
 - [references/spec_schema.md](references/spec_schema.md): the `preso_spec.yaml` schema, tiers, and images
 - [references/design_tokens.md](references/design_tokens.md): canvas, palette, and type scale
 - [references/batch_operations.md](references/batch_operations.md): batch ops, IDs, and gslides quirks
-- [references/narrative_framework.md](references/narrative_framework.md): the 5-act storyline
 - [scripts/validate_spec.py](scripts/validate_spec.py): standalone validator wrapper

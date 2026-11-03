@@ -11,10 +11,10 @@ version: "1.0"
 
 metadata:
   title: string                  # [Required] Main presentation title
-  subtitle: string               # [Optional] Subtitle / thesis statement
+  subtitle: string               # [Optional] Deck subtitle
   template_id: string            # [Optional] Master Deck ID to clone (Default: "" -> clean blank deck)
   target_audience: string        # [Optional] Target audience (e.g. "Senior Engineering Leadership")
-  core_thesis: string            # [Optional] Core narrative thesis
+  core_thesis: string            # [Optional] Optional deck summary metadata
   theme:
     palette: string              # [Optional] "google_editorial" (default) | "dark" | "light"
     primary_color: string        # [Optional] Hex color code (default "#202124")
@@ -23,13 +23,13 @@ metadata:
 chapters:
   - chapter_number: integer      # [Required] 1-based chapter index (1..99)
     title: string                # [Required] Chapter name
-    subtitle: string             # [Optional] Chapter aphorism or thesis
+    subtitle: string             # [Optional] Chapter subtitle
     speaker_notes: string        # [Optional] Notes for the auto divider (none written if absent)
     include_divider: bool        # [Optional] Auto-insert a chapter_divider (default: true)
     slides:                      # [Required] List of slides in this chapter
       - archetype: string        # [Required] Archetype identifier (see below)
         title: string            # [Required] Slide headline
-        subtitle: string         # [Expected] One-sentence takeaway (>= 4 words; lint warns otherwise)
+        subtitle: string         # [Optional] Supporting subtitle or framing line (<= 94 chars)
         kicker: string           # [Optional] Small uppercase category tag
         speaker_notes: string    # [Optional] Authored notes; none written if absent
         tier: string             # [Optional] core (default) | explain | detail | appendix
@@ -50,7 +50,7 @@ chapters:
 
 #### 2. `split_cards` (`card_split_2` / `card_split_3`)
 * `flow_steps` / `process_strip`: `list[{title, subtitle, highlight}]` (Optional; 2–5 horizontal process steps connected by arrows above the cards)
-* `foundation`: `string | {kicker, text}` (Optional; full-width baseline card below the cards)
+* `foundation`: `string | {category, title, description | bullets}` (Optional; full-width baseline card below the cards)
 * `cards`: `list[CardSpec]` (Strictly 2 or 3 items)
   * `title` / `header`: `string` (Card heading, max 35 chars)
   * `category` / `category_pill`: `string` (Top pill text, max 20 chars)
@@ -91,13 +91,11 @@ chapters:
   * `body` / `description`: `string` (Narrative body, max 110 chars)
 
 #### 7. `dodont_checklist` (`do_dont_checklist`)
-* `dont_card` / `anti_pattern`:
-  * `title`: `string` (Default: `"DEPRECATED / ANTI-PATTERN"`)
-  * `items`: `list[string]` (3-4 negative practices, max 60 chars each)
-* `do_card` / `blueprint_standard`:
-  * `title`: `string` (Default: `"HIGH-LEVERAGE / BLUEPRINT"`)
-  * `items`: `list[string]` (3-4 positive practices, max 60 chars each)
-* `synthesis_footer` / `takeaway`: `string` (Full-width summary banner, max 90 chars)
+* `dont_title`: `string` (Default: `"DEPRECATED / ANTI-PATTERN"`)
+* `dont_items`: `list[string]` (3–4 negative practices, max 60 chars each)
+* `do_title`: `string` (Default: `"HIGH-LEVERAGE / BLUEPRINT"`)
+* `do_items`: `list[string]` (3–4 positive practices, max 60 chars each)
+* `takeaway`: `string` (Full-width summary banner, max 90 chars)
 
 #### 8. `actionable_takeaways`
 * `principles` / `action_items`: `list[PrincipleSpec]` (Strictly 3 items)
@@ -226,6 +224,4 @@ chapter is hidden.
   holds about 94 chars, a 3-card title about 19, a 2-card title about 32, and a hero value about 5 (3 metrics) or 9 (2 metrics).
 - **Hard errors (block the build):** unknown archetype or tier, missing required archetype
   content, and per-field budget overruns (strict mode).
-- **Warnings:** a subtitle under 4 words, citation artifacts
-  (`[cite…]`, `[1]`, `[source]`, `(see doc)`, `【n】`), more than 2 consecutive slides with the same
-  archetype, and geometry fit.
+- **Warnings:** citation artifacts (`[cite…]`, `[1]`, `[source]`, `(see doc)`, `【n】`), more than 2 consecutive slides with the same archetype, ambiguous horizon labels (`H1..H4`), and geometry fit.

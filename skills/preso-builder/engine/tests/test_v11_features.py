@@ -98,8 +98,16 @@ class TestValidatorLints(unittest.TestCase):
     def test_subtitle_and_citation_lints(self) -> None:
         res = SpecValidator.validate_slide(_slide(subtitle="Topic label",
                                                   cards=[{"title": "a", "bullets": ["done [cite: 4]"]}]))
-        self.assertTrue(any("takeaway" in w for w in res.warnings))
+        self.assertFalse(any("takeaway" in w for w in res.warnings))
         self.assertTrue(any("citation artifact" in w for w in res.warnings))
+        res_empty_sub = SpecValidator.validate_slide(_slide(
+            subtitle="",
+            cards=[
+                {"title": "a", "bullets": ["clean bullet"]},
+                {"title": "b", "bullets": ["second bullet"]},
+            ],
+        ))
+        self.assertEqual(res_empty_sub.warnings, [])
 
     def test_layout_variety(self) -> None:
         cards = [{"title": "a", "bullets": ["b"]}, {"title": "c", "bullets": ["d"]}]
