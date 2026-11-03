@@ -423,7 +423,9 @@ class BatchCompiler:
                 {"number": 1, "title": "Step 1", "description": "Initial setup"},
                 {"number": 2, "title": "Step 2", "description": "Execution"},
             ]
-        elif archetype == "executive_grid" and not data.get("quadrants"):
+        elif archetype in ("executive_grid", "exec_grid") and not (
+            data.get("quadrants") or data.get("items") or data.get("pillars")
+        ):
             data["quadrants"] = [
                 {"number": 1, "title": "Speed", "description": "Fast turnarounds"},
                 {"number": 2, "title": "Quality", "description": "Zero defects"},
@@ -433,10 +435,50 @@ class BatchCompiler:
         elif archetype == "dodont_checklist" and not data.get("dont_items") and not data.get("do_items"):
             data["dont_items"] = ["Anti-pattern without verification"]
             data["do_items"] = ["Deterministic harness and tests"]
-        elif archetype == "actionable_takeaways" and not data.get("principles"):
+        elif archetype in ("actionable_takeaways", "takeaways") and not data.get("principles"):
             data["principles"] = [
                 {"number": 1, "title": "Action Principle", "description": "Execute immediately."}
             ]
+        elif archetype in ("cover", "title_cover", "opening"):
+            data.setdefault("title", title or "Presentation Overview")
+        elif archetype in ("statement_pivot", "thesis", "short_answer", "provocation"):
+            data.setdefault("title", title or "Strategic Pivot Statement")
+        elif archetype in ("capability_matrix", "matrix", "comparison_matrix"):
+            if not data.get("columns"):
+                data["columns"] = [
+                    {"title": "Option A"},
+                    {"title": "Option B", "highlight": "outline"},
+                ]
+            if not data.get("rows"):
+                data["rows"] = [
+                    {
+                        "capability": "Core Platform",
+                        "cells": [
+                            {"text": "Partial", "status": "partial"},
+                            {"text": "Native", "status": "native"},
+                        ],
+                    }
+                ]
+        elif archetype in ("kpi_spotlight", "big_number", "pilot_spotlight"):
+            data.setdefault("stat_value", data.get("value") or "100%")
+            if not (data.get("measurements") or data.get("metrics") or data.get("items")):
+                data["measurements"] = [
+                    {"title": "Primary KPI", "description": "Verified against production baseline."}
+                ]
+        elif archetype in ("horizon_staircase", "staircase", "rising_horizons", "north_star"):
+            if not (data.get("horizons") or data.get("stages")):
+                data["horizons"] = [
+                    {"horizon": "Agora (Curto Prazo)", "title": "Fundação", "bullets": ["Escopo validado"]},
+                    {"horizon": "Médio Prazo", "title": "Escala", "bullets": ["Governança ativa"]},
+                    {"horizon": "Longo Prazo (Futuro)", "title": "North Star", "bullets": ["Operação autônoma"], "highlight": True},
+                ]
+        elif archetype in ("closing_ask", "dark_closing", "the_ask", "executive_ask"):
+            data.setdefault("title", title or "Executive Alignment & Next Steps")
+            if not (data.get("asks") or data.get("columns") or data.get("items")):
+                data["asks"] = [
+                    {"title": "Align Scope", "description": "Confirm target domain and success metrics."},
+                    {"title": "Launch Pilot", "description": "Execute 90-day co-build with weekly checkpoints."},
+                ]
 
         # Deterministic ID assignment
         if not data.get("id"):
@@ -507,9 +549,19 @@ class BatchCompiler:
                 ch_notes = ch_dict.get("notes", "")
                 include_div = ch_dict.get("include_divider", True)
 
-                # Add Chapter Divider slide if requested and title is present, and not already present
+                # Add Chapter Divider slide if requested and title is present, and not already opened by a divider or cover
                 has_divider_slide = any(
-                    (s.archetype if isinstance(s, SlideManifest) else s.get("archetype") if isinstance(s, dict) else getattr(s, "archetype", "")) == "chapter_divider"
+                    str(
+                        s.archetype
+                        if isinstance(s, SlideManifest)
+                        else s.get("archetype")
+                        if isinstance(s, dict)
+                        else getattr(s, "archetype", "")
+                    )
+                    .strip()
+                    .lower()
+                    .replace("-", "_")
+                    in ("chapter_divider", "cover", "title_cover", "opening")
                     for s in ch_dict.get("slides", [])
                 )
                 chapter_slide_dicts = [

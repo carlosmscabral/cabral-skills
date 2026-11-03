@@ -68,7 +68,7 @@ class MetadataSpec:
 
     title: str = ""
     subtitle: str = ""
-    template_id: str = "1FJ4wCMDlI1zW3XCbIXXn-ejOOjq5iQ1Mit_9MuGnO-U"
+    template_id: str = ""
     target_audience: str = ""
     core_thesis: str = ""
     theme: dict[str, Any] = field(default_factory=dict)
@@ -97,7 +97,7 @@ class MetadataSpec:
         return cls(
             title=str(data.get("title", "")),
             subtitle=str(data.get("subtitle", "")),
-            template_id=str(data.get("template_id", "1FJ4wCMDlI1zW3XCbIXXn-ejOOjq5iQ1Mit_9MuGnO-U")),
+            template_id=str(data.get("template_id", "")),
             target_audience=str(data.get("target_audience", "")),
             core_thesis=str(data.get("core_thesis", "")),
             theme=dict(data.get("theme", {})),
@@ -677,11 +677,28 @@ class SlideSpec:
         )
         steps = [LadderStepSpec.from_dict(s) if isinstance(s, dict) else s for s in steps_raw]
 
-        # 5. Quadrants
+        # 5. Quadrants / Executive Grid Items (2x2 or 2x3)
         quads_raw = (
             data.get("quadrants")
             or data.get("grid")
-            or (content.get("quadrants") or content.get("grid") if isinstance(content, dict) else None)
+            or (
+                (data.get("items") or data.get("pillars"))
+                if archetype in ("executive_grid", "exec_grid")
+                else None
+            )
+            or (
+                (
+                    content.get("quadrants")
+                    or content.get("grid")
+                    or (
+                        (content.get("items") or content.get("pillars"))
+                        if archetype in ("executive_grid", "exec_grid")
+                        else None
+                    )
+                )
+                if isinstance(content, dict)
+                else None
+            )
             or []
         )
         quadrants = [QuadrantSpec.from_dict(q) if isinstance(q, dict) else q for q in quads_raw]
@@ -740,6 +757,9 @@ class SlideSpec:
             "skip",
         ):
             raw_extra.pop(k, None)
+        if archetype in ("executive_grid", "exec_grid"):
+            raw_extra.pop("items", None)
+            raw_extra.pop("pillars", None)
 
         return cls(
             archetype=archetype,

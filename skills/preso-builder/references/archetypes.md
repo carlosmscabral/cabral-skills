@@ -1,6 +1,6 @@
-# Blueprint Layout Archetypes Reference Guide
+# Google Cloud Editorial Layout Archetypes Reference Guide
 
-This document provides visual diagrams, coordinate bounding box formulas, field parameters, and character capacity limits for all 10 standardized presentation layout archetypes in the **AI Factory Blueprint** design system.
+This document provides visual diagrams, coordinate bounding box formulas, field parameters, and character capacity limits for all **18 standardized presentation layout archetypes** in the **Google Cloud Editorial** design system.
 
 ---
 
@@ -58,16 +58,18 @@ Y=375pt└───────────────────────�
 ```
 
 #### Bounding Box & Coordinates
+* **Optional Top Process Strip (`flow_steps` / `process_strip`)**: 2–5 horizontal `ROUND_RECTANGLE` step boxes (`Y=100pt`, `H=44pt`) connected by `FILL_ARROW` lines (`highlight: true` tints a step `#E8F0FE`); shifts the cards below down to `Y=156pt` (`H=219pt`).
+* **Optional Bottom Banner (`foundation`)**: Full-width baseline card at `Y=335pt` (`H=40pt`); shortens cards above to `H=225pt`.
 * **2-Card Layout**:
-  * Card 1: `X=36pt`, `Y=100pt`, `W=312pt`, `H=275pt`
+  * Card 1: `X=36pt`, `Y=100pt`, `W=312pt`, `H=275pt` (`ROUND_RECTANGLE`, `#FFFFFF` fill, `1pt #DADCE0` border)
   * Card 2: `X=372pt`, `Y=100pt`, `W=312pt`, `H=275pt` (Gutter: `24pt`)
 * **3-Card Layout**:
   * Card 1: `X=36pt`, `Y=100pt`, `W=202pt`, `H=275pt`
   * Card 2: `X=254pt`, `Y=100pt`, `W=202pt`, `H=275pt`
   * Card 3: `X=472pt`, `Y=100pt`, `W=202pt`, `H=275pt` (Gutter: `16pt`)
 * **Card Interior Geometry**:
-  * Top Accent Stripe: `Height=3pt`, Fill: `#1A73E8` or custom card theme
-  * Pill Badge: `X=CardX+16pt`, `Y=116pt`, `W=Auto`, `H=18pt`, Fill: `#E8F0FE`, Text: `#174EA6`
+  * Top Accent Stripe: `Height=3pt`, 4-color Google cycle (`#1A73E8`, `#EA4335`, `#FBBC04`, `#34A853`) or custom card theme
+  * Pill Badge: `X=CardX+16pt`, `Y=116pt`, `W=Auto`, `H=18pt`, tinted fill + WCAG AA text
   * Card Header: `X=CardX+16pt`, `Y=142pt`, `W=CardW-32pt`, `H=24pt`
   * Divider Rule: `X=CardX+16pt`, `Y=172pt`, `W=CardW-32pt`, `H=1pt`, Fill: `#DADCE0`
   * Bullets Box: `X=CardX+16pt`, `Y=182pt`, `W=CardW-32pt`, `H=180pt`
@@ -174,30 +176,28 @@ Y=375pt└──────────────┴────────�
 
 ---
 
-### Archetype 6: `executive_grid` (`exec_grid_2x2`)
+### Archetype 6: `executive_grid` (`exec_grid_2x2` & `exec_grid_2x3`)
 
 ```
-Y=28pt ┌─────────────────────────────────────────────────────────────┐
-       │ [KICKER] 10pt Google Sans Bold                              │
-Y=40pt │ SLIDE TITLE: 24pt Google Sans Bold                          │
-Y=100pt├──────────────────────────────┬──────────────────────────────┤
-       │ ┌─┌────────────────────────┐ │ ┌─┌────────────────────────┐ │
-       │ │▌│ 01 PROMPT              │ │ │▌│ 02 CONTEXT             │ │
-       │ │▌│ Guide intent with GCCD │ │ │▌│ Curate the window      │ │
-       │ └─└────────────────────────┘ │ └─└────────────────────────┘ │
-       │ ┌─┌────────────────────────┐ │ ┌─┌────────────────────────┐ │
-       │ │▌│ 03 HARNESS             │ │ │▌│ 04 LOOP                │ │
-       │ │▌│ Tools, hooks, ratchets │ │ │▌│ Automate the prompter  │ │
-       │ └─└────────────────────────┘ │ └─└────────────────────────┘ │
-Y=375pt└──────────────────────────────┴──────────────────────────────┘
+Y=22pt ┌─────────────────────────────────────────────────────────────┐
+       │ [MINI 4-COLOR BAR]  [KICKER]                                │
+Y=40pt │ Slide Title: 22pt Google Sans Regular (#202124)             │
+Y=100pt├───────────────────┬───────────────────┬─────────────────────┤
+       │ ┌───────────────┐ │ ┌───────────────┐ │ ┌─────────────────┐ │
+       │ │▀▀▀ [01]       │ │ │▀▀▀ [02]       │ │ │▀▀▀ [03]         │ │
+       │ │ Pillar 1      │ │ │ Pillar 2      │ │ │ Pillar 3        │ │
+       │ └───────────────┘ │ └───────────────┘ │ └─────────────────┘ │
+       │ ┌───────────────┐ │ ┌───────────────┐ │ ┌─────────────────┐ │
+       │ │▀▀▀ [04]       │ │ │▀▀▀ [05]       │ │ │▀▀▀ [06]         │ │
+       │ │ Pillar 4      │ │ │ Pillar 5      │ │ │ Pillar 6        │ │
+       │ └───────────────┘ │ └───────────────┘ │ └─────────────────┘ │
+Y=375pt└───────────────────┴───────────────────┴─────────────────────┘
 ```
 
 #### Bounding Box & Coordinates
-* Card Top-Left (Q1): `X=36pt`, `Y=100pt`, `W=312pt`, `H=128pt`
-* Card Top-Right (Q2): `X=372pt`, `Y=100pt`, `W=312pt`, `H=128pt`
-* Card Bottom-Left (Q3): `X=36pt`, `Y=244pt`, `W=312pt`, `H=128pt`
-* Card Bottom-Right (Q4): `X=372pt`, `Y=244pt`, `W=312pt`, `H=128pt`
-* **Accent Strip**: Vertical bar on left edge of each card: `W=4pt`, `H=128pt`, Fill: `#1A73E8`
+* **`2×2` Layout (4 items)**: `W=316pt`, `H=129pt` (`X=36, 368`, `Y=100, 245`)
+* **`2×3` Layout (6 items)**: `W=205.3pt`, `H=129pt` (`X=36, 257.3, 478.7`, `Y=100, 245`)
+* **Card Styling**: `ROUND_RECTANGLE` white card with `1pt #DADCE0` border, top `3pt` 4-color cycling bar (`#1A73E8`, `#EA4335`, `#FBBC04`, `#34A853`), and matching tinted `01..06` pill badge.
 
 ---
 
@@ -332,6 +332,7 @@ cycle (with 2 foundation stages)                 timeline                     fu
 | `cycle` | `cycle.nodes[]` clockwise from the left (left → top → right → bottom), curved connectors, `center` caption, optional `entry` (solid blue) + dashed `feeder`; optional `stages[]` on the left | 3–4 nodes, ≤2 stages |
 | `funnel` | `steps[]` → chevron strip (`label`) + a card per step (`title`, `lead`, `body`); `active: N` colours one chevron and tints the rest | 3–6 steps |
 | `layered_cake` | `layers[]` (bottom-to-top: `layers[0]` full-width base foundation, `layers[1]` 2–4 middle pillars, `layers[2]` 1–3 top frontier boxes) or `base` / `middle` / `top` keys | 2–4 layers |
+| `swimlanes` | `lanes[]` (top-to-bottom horizontal capability bands: left lane label header + 2–5 horizontal rounded cards inside each lane; supports `highlight: true` for `#E37400` co-build outline) | 2–4 lanes, 1–5 cards/lane |
 
 Shared: `marker: {text, at: entry | stage:N | node:N | step:N}` (red pill),
 `note` (honesty line, e.g. "Today: X mature · Y in progress"), `label` (section label),
@@ -373,3 +374,55 @@ Y=370pt└───────────────────────�
   * **Right Top (`X=270..684, Y=106, H=40`):** Two KPI pills side by side (`tempo` / `horizon` and `receita` / `revenue`).
   * **Right Middle (`X=270..684, Y=154, H=114`):** Side-by-side comparison of `desafios` (`challenges` / `risks`) vs. `diferenciais` (`differentiators` / `strengths`), up to 3–4 short bullets each.
   * **Right Bottom (`X=270..684, Y=276, H=94`):** Full-width yellow action card (`acoes` / `actions` / `next_steps`) for concrete actions and open questions (`[Em aberto]`).
+
+---
+
+### Archetype 13: `cover` (aliases `title_cover`, `opening`)
+
+* **Canvas Fill**: `#FFFFFF` with top mini 4-color bar (`X=36pt, Y=36pt, W=88pt, H=4pt`).
+* **Evolution Breadcrumbs (`breadcrumbs`)**: Optional horizontal pill trail `A → B → [C]` at `Y=104pt`, with the final destination pill highlighted in `#E8F0FE` (`#174EA6` bold text).
+* **Editorial Title**: `36–44pt` `Google Sans` Regular (`#202124`) at `Y=144pt`, followed by `15pt` `#5F6368` `subtitle` and bottom-left `date` / confidentiality metadata at `Y=354pt`.
+* Exempt from the 4-word assertion-subtitle lint.
+
+---
+
+### Archetype 14: `statement_pivot` (aliases `thesis`, `short_answer`, `provocation`)
+
+* **`variant: "blue"` (default)**: Full-bleed Google Blue (`#1A73E8`) canvas, white-first mini 4-color bar, `#FFFFFF` uppercase kicker, large `28–36pt` white statement headline, and `#E8F0FE` supporting subtitle.
+* **`variant: "dark"`**: Full-bleed Google Charcoal (`#202124`) canvas, standard mini 4-color bar, `#FBBC04` uppercase kicker, large `28–36pt` white provocation/question, and `#BDC1C6` subtitle.
+* Exempt from the 4-word assertion-subtitle lint.
+
+---
+
+### Archetype 15: `capability_matrix` (aliases `matrix`, `comparison_matrix`)
+
+* **Columns (`columns[]`, 2–4)**: Column headers across `X=216..684pt`, with optional `highlight: "outline"` (`2pt #1A73E8` frame) or `highlight: "solid"` (`#1A73E8` header).
+* **Rows (`rows[]`, 2–6)**: Left capability label (`X=36..208pt`) + `ROUND_RECTANGLE` semantic status cells:
+  * `native` / `done` (`#E6F4EA` fill, `#137333` text)
+  * `partial` / `warn` (`#FEF7E0` fill, `#945200` text)
+  * `gap` / `plugin` / `risk` (`#FCE8E6` fill, `#C5221F` text)
+  * `building_blocks` / `blocks` / `platform` (`#E8F0FE` fill, `#174EA6` text)
+  * Optional `highlight: true` on any cell adds a `1.5pt #E37400` co-build accent border.
+* **Footnote (`footnote`)**: Optional bottom synthesis line (`Y=362pt`).
+
+---
+
+### Archetype 16: `kpi_spotlight` (aliases `big_number`, `pilot_spotlight`)
+
+* **Left Spotlight (`X=36..308pt`)**: Rounded `#F8F9FA` spotlight panel with huge `60pt` `#1A73E8` `stat_value`, bold `stat_label`, muted `stat_description`, and optional green `status_pill` (`#E6F4EA` / `#137333`).
+* **Right Measurements (`X=336..684pt`)**: Uppercase `measured_by_label` (`MEASURED BY`) + 2–4 leading-indicator rows separated by `1pt #DADCE0` hairline rules, each prefixed with a 4-color `ELLIPSE` dot.
+
+---
+
+### Archetype 17: `horizon_staircase` (aliases `staircase`, `rising_horizons`, `north_star`)
+
+* **2–4 Ascending Cards**: Bottom-aligned at `Y=374pt` with progressively taller heights from left to right (`Agora (Curto Prazo)` → `Médio Prazo` → `Longo Prazo (Futuro)`). Never use ambiguous `H1/H2/H3` labels.
+* **North Star Highlight**: Final (or `highlight: true`) horizon uses `#E8F0FE` tint fill with `#AECBFA` border; each card carries a cycling 4-color top bar, horizon pill, title, bullets, and optional bottom human-governance `footer` strip.
+
+---
+
+### Archetype 18: `closing_ask` (aliases `dark_closing`, `the_ask`, `executive_ask`)
+
+* **Canvas Fill**: `#202124` Google Charcoal with top mini 4-color bar, large `28pt` white takeaway `title`, optional `#BDC1C6` `subtitle`, and `#FBBC04` `section_kicker` (`THE ASK` / `DECISÕES`).
+* **Decision Columns (`asks[]` / `columns[]`, 2–4)**: Borderless dark columns (`Y=224..365pt`) topped by crisp `2.5pt` colored rules (`#1A73E8`, `#EA4335`, `#FBBC04`, `#34A853`) with bold white headers and `#E8EAED` descriptions.
+* Exempt from the 4-word assertion-subtitle lint.

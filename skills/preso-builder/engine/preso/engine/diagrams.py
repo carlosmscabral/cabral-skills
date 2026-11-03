@@ -52,12 +52,14 @@ C_PANEL = "#E8F0FE"
 # name -> (accent fill, accessible text-on-light, tint)
 ACCENTS: dict[str, tuple[str, str, str]] = {
     "red": ("#EA4335", "#C5221F", "#FCE8E6"),
-    "yellow": ("#FBBC04", "#E37400", "#FEF7E0"),
-    "blue": ("#4285F4", "#1967D2", "#E8F0FE"),
+    "yellow": ("#FBBC04", "#945200", "#FEF7E0"),
+    "orange": ("#E37400", "#945200", "#FFFBF5"),
+    "cobuild": ("#E37400", "#945200", "#FFFBF5"),
+    "blue": ("#1A73E8", "#1967D2", "#E8F0FE"),
     "green": ("#34A853", "#137333", "#E6F4EA"),
     "grey": ("#80868B", "#3C4043", "#F1F3F4"),
 }
-ACCENT_ORDER = ("red", "yellow", "blue", "green")
+ACCENT_ORDER = ("blue", "red", "yellow", "green")
 
 # status -> (default label, chip fill, chip text)
 STATUS_STYLES: dict[str, tuple[str, str, str]] = {
@@ -90,7 +92,7 @@ X0, X1 = 36.0, 684.0
 Y0, Y1 = 100.0, 376.0
 MID_Y = 240.0
 
-LAYOUTS = ("timeline", "cycle", "funnel", "layered_cake")
+LAYOUTS = ("timeline", "cycle", "funnel", "layered_cake", "swimlanes")
 PILL_CHAR_W = 0.56  # em-fraction per char for bold, caps-heavy single-line labels
 MAX_STAGES = {"timeline": 5, "cycle": 2}
 MIN_OBJECT_ID_LEN = 5
@@ -348,12 +350,21 @@ def _marker(diagram: dict[str, Any]) -> tuple[str, str, int]:
         return text, kind, -1
 
 
+_LAYOUT_ALIASES = {
+    "cake": "layered_cake",
+    "swimlane": "swimlanes",
+    "layers_swimlane": "swimlanes",
+    "architecture_layers": "swimlanes",
+}
+
+
 def infer_layout(diagram: dict[str, Any], hint: str = "") -> str:
     layout = _s(diagram.get("layout") or diagram.get("type")).lower() or hint
-    if layout == "cake":
-        layout = "layered_cake"
+    layout = _LAYOUT_ALIASES.get(layout, layout)
     if layout in LAYOUTS:
         return layout
+    if diagram.get("lanes"):
+        return "swimlanes"
     if diagram.get("layers") or diagram.get("base"):
         return "layered_cake"
     if diagram.get("steps"):
@@ -420,9 +431,9 @@ def _stage_card(c: RawCanvas, i: int, stage: dict[str, Any], x: float, y: float,
                 labels: dict[str, str], highlight: bool = False) -> None:
     accent, accent_text, _tint = _accent(stage, i)
     n = i + 1
-    c.shape(f"card{n}", "RECTANGLE", x, y, w, h, fill=C_WHITE,
+    c.shape(f"card{n}", "ROUND_RECTANGLE", x, y, w, h, fill=C_WHITE,
             outline=accent_text if highlight else C_RULE, weight=1.5 if highlight else 0.75)
-    c.shape(f"card{n}_bar", "RECTANGLE", x, y, w, 5, fill=accent)
+    c.shape(f"card{n}_bar", "RECTANGLE", x + 2, y, max(4.0, w - 4), 4, fill=accent)
     status = _status(stage, labels)
     chip_h = 34.0 if status else 6.0
     runs = _stage_runs(stage, i, w)
@@ -637,9 +648,9 @@ def _layout_funnel(c: RawCanvas, d: dict[str, Any], labels: dict[str, str]) -> N
 
         cx = X0 + i * (card_w + gap)
         hl = i == active_idx
-        c.shape(f"card{i + 1}", "RECTANGLE", cx, card_y, card_w, card_h, fill=C_WHITE,
+        c.shape(f"card{i + 1}", "ROUND_RECTANGLE", cx, card_y, card_w, card_h, fill=C_WHITE,
                 outline=accent_text if hl else C_RULE, weight=1.5 if hl else 0.75)
-        c.shape(f"card{i + 1}_bar", "RECTANGLE", cx, card_y, card_w, 4, fill=accent)
+        c.shape(f"card{i + 1}_bar", "RECTANGLE", cx + 2, card_y, max(4.0, card_w - 4), 4, fill=accent)
         status = _status(st, labels)
         chip_h = 34.0 if status else 6.0
         runs = _funnel_runs(st, i)
@@ -716,16 +727,16 @@ def _layout_layered_cake(c: RawCanvas, d: dict[str, Any], labels: dict[str, str]
         for b_idx, box in enumerate(boxes):
             bx = X0 + b_idx * (bw + gap_x)
             accent, accent_text, tint = _accent(box, t_idx + b_idx)
-            bg_fill = _s(box.get("fill")) or ("#1A237E" if is_base and not box.get("color") else (tint if t_idx == num_tiers - 1 else C_WHITE))
-            dark_bg = bg_fill.upper() in ("#1A237E", "#202124", "#0D47A1")
+            bg_fill = _s(box.get("fill")) or ("#202124" if is_base and not box.get("color") else (tint if t_idx == num_tiers - 1 else C_WHITE))
+            dark_bg = bg_fill.upper() in ("#1A237E", "#202124", "#0D47A1", "#303134")
             title_col = C_WHITE if dark_bg else C_DARK
             body_col = "#E8EAED" if dark_bg else C_GREY
             kicker_col = "#8AB4F8" if dark_bg else accent_text
 
-            c.shape(f"cake_t{t_idx + 1}_b{b_idx + 1}", "RECTANGLE", bx, ty, bw, th,
-                    fill=bg_fill, outline=accent if not dark_bg else "#3949AB", weight=1.0)
-            c.shape(f"cake_t{t_idx + 1}_b{b_idx + 1}_bar", "RECTANGLE", bx, ty, bw, 4.0,
-                    fill=accent if not dark_bg else "#4285F4")
+            c.shape(f"cake_t{t_idx + 1}_b{b_idx + 1}", "ROUND_RECTANGLE", bx, ty, bw, th,
+                    fill=bg_fill, outline=accent if not dark_bg else "#5F6368", weight=1.0)
+            c.shape(f"cake_t{t_idx + 1}_b{b_idx + 1}_bar", "RECTANGLE", bx + 2, ty, max(4.0, bw - 4), 4.0,
+                    fill=accent if not dark_bg else "#1A73E8")
 
             runs: list[Run] = []
             kicker_txt = _s(box.get("kicker") or box.get("layer") or box.get("category"))
@@ -752,11 +763,168 @@ def _layout_layered_cake(c: RawCanvas, d: dict[str, Any], labels: dict[str, str]
     _note(c, _s(d.get("note")), X0, min(362.0, tier_ys[0] + heights[0] + 4.0), X1 - X0)
 
 
+_SWIMLANE_STYLES: dict[str, tuple[str, str, str]] = {
+    # color key -> (outline_hex, accessible_text_hex, fill_hex)
+    "blue": ("#1A73E8", "#174EA6", C_WHITE),
+    "gcp": ("#1A73E8", "#174EA6", C_WHITE),
+    "native": ("#1A73E8", "#174EA6", C_WHITE),
+    "green": ("#188038", "#137333", C_WHITE),
+    "partner": ("#188038", "#137333", C_WHITE),
+    "oss": ("#188038", "#137333", C_WHITE),
+    "orange": ("#E37400", "#945200", "#FFFBF5"),
+    "cobuild": ("#E37400", "#945200", "#FFFBF5"),
+    "co-build": ("#E37400", "#945200", "#FFFBF5"),
+    "yellow": ("#E37400", "#945200", "#FFFBF5"),
+    "amber": ("#E37400", "#945200", "#FFFBF5"),
+    "red": ("#D93025", "#C5221F", "#FCE8E6"),
+    "gap": ("#D93025", "#C5221F", "#FCE8E6"),
+    "risk": ("#D93025", "#C5221F", "#FCE8E6"),
+    "grey": ("#80868B", "#3C4043", "#F8F9FA"),
+    "gray": ("#80868B", "#3C4043", "#F8F9FA"),
+    "existing": ("#80868B", "#3C4043", "#F8F9FA"),
+    "neutral": ("#DADCE0", "#3C4043", C_WHITE),
+}
+
+
+def _swimlane_style(color_name: str, fallback_idx: int = 0) -> tuple[str, str, str]:
+    key = _s(color_name).lower()
+    if key in _SWIMLANE_STYLES:
+        return _SWIMLANE_STYLES[key]
+    order = ("blue", "green", "orange", "grey")
+    return _SWIMLANE_STYLES[order[fallback_idx % len(order)]]
+
+
+def _normalize_lanes(d: dict[str, Any]) -> list[dict[str, Any]]:
+    raw = d.get("lanes") or []
+    out: list[dict[str, Any]] = []
+    if not isinstance(raw, list):
+        return out
+    for idx, ln in enumerate(raw):
+        if not isinstance(ln, dict):
+            continue
+        items_raw = ln.get("items") or ln.get("cards") or ln.get("boxes") or []
+        items = [it for it in items_raw if isinstance(it, dict)] if isinstance(items_raw, list) else []
+        out.append({
+            "label": _s(ln.get("label") or ln.get("layer") or ln.get("title") or f"LAYER {idx + 1}"),
+            "sublabel": _s(ln.get("sublabel") or ln.get("subtitle") or ""),
+            "color": _s(ln.get("color") or ""),
+            "items": items,
+        })
+    return out
+
+
+def _layout_swimlanes(c: RawCanvas, d: dict[str, Any], labels: dict[str, str]) -> None:
+    """Renders horizontal architecture swimlanes (left uppercase layer label + 1-4 rounded cards per row)."""
+    del labels
+    lanes = _normalize_lanes(d)
+    num_lanes = max(1, len(lanes))
+    raw_legend = d.get("legend") or []
+    legend_items: list[dict[str, str]] = []
+    if isinstance(raw_legend, list):
+        for idx, lg in enumerate(raw_legend[:4]):
+            if isinstance(lg, dict):
+                lbl = _s(lg.get("label") or lg.get("text"))
+                col = _s(lg.get("color") or "blue")
+            else:
+                lbl = _s(lg)
+                col = ("blue", "green", "orange", "grey")[idx % 4]
+            if lbl:
+                legend_items.append({"label": lbl, "color": col})
+
+    cards_x0 = 112.0
+    cards_w = X1 - cards_x0  # 572.0 pt
+
+    # Optional top legend row aligned with card column
+    if legend_items:
+        lx = cards_x0
+        for idx, lg in enumerate(legend_items):
+            outline_col, txt_col, fill_col = _swimlane_style(lg["color"], idx)
+            pw = min(180.0, max(82.0, len(lg["label"]) * 7.5 * 0.56 + 18.0))
+            if lx + pw > X1:
+                break
+            c.box(
+                f"lgd_{idx + 1}", lx, 98.0, pw, 18.0,
+                [(lg["label"], 7.5, True, txt_col)],
+                align="CENTER", valign="MIDDLE", kind="ROUND_RECTANGLE",
+                fill=fill_col, outline=outline_col, weight=1.25,
+                label=f"legend pill {idx + 1}", single_line=True,
+            )
+            lx += pw + 8.0
+
+    lanes_top = 122.0 if legend_items else 102.0
+    lanes_bot = 362.0 if _s(d.get("note")) else 376.0
+    gap_y = 7.0 if num_lanes >= 5 else (8.0 if num_lanes == 4 else 10.0)
+    lane_h = round((lanes_bot - lanes_top - (num_lanes - 1) * gap_y) / num_lanes, 2)
+
+    title_sz = 9.0 if num_lanes >= 5 else 9.5
+    body_sz = 7.5 if num_lanes >= 5 else 8.0
+
+    for r_idx, lane in enumerate(lanes):
+        ly = round(lanes_top + r_idx * (lane_h + gap_y), 2)
+        lane_accent, lane_txt_col, _ = _swimlane_style(lane.get("color") or "", r_idx)
+        c.shape(
+            f"lane{r_idx + 1}_bar", "ROUND_RECTANGLE",
+            X0, round(ly + 10.0, 2), 3.0, max(16.0, round(lane_h - 20.0, 2)),
+            fill=lane_accent,
+        )
+        lbl_runs: list[Run] = [(lane["label"].upper(), 8.0, True, lane_txt_col)]
+        if lane.get("sublabel"):
+            lbl_runs.append(("\n" + lane["sublabel"], 7.2, False, C_GREY))
+        c.box(
+            f"lane{r_idx + 1}_lbl", X0 + 8.0, ly, 66.0, lane_h,
+            lbl_runs,
+            align="START", valign="MIDDLE", spacing=110,
+            label=f"lane {r_idx + 1} label",
+        )
+        items = lane["items"][:4]
+        k = max(1, len(items))
+        gap_x = 10.0
+        iw = round((cards_w - (k - 1) * gap_x) / k, 2)
+        for j_idx, item in enumerate(items):
+            ix = round(cards_x0 + j_idx * (iw + gap_x), 2)
+            is_hl = bool(item.get("highlight"))
+            explicit_col = _s(item.get("color"))
+            col_key = explicit_col or ("orange" if is_hl else "neutral")
+            outline_col, _txt_col, fill_col = _swimlane_style(col_key, j_idx)
+            c.shape(
+                f"lane{r_idx + 1}_c{j_idx + 1}", "ROUND_RECTANGLE",
+                ix, ly, iw, lane_h,
+                fill=fill_col, outline=outline_col, weight=1.75 if (is_hl or explicit_col) else 1.0,
+            )
+            runs: list[Run] = []
+            it_status = _s(item.get("status")).lower()
+            it_title = _s(item.get("title"))
+            it_body = _body_text(item.get("body") or item.get("subtitle") or item.get("description") or item.get("bullets"))
+            if is_hl:
+                runs.append(("★ CO-BUILD\n", 7.0, True, "#945200"))
+            elif it_status in ("done", "native"):
+                runs.append(("● ", 8.0, True, "#137333"))
+            elif it_status in ("active", "in_progress"):
+                runs.append(("● ", 8.0, True, "#174EA6"))
+            elif it_status in ("next", "planned"):
+                runs.append(("○ ", 8.0, True, C_GREY))
+            elif it_status in ("risk", "gap"):
+                runs.append(("● ", 8.0, True, "#C5221F"))
+            if it_title:
+                runs.append((it_title + ("\n" if it_body else ""), title_sz if k <= 3 else 8.5, True, C_DARK))
+            if it_body:
+                runs.append((it_body, body_sz if k <= 3 else 7.2, False, C_GREY))
+            c.box(
+                f"lane{r_idx + 1}_c{j_idx + 1}_txt",
+                ix + 8.0, ly + 4.0, iw - 16.0, max(16.0, lane_h - 8.0),
+                runs, align="START", valign="MIDDLE", spacing=110, space_below=1.5,
+                label=f"lane {r_idx + 1} card {j_idx + 1}",
+            )
+
+    _note(c, _s(d.get("note")), X0, min(364.0, lanes_bot + 2.0), X1 - X0)
+
+
 _LAYOUT_FN = {
     "timeline": _layout_timeline,
     "cycle": _layout_cycle,
     "funnel": _layout_funnel,
     "layered_cake": _layout_layered_cake,
+    "swimlanes": _layout_swimlanes,
 }
 
 
@@ -811,6 +979,7 @@ def validate_diagram(diagram: Any, layout_hint: str = "") -> tuple[list[str], li
         return ["requires a `diagram:` block (layout + stages/cycle/steps)"], []
     layout = infer_layout(diagram, layout_hint)
     raw_layout = _s(diagram.get("layout") or diagram.get("type")).lower()
+    raw_layout = _LAYOUT_ALIASES.get(raw_layout, raw_layout)
     if raw_layout and raw_layout not in LAYOUTS:
         errors.append(f"diagram.layout must be one of {list(LAYOUTS)}, got '{raw_layout}'")
     stages = diagram.get("stages") or []
@@ -837,6 +1006,13 @@ def validate_diagram(diagram: Any, layout_hint: str = "") -> tuple[list[str], li
         tiers = _normalize_cake_layers(diagram)
         if not 2 <= len(tiers) <= 4:
             errors.append(f"layered_cake needs 2-4 layers (bottom-to-top), got {len(tiers)}")
+    elif layout == "swimlanes":
+        lanes = _normalize_lanes(diagram)
+        if not 2 <= len(lanes) <= 5:
+            errors.append(f"swimlanes needs 2-5 horizontal lanes, got {len(lanes)}")
+        for l_idx, ln in enumerate(lanes, start=1):
+            if not 1 <= len(ln["items"]) <= 4:
+                errors.append(f"swimlanes lane {l_idx} needs 1-4 item cards, got {len(ln['items'])}")
 
     m_text, m_kind, m_idx = _marker(diagram)
     if m_text and m_kind and m_kind not in ("stage", "node", "step", "entry"):
@@ -888,7 +1064,7 @@ def generate_flow_diagram(
     """
     ops: list[dict[str, Any]] = [
         {"op": "add-slide", "layout": "BLANK", "id": slide_id},
-        {"op": "set-background", "slide": slide_id, "color": "#F8F9FA"},
+        {"op": "set-background", "slide": slide_id, "color": C_WHITE},
     ]
     ops.extend(header_ops or [])
     canvas = build_diagram_canvas(slide_id, diagram or {}, prefix=f"dg{slide_idx}", layout_hint=layout_hint)

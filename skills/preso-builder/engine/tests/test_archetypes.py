@@ -12,13 +12,19 @@ from preso.engine.archetypes import (
     StepSpec,
     TerminalSpec,
     generate_actionable_takeaways,
+    generate_capability_matrix,
     generate_chapter_divider,
+    generate_closing_ask,
     generate_code_terminal,
+    generate_cover,
     generate_dodont_checklist,
     generate_executive_grid,
     generate_hero_metrics,
+    generate_horizon_staircase,
+    generate_kpi_spotlight,
     generate_ladder_hierarchy,
     generate_split_cards,
+    generate_statement_pivot,
 )
 from preso.engine.design_tokens import (
     CANVAS_HEIGHT,
@@ -28,6 +34,7 @@ from preso.engine.design_tokens import (
     COLOR_BG_LIGHT,
     COLOR_BLUE_ACCENT,
     COLOR_CARD_WHITE,
+    COLOR_DARK_PRIMARY,
     COLOR_GREEN_DO,
     COLOR_GREEN_LIGHT,
     COLOR_NAVY_PRIMARY,
@@ -332,9 +339,9 @@ class TestArchetypeGenerators(unittest.TestCase):
         )
         self._verify_slide_invariants(ops, "SLIDE_06_METRICS")
 
-        # Metric 2 is Hero -> Navy background
+        # Metric 2 is Hero -> Editorial Charcoal dark background
         card2 = next(op for op in ops if op.get("id") == "CARD_S06_M2")
-        self.assertEqual(card2["background_color"], COLOR_NAVY_PRIMARY)
+        self.assertEqual(card2["background_color"], COLOR_DARK_PRIMARY)
 
         # Metric 1 is standard -> White background
         card1 = next(op for op in ops if op.get("id") == "CARD_S06_M1")
@@ -518,7 +525,7 @@ class TestArchetypeGenerators(unittest.TestCase):
         right_panel = next(op for op in ops if op.get("id") == "PANEL_S10_RIGHT")
         self.assertEqual(left_panel["width"], 380.0)
         self.assertEqual(right_panel["width"], 244.0)
-        self.assertEqual(right_panel["background_color"], COLOR_NAVY_PRIMARY)
+        self.assertEqual(right_panel["background_color"], COLOR_DARK_PRIMARY)
 
         cta_shape = next(op for op in ops if op.get("id") == "BTN_S10_CTA")
         cta_txt = next(op for op in ops if op.get("id") == "BTN_TXT_S10_CTA")
@@ -639,6 +646,166 @@ class TestArchetypeEngineDispatcher(unittest.TestCase):
     def test_dispatch_unknown_archetype_raises_error(self):
         with self.assertRaises(ValueError):
             ArchetypeEngine.generate_slide_ops({"archetype": "unknown_type"}, slide_index=1)
+
+
+class TestGoogleEditorialArchetypesAndQA(unittest.TestCase):
+    """Tests all 6 new Editorial archetypes + 2x3 executive_grid + split_cards flow_steps + QA."""
+
+    def test_editorial_archetypes_zero_qa_errors(self):
+        from preso.compiler.batch_generator import BatchCompiler
+        from preso.qa.verifier import QAVerifier
+        from preso.spec.models import PresentationSpec
+        from preso.spec.validator import SpecValidator
+
+        spec_dict = {
+            "version": "1.0",
+            "metadata": {"title": "Editorial Operating Model"},
+            "slides": [
+                {
+                    "archetype": "cover",
+                    "kicker": "GOOGLE CLOUD · AI MODEL",
+                    "title": "Modelo Operacional Agêntico",
+                    "subtitle": "Governança, engenharia e escala em produção corporativa.",
+                    "breadcrumbs": ["Prompt Manual", "Copilotos", "Fábrica Agêntica"],
+                    "date": "Novembro 2026 · Confidencial",
+                },
+                {
+                    "archetype": "executive_grid",
+                    "kicker": "SEIS PILARES",
+                    "title": "Seis Dimensões da Plataforma",
+                    "subtitle": "Cada dimensão opera com contratos verificáveis de ponta a ponta",
+                    "items": [
+                        {"number": i, "title": f"Pilar {i}", "description": f"Descrição concisa {i}."}
+                        for i in range(1, 7)
+                    ],
+                },
+                {
+                    "archetype": "statement_pivot",
+                    "variant": "blue",
+                    "kicker": "RESPOSTA CURTA",
+                    "title": "Nenhuma ferramenta isolada resolve governança agêntica.",
+                    "subtitle": "A combinação de blocos nativos e avaliação contínua fecha a lacuna.",
+                },
+                {
+                    "archetype": "capability_matrix",
+                    "kicker": "AVALIAÇÃO DE OPÇÕES",
+                    "title": "Comparativo de Capacidades por Abordagem",
+                    "subtitle": "Blocos nativos cobrem segurança, avaliação e observabilidade sem lock-in",
+                    "columns": [
+                        {"title": "SaaS Fechado"},
+                        {"title": "DIY Puro"},
+                        {"title": "Vertex + ADK", "highlight": "outline"},
+                    ],
+                    "rows": [
+                        {
+                            "capability": "Identidade & IAM",
+                            "cells": [
+                                {"text": "Parcial", "status": "partial"},
+                                {"text": "Manual", "status": "gap"},
+                                {"text": "Nativo", "status": "native"},
+                            ],
+                        },
+                        {
+                            "capability": "Harness de Eval",
+                            "cells": [
+                                {"text": "Ausente", "status": "gap"},
+                                {"text": "Custom", "status": "partial"},
+                                {"text": "Co-build", "status": "building_blocks", "highlight": True},
+                            ],
+                        },
+                    ],
+                    "footnote": "Co-build focado apenas onde há diferencial de negócio.",
+                },
+                {
+                    "archetype": "split_cards",
+                    "kicker": "ESTEIRA DE ENTREGA",
+                    "title": "Fluxo de Execução e Papéis",
+                    "subtitle": "Quatro etapas conectadas sustentam a operação de produto e plataforma",
+                    "flow_steps": [
+                        {"title": "1. Especificar", "subtitle": "Contrato YAML"},
+                        {"title": "2. Construir", "subtitle": "ADK + Tools"},
+                        {"title": "3. Avaliar", "subtitle": "Golden Set", "highlight": True},
+                        {"title": "4. Operar", "subtitle": "Telemetria"},
+                    ],
+                    "cards": [
+                        {"title": "Time de Domínio", "category": "NEGÓCIO", "bullets": ["Define políticas", "Valida cenários"]},
+                        {"title": "Time de Plataforma", "category": "ENGENHARIA", "bullets": ["Mantém guardrails", "Opera observabilidade"]},
+                    ],
+                },
+                {
+                    "archetype": "kpi_spotlight",
+                    "kicker": "IMPACTO DO PILOTO",
+                    "title": "Meta de Automação com Qualidade Auditada",
+                    "subtitle": "Indicadores acompanhados semanalmente pelo comitê executivo",
+                    "stat_value": "85%",
+                    "stat_label": "Resolução no primeiro contato",
+                    "stat_description": "Casos elegíveis resolvidos sem transbordo humano.",
+                    "status_pill": "EM PRODUÇÃO",
+                    "measured_by_label": "MEDIDO POR",
+                    "measurements": [
+                        {"title": "Precisão Factual", "description": "Zero alucinação em auditoria cega."},
+                        {"title": "Latência P95", "description": "Abaixo de 2,5 segundos por turno."},
+                        {"title": "Custo por Sessão", "description": "Redução de 60% frente ao legado."},
+                    ],
+                },
+                {
+                    "archetype": "horizon_staircase",
+                    "kicker": "TRAJETÓRIA DE MATURIDADE",
+                    "title": "Evolução em Três Horizontes Claros",
+                    "subtitle": "Cada degrau amplia autonomia mantendo governança humana explícita",
+                    "horizons": [
+                        {
+                            "horizon": "Agora (Curto Prazo)",
+                            "title": "Fundação & Piloto",
+                            "bullets": ["1 domínio crítico", "Eval determinístico"],
+                            "footer": "Humano aprova cada ação",
+                        },
+                        {
+                            "horizon": "Médio Prazo",
+                            "title": "Escala Multi-Domínio",
+                            "bullets": ["Catálogo de tools", "Roteamento federado"],
+                            "footer": "Humano supervisiona exceções",
+                        },
+                        {
+                            "horizon": "Longo Prazo (Futuro)",
+                            "title": "Operação North Star",
+                            "bullets": ["Malha autônoma", "Otimização contínua"],
+                            "footer": "Humano define política e metas",
+                            "highlight": True,
+                        },
+                    ],
+                },
+                {
+                    "archetype": "statement_pivot",
+                    "variant": "dark",
+                    "kicker": "PERGUNTA-CHAVE",
+                    "title": "Qual domínio inaugura a esteira nos próximos 30 dias?",
+                    "subtitle": "Começar pequeno, medir com rigor e escalar o padrão validado.",
+                },
+                {
+                    "archetype": "closing_ask",
+                    "title": "Três Decisões para Iniciar na Próxima Semana",
+                    "subtitle": "Alinhamento executivo para destravar o primeiro ciclo de 90 dias.",
+                    "section_kicker": "DECISÕES & PRÓXIMOS PASSOS",
+                    "asks": [
+                        {"title": "1. Escolher Domínio", "description": "Confirmar jornada piloto e patrocinador."},
+                        {"title": "2. Definir Squad", "description": "Alocar engenharia + negócio dedicados."},
+                        {"title": "3. Fixar Cadência", "description": "Revisão quinzenal com métricas vivas."},
+                    ],
+                },
+            ],
+        }
+
+        spec = PresentationSpec.from_dict(spec_dict)
+        val = SpecValidator.validate(spec, geometry=True)
+        self.assertTrue(val.is_valid, f"Validation failed: {val.errors}")
+
+        batch = BatchCompiler().compile(spec)
+        self.assertEqual(batch.slide_count, 9)
+
+        qa = QAVerifier().verify(spec=spec, batch_result=batch)
+        self.assertTrue(qa.is_passing, f"QA failed: {qa.summary()}")
+        self.assertEqual(qa.error_count, 0)
 
 
 if __name__ == "__main__":

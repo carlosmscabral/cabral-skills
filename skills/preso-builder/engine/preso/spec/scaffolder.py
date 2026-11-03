@@ -30,7 +30,7 @@ from preso.spec.models import (
 class SpecScaffolder:
     """Generates structured presentation specifications from prompts, outlines, or presets."""
 
-    DEFAULT_TEMPLATE_ID = "1FJ4wCMDlI1zW3XCbIXXn-ejOOjq5iQ1Mit_9MuGnO-U"
+    DEFAULT_TEMPLATE_ID = ""
 
     @classmethod
     def scaffold_default(cls) -> PresentationSpec:
@@ -142,16 +142,20 @@ class SpecScaffolder:
         header = (
             "# =============================================================================\n"
             "# AI FACTORY BLUEPRINT PRESENTATION SPECIFICATION (preso_spec.yaml)\n"
+            "# Google Cloud Editorial Design System (18 Archetypes · Blank Deck Default)\n"
             "# =============================================================================\n"
             "# Character Budgets & Constraints:\n"
             "#   - Slide Title: <= 60 chars | Subtitle: <= 120 chars | Kicker: <= 30 chars\n"
             "#   - Card Title: <= 35 chars  | Bullet: <= 90 chars (max 4 bullets/card)\n"
             "#   - Code: <= 16 lines        | Hero Metric Stat: <= 12 chars\n"
-            "#   - Speaker Notes: Non-empty, >= 15 characters (required for every slide)\n"
-            "# Archetypes:\n"
-            "#   1. chapter_divider    2. split_cards      3. code_terminal\n"
-            "#   4. hero_metrics       5. ladder_hierarchy 6. executive_grid\n"
-            "#   7. dodont_checklist   8. actionable_takeaways\n"
+            "#   - Speaker Notes: Optional (authored notes passed through; never fabricated)\n"
+            "# Archetypes (18):\n"
+            "#   1. cover              2. chapter_divider    3. statement_pivot\n"
+            "#   4. executive_grid     5. capability_matrix  6. split_cards\n"
+            "#   7. flow_diagram       8. kpi_spotlight      9. hero_metrics\n"
+            "#  10. horizon_staircase 11. ladder_hierarchy  12. code_terminal\n"
+            "#  13. dodont_checklist  14. workstream_card   15. image_split\n"
+            "#  16. demo_pivot        17. actionable_takeaways 18. closing_ask\n"
             "# =============================================================================\n\n"
         )
         full_text = header + yaml_content
@@ -171,7 +175,7 @@ class SpecScaffolder:
         target_audience: str,
         core_thesis: str,
     ) -> PresentationSpec:
-        """Builds a rich 3-chapter, 10-slide deck covering all 8 Blueprint archetypes."""
+        """Builds a rich 3-chapter, 10-slide deck in Google Cloud Editorial style."""
         meta = MetadataSpec(
             title=title,
             subtitle=subtitle,
@@ -179,12 +183,12 @@ class SpecScaffolder:
             target_audience=target_audience,
             core_thesis=core_thesis,
             theme={
-                "palette": "blueprint",
-                "primary_color": "#1E2761",
+                "palette": "google_editorial",
+                "primary_color": "#202124",
                 "accent_color": "#1A73E8",
-                "dark_background": "#1E2761",
+                "dark_background": "#202124",
                 "light_background": "#FFFFFF",
-                "card_background": "#F8F9FA",
+                "card_background": "#FFFFFF",
             },
         )
 

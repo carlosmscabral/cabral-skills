@@ -24,7 +24,8 @@ from typing import Any, Callable, Optional, Union
 # =============================================================================
 
 DEFAULT_GSLIDES_BINARY: str = "/google/bin/releases/gemini-agents-gslides/gslides"
-DEFAULT_TEMPLATE_ID: str = "1FJ4wCMDlI1zW3XCbIXXn-ejOOjq5iQ1Mit_9MuGnO-U"
+LEGACY_BLUEPRINT_TEMPLATE_ID: str = "1FJ4wCMDlI1zW3XCbIXXn-ejOOjq5iQ1Mit_9MuGnO-U"
+DEFAULT_TEMPLATE_ID: str = ""
 DEFAULT_TIMEOUT_SECONDS: int = 120
 
 
@@ -230,12 +231,13 @@ class GSlidesClient:
     def copy_presentation(
         self,
         template_id: str = DEFAULT_TEMPLATE_ID,
-        title: str = "Blueprint Presentation",
+        title: str = "Editorial Presentation",
     ) -> str:
         """Clones a master template deck and returns the new presentation ID.
 
         Args:
-            template_id: Master template deck ID to copy.
+            template_id: Master template deck ID to copy (falls back to
+                `LEGACY_BLUEPRINT_TEMPLATE_ID` when called directly with empty string).
             title: Title for the newly created presentation.
 
         Returns:
@@ -244,12 +246,13 @@ class GSlidesClient:
         Raises:
             GSlidesError: If the cloning process fails.
         """
+        resolved_template = template_id or LEGACY_BLUEPRINT_TEMPLATE_ID
         if self.dry_run:
             # Deterministic simulated deck ID based on title and template
-            seed = abs(hash(f"{template_id}:{title}")) % 0xFFFFFFFF
+            seed = abs(hash(f"{resolved_template}:{title}")) % 0xFFFFFFFF
             return f"mock_deck_copy_{seed:08x}"
 
-        args = ["copy", template_id, title, "--json"]
+        args = ["copy", resolved_template, title, "--json"]
         result = self._run_command(args)
         output_str = result.stdout.strip()
 

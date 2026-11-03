@@ -414,14 +414,22 @@ class TestExecutiveGridBoundaries(unittest.TestCase):
     """Verifies Archetype 6 2x2 grid quadrant limits."""
 
     def test_zero_and_uneven_quadrants(self) -> None:
-        """Verifies non-4 quadrants trigger validation errors."""
+        """Verifies invalid item counts (neither 4 nor 6) trigger validation errors."""
         quads_3 = [QuadrantSpec(number=f"0{i}", title=f"Q{i}", narrative=f"N{i}") for i in range(1, 4)]
         spec_3 = PresentationSpec(chapters=[ChapterSpec(number=1, title="C1", slides=[
             SlideSpec(archetype="executive_grid", title="Grid", quadrants=quads_3, notes="Speaker notes here.")
         ])])
         res = SpecValidator.validate(spec_3)
         self.assertFalse(res.is_valid)
-        self.assertTrue(any("requires exactly 4 quadrants" in e.lower() for e in res.errors))
+        self.assertTrue(any("requires 4 (2x2) or 6 (2x3) items" in e.lower() for e in res.errors))
+
+    def test_six_items_grid_valid(self) -> None:
+        """Verifies 6-item 2x3 executive grid passes validation cleanly."""
+        quads_6 = [QuadrantSpec(number=f"0{i}", title=f"Q{i}", narrative=f"N{i}") for i in range(1, 7)]
+        spec_6 = PresentationSpec(chapters=[ChapterSpec(number=1, title="C1", slides=[
+            SlideSpec(archetype="executive_grid", title="Grid", subtitle="Six pillars of the operating model", quadrants=quads_6)
+        ])])
+        self.assertTrue(SpecValidator.validate(spec_6).is_valid)
 
     def test_exact_four_quadrants_valid(self) -> None:
         """Verifies exactly 4 quadrants pass validation cleanly."""
@@ -444,7 +452,7 @@ class TestMissingFieldsAndMalformedData(unittest.TestCase):
         spec = PresentationSpec(chapters=[ChapterSpec(number=1, title="C1", slides=[
             SlideSpec(archetype="chapter_divider", title="Title", notes="Speaker notes here.")
         ])])
-        self.assertEqual(spec.metadata.template_id, "1FJ4wCMDlI1zW3XCbIXXn-ejOOjq5iQ1Mit_9MuGnO-U")
+        self.assertEqual(spec.metadata.template_id, "")
         self.assertTrue(SpecValidator.validate(spec).is_valid)
 
     def test_empty_presentation_rejected(self) -> None:

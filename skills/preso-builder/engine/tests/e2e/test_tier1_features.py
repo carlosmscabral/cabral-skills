@@ -45,6 +45,7 @@ from preso.compiler.batch_generator import (
 from preso.compiler.gslides_client import (
     DEFAULT_GSLIDES_BINARY,
     DEFAULT_TEMPLATE_ID,
+    LEGACY_BLUEPRINT_TEMPLATE_ID,
     BatchExecutionResult,
     GSlidesCLIError,
     GSlidesClient,
@@ -688,8 +689,9 @@ class TestF10TemplateCloner(unittest.TestCase):
     """Tier 1 Feature Tests: Template Cloner & Creator."""
 
     def test_f10_01_default_template_id_constant(self) -> None:
-        """Verifies DEFAULT_TEMPLATE_ID is the AI Factory Blueprint ID."""
-        self.assertEqual(DEFAULT_TEMPLATE_ID, "1FJ4wCMDlI1zW3XCbIXXn-ejOOjq5iQ1Mit_9MuGnO-U")
+        """Verifies DEFAULT_TEMPLATE_ID defaults to clean blank deck and preserves legacy ID."""
+        self.assertEqual(DEFAULT_TEMPLATE_ID, "")
+        self.assertEqual(LEGACY_BLUEPRINT_TEMPLATE_ID, "1FJ4wCMDlI1zW3XCbIXXn-ejOOjq5iQ1Mit_9MuGnO-U")
 
     def test_f10_02_copy_presentation_dry_run(self) -> None:
         """Verifies `copy_presentation` in dry-run mode returns mock cloned deck ID."""

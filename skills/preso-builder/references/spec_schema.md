@@ -12,13 +12,13 @@ version: "1.0"
 metadata:
   title: string                  # [Required] Main presentation title
   subtitle: string               # [Optional] Subtitle / thesis statement
-  template_id: string            # [Optional] Google Slides Master Deck ID (Default: AI Factory Blueprint)
+  template_id: string            # [Optional] Master Deck ID to clone (Default: "" -> clean blank deck)
   target_audience: string        # [Optional] Target audience (e.g. "Senior Engineering Leadership")
   core_thesis: string            # [Optional] Core narrative thesis
   theme:
-    palette: string              # [Optional] "blueprint" | "dark" | "light"
-    primary_color: string        # [Optional] Hex color code (e.g. "#1E2761")
-    accent_color: string         # [Optional] Hex color code (e.g. "#1A73E8")
+    palette: string              # [Optional] "google_editorial" (default) | "dark" | "light"
+    primary_color: string        # [Optional] Hex color code (default "#202124")
+    accent_color: string         # [Optional] Hex color code (default "#1A73E8")
 
 chapters:
   - chapter_number: integer      # [Required] 1-based chapter index (1..99)
@@ -49,11 +49,13 @@ chapters:
 * `speaker_notes`: `string` (Optional)
 
 #### 2. `split_cards` (`card_split_2` / `card_split_3`)
+* `flow_steps` / `process_strip`: `list[{title, subtitle, highlight}]` (Optional; 2–5 horizontal process steps connected by arrows above the cards)
+* `foundation`: `string | {kicker, text}` (Optional; full-width baseline card below the cards)
 * `cards`: `list[CardSpec]` (Strictly 2 or 3 items)
   * `title` / `header`: `string` (Card heading, max 35 chars)
   * `category` / `category_pill`: `string` (Top pill text, max 20 chars)
-  * `bullets`: `list[string]` (Strictly 3 to 4 items; max 90 chars per bullet for 2-card, max 65 chars for 3-card)
-  * `theme`: `string` (Optional hex accent color)
+  * `bullets`: `list[string]` (Strictly 2 to 4 items; max 90 chars per bullet for 2-card, max 65 chars per bullet for 3-card)
+  * `theme`: `string` (Optional hex accent color; defaults to 4-color Google cycle)
 
 #### 3. `code_terminal`
 * `left_content` / `context`:
@@ -81,10 +83,10 @@ chapters:
   * `subtitle` / `tagline`: `string` (Short summary, max 40 chars)
   * `bullets` / `details`: `list[string]` (1-2 descriptive points)
 
-#### 6. `executive_grid` (`exec_grid_2x2`)
-* `quadrants` / `grid`: `list[QuadrantSpec]` (Strictly 4 items)
-  * `quadrant_number`: `integer` (1..4)
-  * `kicker`: `string` (e.g. `"01 PROMPT"`)
+#### 6. `executive_grid` (`exec_grid_2x2` / `exec_grid_2x3`)
+* `quadrants` / `items` / `pillars` / `grid`: `list[QuadrantSpec]` (Strictly **4** (`2×2`) or **6** (`2×3`) items)
+  * `number` / `quadrant_number`: `integer` (1..6)
+  * `kicker`: `string` (Optional pill override, e.g. `"01"`)
   * `header` / `title`: `string` (Takeaway summary, max 35 chars)
   * `body` / `description`: `string` (Narrative body, max 110 chars)
 
@@ -119,14 +121,15 @@ chapters:
 * `image_side`: `left` | `right` (default `right`)
 * `image_layout`: `split` (bullets card + image) | `full` (image across the content area)
 
-#### 11. `flow_diagram` (aliases `cycle`, `timeline`, `funnel`, `layered_cake`, `cake`, `flow`)
+#### 11. `flow_diagram` (aliases `cycle`, `timeline`, `funnel`, `layered_cake`, `cake`, `swimlanes`, `swimlane`, `layers_swimlane`, `architecture_layers`, `flow`)
 * `diagram`: required block.
-  * `layout`: `timeline` | `cycle` | `funnel` | `layered_cake` (optional; inferred from the alias or from which of `layers` / `base` / `steps` / `cycle` / `stages` is present)
+  * `layout`: `timeline` | `cycle` | `funnel` | `layered_cake` | `swimlanes` (optional; inferred from the alias or from which of `lanes` / `layers` / `base` / `steps` / `cycle` / `stages` is present)
   * `label`: section label above the stages/steps (optional)
   * `stages[]`: `{kicker, title, lead, body (string | list), status, status_label, color}` — timeline cards, or ≤2 foundation cards left of a cycle
   * `cycle`: `{label, entry: {title, body}, feeder: {title, body}, nodes: [{title, body}] (3–4, clockwise from left), center: {icon, text}}`
   * `steps[]`: `{label (chevron), title, lead, body, status, color}`; `active`: 1-based step to highlight
   * `layers[]`: list of 2–4 tiers ordered **bottom-to-top** (`layers[0]` = base foundation, `layers[1]` = middle workstreams, `layers[2]` = top frontier). Each tier is a list of box dicts `[{kicker, title, body, color, fill}]` (or a single box dict). Also accepts top-level `base:`, `middle:`, `top:` keys.
+  * `lanes[]`: list of 2–4 horizontal capability swimlanes ordered **top-to-bottom**: `{label, sublabel, color, items: [{title, body, status, highlight}]}` (`highlight: true` draws a `1.5pt #E37400` co-build accent border).
   * `marker`: `{text, at: entry | stage:N | node:N | step:N}` (or a plain string)
   * `note`: one-line honesty note under the diagram
   * `status_labels`: `{done, active, next, risk}` overrides (e.g. `{done: "✓ Concluído"}`)
@@ -138,6 +141,41 @@ chapters:
 * `desafios` / `challenges` / `risks`: `list[string]` (3–4 concise bullets for the red-striped middle-left card)
 * `diferenciais` / `differentiators` / `strengths`: `list[string]` (3–4 concise bullets for the green-striped middle-right card)
 * `acoes` / `actions` / `next_steps`: `list[string]` (3–4 concise bullets for the bottom full-width yellow action & open-questions card)
+
+#### 13. `cover` (aliases `title_cover`, `opening`)
+* `kicker`: `string` (Optional, max 30 chars)
+* `title`: `string` (Required editorial headline)
+* `subtitle`: `string` (Optional framing subtitle)
+* `breadcrumbs` / `evolution`: `list[string]` (Optional 2–4 evolution pills rendered as `A → B → [C]`)
+* `date` / `context`: `string` (Optional bottom-left metadata line)
+
+#### 14. `statement_pivot` (aliases `thesis`, `short_answer`, `provocation`)
+* `variant`: `"blue"` (`#1A73E8`, default) | `"dark"` (`#202124`)
+* `kicker`: `string` (Optional uppercase label, max 30 chars)
+* `title`: `string` (Required statement or executive question)
+* `subtitle`: `string` (Optional supporting sentence)
+
+#### 15. `capability_matrix` (aliases `matrix`, `comparison_matrix`)
+* `columns`: `list[string | {title, subtitle, highlight}]` (2–4 columns; `highlight`: `"outline"` | `"solid"`)
+* `rows`: `list[{capability, sublabel, cells: list[string | {text, status, highlight}]}]` (2–6 rows; `status`: `native` | `done` | `partial` | `warn` | `gap` | `plugin` | `risk` | `building_blocks` | `blocks` | `platform`; `highlight: true` adds `#E37400` co-build border)
+* `footnote`: `string` (Optional bottom synthesis note)
+
+#### 16. `kpi_spotlight` (aliases `big_number`, `pilot_spotlight`)
+* `stat_value` / `value`: `string` (Required hero stat, e.g. `"85%"`, `"3.2x"`)
+* `stat_label` / `label`: `string` (Bold metric headline)
+* `stat_description` / `description`: `string` (Context under hero stat)
+* `status_pill`: `string` (Optional green status pill, e.g. `"EM PRODUÇÃO"`)
+* `measured_by_label`: `string` (Default `"MEASURED BY"`)
+* `measurements` / `items`: `list[{title, description}]` (2–4 right-column measurement rows)
+
+#### 17. `horizon_staircase` (aliases `staircase`, `rising_horizons`, `north_star`)
+* `horizons` / `steps`: `list[{horizon, title, bullets: list[string], footer, highlight}]` (2–4 ascending horizons; use self-explanatory labels `Agora (Curto Prazo)`, `Médio Prazo`, `Longo Prazo (Futuro)` — validator warns on ambiguous `H1..H4`)
+
+#### 18. `closing_ask` (aliases `dark_closing`, `the_ask`, `executive_ask`)
+* `title`: `string` (Required closing takeaway headline)
+* `subtitle`: `string` (Optional supporting line)
+* `section_kicker`: `string` (Default `"THE ASK"`)
+* `asks` / `columns` / `items`: `list[{title, description}]` (2–4 borderless decision columns under colored rules)
 
 ```yaml
 - archetype: cycle

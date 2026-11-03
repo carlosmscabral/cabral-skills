@@ -113,7 +113,22 @@ class TestCLIBuild(unittest.TestCase):
         self.assertIsInstance(batch_data, list)
         self.assertGreater(len(batch_data), 0)
 
-        # Check deck ID content
+        # Check deck ID content (default creates a clean blank deck)
+        deck_id = deck_id_file.read_text(encoding="utf-8").strip()
+        self.assertTrue(deck_id.startswith("mock_deck_new_"))
+
+    def test_build_explicit_template_clones_deck(self) -> None:
+        """Verifies --template-id clones the specified master template instead of creating blank."""
+        deck_id_file = self.tmp_dir / "cloned_deck_id.txt"
+        ret = main([
+            "build",
+            "--spec", str(self.spec_file),
+            "--template-id", "custom_master_template_id",
+            "--dry-run",
+            "--output-deck-id", str(deck_id_file),
+            "--no-qa",
+        ])
+        self.assertEqual(ret, 0)
         deck_id = deck_id_file.read_text(encoding="utf-8").strip()
         self.assertTrue(deck_id.startswith("mock_deck_copy_"))
 

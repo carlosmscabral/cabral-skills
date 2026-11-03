@@ -46,7 +46,7 @@ class TestSpecModels(unittest.TestCase):
         d = meta.to_dict()
         self.assertEqual(d["title"], "Test Title")
         self.assertEqual(d["subtitle"], "Test Subtitle")
-        self.assertEqual(d["template_id"], "1FJ4wCMDlI1zW3XCbIXXn-ejOOjq5iQ1Mit_9MuGnO-U")
+        self.assertEqual(d["template_id"], "")
 
         restored = MetadataSpec.from_dict(d)
         self.assertEqual(restored.title, "Test Title")
@@ -367,7 +367,7 @@ class TestSpecValidator(unittest.TestCase):
         self.assertTrue(any("requires 3 to 5 steps" in e for e in res_many.errors))
 
     def test_executive_grid_validation(self) -> None:
-        # != 4 quadrants
+        # Invalid count (3 is neither 4 nor 6)
         bad_quads_slide = SlideSpec(
             archetype="executive_grid",
             title="Grid Test",
@@ -380,7 +380,21 @@ class TestSpecValidator(unittest.TestCase):
         )
         res = SpecValidator.validate_slide(bad_quads_slide)
         self.assertFalse(res.is_valid)
-        self.assertTrue(any("requires exactly 4 quadrants" in e for e in res.errors))
+        self.assertTrue(any("requires 4 (2x2) or 6 (2x3) items" in e for e in res.errors))
+
+    def test_horizon_staircase_warns_on_ambiguous_h1_labels(self) -> None:
+        slide = SlideSpec.from_dict({
+            "archetype": "horizon_staircase",
+            "title": "Roadmap",
+            "subtitle": "Three horizons from pilot to autonomous scale",
+            "horizons": [
+                {"horizon": "H1", "title": "Now", "bullets": ["Pilot"]},
+                {"horizon": "H2", "title": "Next", "bullets": ["Scale"]},
+            ],
+        })
+        res = SpecValidator.validate_slide(slide)
+        self.assertTrue(res.is_valid)
+        self.assertTrue(any("ambiguous label 'H1'" in w for w in res.warnings))
 
     def test_dodont_checklist_validation(self) -> None:
         # Missing DO items

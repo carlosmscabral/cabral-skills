@@ -284,6 +284,69 @@ def calculate_2x2_grid_bounds(
     return quadrants
 
 
+def calculate_grid_bounds(
+    n: int = 4,
+    left_margin: float = MARGIN_LEFT,
+    right_margin: float = MARGIN_RIGHT,
+    top_y: float = CONTENT_TOP,
+    bottom_margin: float = MARGIN_BOTTOM,
+    gap_x: Optional[float] = None,
+    gap_y: float = 15.0,
+    canvas_width: float = CANVAS_WIDTH,
+    canvas_height: float = CANVAS_HEIGHT,
+) -> list[BoundingBox]:
+    """Calculates coordinates for a 2x2 (4 cards) or 2x3 (6 cards) executive grid.
+
+    Args:
+        n: Number of grid cells (4 for 2x2, 6 for 2x3).
+        left_margin: Left margin (default: 36.0 pt).
+        right_margin: Right margin (default: 36.0 pt).
+        top_y: Top starting position (default: 100.0 pt).
+        bottom_margin: Bottom margin (default: 30.0 pt).
+        gap_x: Horizontal gap (defaults to 24.0 pt for 2x2, 18.0 pt for 2x3).
+        gap_y: Vertical gap between row 0 and row 1 (default: 15.0 pt).
+        canvas_width: Canvas width (default: 720.0 pt).
+        canvas_height: Canvas height (default: 405.0 pt).
+
+    Returns:
+        List of 4 or 6 BoundingBox objects ordered row-by-row left-to-right.
+    """
+    if n == 4:
+        return calculate_2x2_grid_bounds(
+            left_margin=left_margin,
+            right_margin=right_margin,
+            top_y=top_y,
+            bottom_margin=bottom_margin,
+            gap_x=24.0 if gap_x is None else gap_x,
+            gap_y=gap_y,
+            canvas_width=canvas_width,
+            canvas_height=canvas_height,
+        )
+    if n != 6:
+        raise ValueError(f"Executive grid supports 4 (2x2) or 6 (2x3) items, got {n}")
+
+    gx = 18.0 if gap_x is None else gap_x
+    usable_w = canvas_width - left_margin - right_margin
+    usable_h = canvas_height - top_y - bottom_margin
+    col_w = (usable_w - 2.0 * gx) / 3.0
+    row_h = (usable_h - gap_y) / 2.0
+
+    cells: list[BoundingBox] = []
+    for row in range(2):
+        y = top_y + row * (row_h + gap_y)
+        for col in range(3):
+            x = left_margin + col * (col_w + gx)
+            cells.append(
+                BoundingBox(
+                    x=round(x, 2),
+                    y=round(y, 2),
+                    width=round(col_w, 2),
+                    height=round(row_h, 2),
+                )
+            )
+    return cells
+
+
 def calculate_card_internal_bounds(
     card_bounds: BoundingBox,
     has_top_stripe: bool = True,

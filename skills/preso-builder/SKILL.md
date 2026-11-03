@@ -1,29 +1,29 @@
 ---
 name: preso-builder
 description: >-
-  Builds executive-ready Google Slides decks in "The AI Factory Blueprint" visual
+  Builds executive-ready Google Slides decks in clean Google Cloud Editorial visual
   style from a YAML spec (preso_spec.yaml), ingesting codebases, existing decks, or
-  markdown docs, with native editable diagrams (cycle, timeline, funnel with glued
-  connectors), geometry-aware text-fit checks, duration tiers, and a render-audit loop
-  on real thumbnails. Use when asked to create, restyle, or QA a Blueprint-style slide
-  deck, convert a repo or doc into slides, draw a "where we are" / roadmap / process
-  diagram slide, cut a 5/15/45-minute version of a deck, or redesign a single slide.
+  markdown docs, with 18 slide archetypes, native editable diagrams (cycle, timeline,
+  funnel, layered_cake, swimlanes with glued connectors), geometry-aware text-fit checks,
+  duration tiers, and a render-audit loop on real thumbnails. Use when asked to create,
+  restyle, or QA an executive Google Slides deck, convert a repo or doc into slides,
+  draw a "where we are" / roadmap / process / swimlane diagram slide, cut a 5/15/45-minute
+  version of a deck, or redesign a single slide.
 ---
 
-# preso-builder: The AI Factory Blueprint deck builder
+# preso-builder: Google Cloud Editorial deck builder
 
 A spec-first engine: you author `preso_spec.yaml`. The engine (bundled in
-[`engine/`](engine/README.md) next to this file) validates it, compiles it into one atomic `gslides batch`, builds the deck from the
-Blueprint template (`1FJ4wCMDlI1zW3XCbIXXn-ejOOjq5iQ1Mit_9MuGnO-U`), then exports
+[`engine/`](engine/README.md) next to this file) validates it, compiles it into one atomic `gslides batch`, builds a clean blank Google Slides deck (or clones `--template-id` when requested), prunes the default blank slide `p`, then exports
 thumbnails so you can audit what actually rendered.
 
 ## When to use
 
-- Build a Blueprint-style executive deck from docs, RFCs, notes, or a repo.
+- Build a clean Google Cloud Editorial executive deck (`#FFFFFF` white, `#202124` charcoal, and `#1A73E8` blue canvases, top mini 4-color bar, `ROUND_RECTANGLE` hairline cards, `Google Sans` Regular titles) from docs, RFCs, notes, or a repo.
 - Restyle an existing Google Slides deck (`ingest --slides <deck_id>`).
 - Cut one deck to several talk lengths (`--duration 5|15|45|full`).
 - Redesign one slide, or QA/audit a built deck.
-- Draw a native process diagram slide (loop, roadmap, funnel, "where we are") that stays
+- Draw a native process or architecture diagram slide (`cycle`, `timeline`, `funnel`, `layered_cake`, `swimlanes`) that stays
   editable in Slides (`flow_diagram`).
 
 Not for: data charts or telemetry plots (`dataviz`), dense technical/architecture diagrams
@@ -88,16 +88,15 @@ Authoring rules:
   content slide needs a subtitle of at least 4 words that states the point
   ("Agents cut review time from 2 days to 3 hours"), not a topic ("Review time").
   The validator warns when it's missing.
-- **Vary the layout.** Don't use more than 2 slides in a row with the same archetype. The
-  validator warns. Rotate `split_cards` with `hero_metrics`, `ladder_hierarchy`,
-  `executive_grid`, and `image_split`.
+- **Vary the layout across the 18 archetypes.** Don't use more than 2 slides in a row with the same archetype. The
+  validator warns. Open with `cover` (with `breadcrumbs` evolution trail when relevant), punctuate key theses or questions with `statement_pivot` (`variant: blue` or `dark`), compare options with `capability_matrix`, spotlight pilot impact with `kpi_spotlight`, frame maturity horizons with `horizon_staircase`, summarize 4 or 6 pillars with `executive_grid` (`2×2` or `2×3`), pair an end-to-end flow strip with role cards in `split_cards` (`flow_steps`), and close with `closing_ask`.
 - **Tier every slide** for length variants: `core` (always shown), `explain` (15 min and up),
   `detail` (45 min and up), or `appendix` (built but hidden). Use `skip: true` to hide one slide.
 - **Mark the demo.** Put a `demo_pivot` slide before any live demo, with up to 3
   `watch_for` chips that tell the audience what to notice.
-- **Draw flows & stacked architectures natively.** Loops, roadmaps, staged journeys, "where we are" slides, and bottom-up architectures use
-  `flow_diagram` (`cycle` / `timeline` / `funnel` / `layered_cake`): editable shapes, curved connectors,
-  status chips, a red marker pill. Never use `funnel` or `ladder_hierarchy` when the user asks for a **Layered Cake** (bottom-up stacked foundation → platforms → frontier).
+- **Draw flows, horizontal swimlanes & stacked architectures natively.** Loops, roadmaps, staged journeys, "where we are" slides, horizontal capability bands, and bottom-up architectures use
+  `flow_diagram` (`cycle` / `timeline` / `funnel` / `layered_cake` / `swimlanes`): editable rounded shapes, curved connectors,
+  status chips, co-build highlight outlines (`#E37400`), and a red marker pill. Never use `funnel` or `ladder_hierarchy` when the user asks for a **Layered Cake** (bottom-up stacked foundation → platforms → frontier); use `swimlanes` when showing horizontal capability bands stacked top-to-bottom.
 - **Use `workstream_card` for initiative / workstream catalogues.** When building 1 slide per workstream/frente (with an image or placeholder drop-zone on the left + Tempo/Maturidade, Potencial de Receita, Riscos & Desafios vs. Diferenciais, and Ações on the right), use `archetype: workstream_card`.
 - **Self-explanatory roadmap labels (no ambiguous `H1/H2/H3`).** In executive decks and roadmaps, never use `H1 / H2 / H3` (which confuses Three Horizons with 1st/2nd Half of the year). Always write self-explanatory labels: `Agora (Curto Prazo)`, `Médio Prazo`, `Longo Prazo (Futuro)`.
 - **Fast image & placeholder workflow.** When the user wants a quick draft ("vou dar um tapa manualmente") or an image space to fill later, pass `image: {placeholder: "Descrição do diagrama..."}` on `workstream_card` or `image_split` (instant grey drop-zone, zero upload calls). When embedding architecture diagrams (such as Dendrite `.svg` exports) into `image_split`, rasterize them via [`scripts/svg_to_slide_png.py`](scripts/svg_to_slide_png.py) (`<slug>.slide.png`, calibrated at `<=1999px` Skia vector width so Google Slides' `=s2048` server cap never downscales/blurs text) and prefer `image_layout: full`. When rendering multiple diagrams, pass all `.svg` files in a single call so they rasterize in parallel before `preso build`.
@@ -130,12 +129,12 @@ overflows, or when a pill, chip, or label would wrap onto a second line.
 ### 5. Build
 
 ```bash
-preso build --spec preso_spec.yaml [--duration 15] [--deck-id <existing>] [--audit-slides 1,2,10] [--no-thumbnails]
+preso build --spec preso_spec.yaml [--duration 15] [--deck-id <existing>] [--template-id <master>] [--audit-slides 1,2,10] [--no-thumbnails]
 ```
 
-- The build copies the template, runs the batch, prunes the template's own slides in a single atomic `deleteObject` raw-batch, uploads any
+- By default, `preso build` creates a clean blank presentation, runs the batch, atomically prunes the initial default slide `p` via `deleteObject` raw-batch, uploads any
   local `image_split` / `workstream_card` images in parallel (`ThreadPoolExecutor`), draws `flow_diagram` bodies in one atomic `mutate raw-batch`,
-  exports **fresh** thumbnails (with automatic backoff on HTTP 429), and writes `dist/qa/audit_checklist.md`.
+  exports **fresh** thumbnails (with automatic backoff on HTTP 429), and writes `dist/qa/audit_checklist.md`. Pass `--template-id <id>` (or set `metadata.template_id` in the spec) when cloning a master template instead.
 - `--deck-id` rebuilds in place. Previous slides are pruned atomically after the new ones are
   added.
 - `--audit-slides 1,2,10` exports thumbnails only for the listed 1-based slides (ideal when slides 3–9 share the same `workstream_card` template, avoiding the 300 req/min Slides API quota). Use `--no-thumbnails` on intermediate rebuilds when you only need offline geometry/contrast QA.
@@ -171,8 +170,8 @@ only the one they pick.
 
 Try these in order:
 
-1. **Pathway A (use an archetype).** Almost everything fits one of the 11 archetypes, including
-   `flow_diagram` for native loops, roadmaps and funnels. Rephrase the content before you
+1. **Pathway A (use an archetype).** Almost everything fits one of the 18 archetypes, including
+   `flow_diagram` for native loops, roadmaps, funnels, layered cakes, and swimlanes. Rephrase the content before you
    reach for anything else. For a one-off diagram slide outside a deck build, use
    [examples/diagram_slide_rawbatch.py](examples/diagram_slide_rawbatch.py) (new deck,
    one raw-batch, thumbnail, `--patch` to redo single elements).
@@ -216,15 +215,14 @@ Try these in order:
   `resize-element` takes a scale factor rather than points, `move-element` resets scale,
   `skip-slide`/`unskip-slide` exist even though `--help` doesn't list them, and
   `--json` returns `resolved_ids` (placeholder → real object ID).
-- The chapter divider is **white** with a rainbow bar, not navy. `demo_pivot` is the
-  navy slide.
+- The chapter divider and `cover` are **pure white (`#FFFFFF`)**, not dark. Dark pivots (`demo_pivot`, `statement_pivot` with `variant: dark`, and `closing_ask`) use **Google Charcoal (`#202124`)**; `statement_pivot` with `variant: blue` uses **Google Blue (`#1A73E8`)**.
 - The validator blocks the build on errors (unknown archetype or tier, missing
   required content, budget overruns in strict mode). Everything else is a warning. Use
   `--force` only when you understand the warning.
 
 ## References
 
-- [references/archetypes.md](references/archetypes.md): the 11 archetypes, fields, and capacities
+- [references/archetypes.md](references/archetypes.md): the 18 archetypes, fields, and capacities
 - [references/diagram_tokens.yaml](references/diagram_tokens.yaml): palette, type scale, and grid for native diagrams
 - [examples/flow_diagram_spec.yaml](examples/flow_diagram_spec.yaml): one slide per diagram layout
 - [references/spec_schema.md](references/spec_schema.md): the `preso_spec.yaml` schema, tiers, and images

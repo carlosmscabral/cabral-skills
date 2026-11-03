@@ -63,7 +63,16 @@ MIN_ASSERTION_SUBTITLE_WORDS = 4
 MAX_CONSECUTIVE_SAME_ARCHETYPE = 2
 
 # Archetypes that intentionally carry no assertion subtitle.
-SUBTITLE_EXEMPT_ARCHETYPES = {"chapter_divider", "demo_pivot"}
+SUBTITLE_EXEMPT_ARCHETYPES = {
+    "chapter_divider",
+    "demo_pivot",
+    "cover",
+    "statement_pivot",
+    "closing_ask",
+}
+
+# Ambiguous roadmap horizon tags forbidden by user style rules (prefer Agora / Médio Prazo / Longo Prazo).
+AMBIGUOUS_HORIZON_RE = re.compile(r"^\s*H[1-4]\b", re.IGNORECASE)
 
 # Leftover research/LLM citation markers that must never reach a slide.
 CITATION_ARTIFACT_RE = re.compile(
@@ -84,6 +93,12 @@ CANONICAL_ARCHETYPES = {
     "image_split",
     "flow_diagram",
     "workstream_card",
+    "cover",
+    "statement_pivot",
+    "capability_matrix",
+    "kpi_spotlight",
+    "horizon_staircase",
+    "closing_ask",
 }
 
 ARCHETYPE_ALIASES = {
@@ -104,9 +119,28 @@ ARCHETYPE_ALIASES = {
     "funnel": "flow_diagram",
     "layered_cake": "flow_diagram",
     "cake": "flow_diagram",
+    "swimlanes": "flow_diagram",
+    "swimlane": "flow_diagram",
+    "layers_swimlane": "flow_diagram",
+    "architecture_layers": "flow_diagram",
     "initiative_card": "workstream_card",
     "frente_card": "workstream_card",
     "workstream": "workstream_card",
+    "title_cover": "cover",
+    "opening": "cover",
+    "thesis": "statement_pivot",
+    "short_answer": "statement_pivot",
+    "provocation": "statement_pivot",
+    "matrix": "capability_matrix",
+    "comparison_matrix": "capability_matrix",
+    "big_number": "kpi_spotlight",
+    "pilot_spotlight": "kpi_spotlight",
+    "staircase": "horizon_staircase",
+    "rising_horizons": "horizon_staircase",
+    "north_star": "horizon_staircase",
+    "dark_closing": "closing_ask",
+    "the_ask": "closing_ask",
+    "executive_ask": "closing_ask",
 }
 
 
@@ -405,10 +439,17 @@ class SpecValidator:
             )
             return result
 
-        # 2. Universal Header Text Budgets
-        if parsed.title and len(parsed.title) > BUDGET_SLIDE_TITLE:
+        # 2. Universal Header Text Budgets (multi-line statement/cover canvases allow longer headlines)
+        title_budget = (
+            120
+            if normalized_arch == "statement_pivot"
+            else 85
+            if normalized_arch in ("cover", "closing_ask", "demo_pivot")
+            else BUDGET_SLIDE_TITLE
+        )
+        if parsed.title and len(parsed.title) > title_budget:
             msg = (
-                f"Slide {slide_index} ({normalized_arch}) title exceeds {BUDGET_SLIDE_TITLE} "
+                f"Slide {slide_index} ({normalized_arch}) title exceeds {title_budget} "
                 f"character budget ({len(parsed.title)} chars): '{parsed.title[:35]}...'"
             )
             if strict:
@@ -489,6 +530,18 @@ class SpecValidator:
             cls._validate_flow_diagram(parsed, slide_index, result, raw_arch)
         elif normalized_arch == "workstream_card":
             cls._validate_workstream_card(parsed, slide_index, result, strict)
+        elif normalized_arch == "cover":
+            cls._validate_cover(parsed, slide_index, result, strict)
+        elif normalized_arch == "statement_pivot":
+            cls._validate_statement_pivot(parsed, slide_index, result, strict)
+        elif normalized_arch == "capability_matrix":
+            cls._validate_capability_matrix(parsed, slide_index, result, strict)
+        elif normalized_arch == "kpi_spotlight":
+            cls._validate_kpi_spotlight(parsed, slide_index, result, strict)
+        elif normalized_arch == "horizon_staircase":
+            cls._validate_horizon_staircase(parsed, slide_index, result, strict)
+        elif normalized_arch == "closing_ask":
+            cls._validate_closing_ask(parsed, slide_index, result, strict)
 
         return result
 
@@ -686,8 +739,10 @@ class SpecValidator:
             result.add_error(f"Slide {idx} (executive_grid) requires quadrants, but none were provided.")
             return
 
-        if len(quadrants) != 4:
-            result.add_error(f"Slide {idx} (executive_grid) requires exactly 4 quadrants (2x2), found {len(quadrants)}.")
+        if len(quadrants) not in (4, 6):
+            result.add_error(
+                f"Slide {idx} (executive_grid) requires 4 (2x2) or 6 (2x3) items, found {len(quadrants)}."
+            )
 
         for q_idx, q in enumerate(quadrants, start=1):
             title = q.title if isinstance(q, QuadrantSpec) else str(q.get("title", ""))
@@ -843,11 +898,14 @@ class SpecValidator:
         """Structure + fit checks for native diagrams (raw-batch rendered)."""
         from preso.engine.diagrams import validate_diagram  # pylint: disable=g-import-not-at-top
 
-        hint = (
-            "layered_cake"
-            if raw_arch in ("layered_cake", "cake")
-            else (raw_arch if raw_arch in ("cycle", "timeline", "funnel") else "")
-        )
+        if raw_arch in ("layered_cake", "cake"):
+            hint = "layered_cake"
+        elif raw_arch in ("swimlanes", "swimlane", "layers_swimlane", "architecture_layers"):
+            hint = "swimlanes"
+        elif raw_arch in ("cycle", "timeline", "funnel"):
+            hint = raw_arch
+        else:
+            hint = ""
         diagram = (slide.raw_content or {}).get("diagram")
         errors, warnings = validate_diagram(diagram, hint)
         for e in errors:
@@ -923,3 +981,117 @@ class SpecValidator:
                         result.add_error(msg)
                     else:
                         result.add_warning(msg)
+
+    @classmethod
+    def _validate_cover(
+        cls, slide: SlideSpec, idx: int, result: ValidationResult, strict: bool
+    ) -> None:
+        if not slide.title:
+            result.add_error(f"Slide {idx} (cover) requires a non-empty `title`.")
+        crumbs = (slide.raw_content or {}).get("breadcrumbs") or (slide.raw_content or {}).get("evolution") or []
+        if isinstance(crumbs, list) and len(crumbs) > 4:
+            result.add_warning(f"Slide {idx} (cover) has {len(crumbs)} breadcrumbs (max 4 rendered).")
+
+    @classmethod
+    def _validate_statement_pivot(
+        cls, slide: SlideSpec, idx: int, result: ValidationResult, strict: bool
+    ) -> None:
+        raw = slide.raw_content or {}
+        statement = slide.title or str(raw.get("statement") or raw.get("thesis") or "")
+        if not statement.strip():
+            result.add_error(f"Slide {idx} (statement_pivot) requires `title` (or `statement`).")
+        variant = str(raw.get("variant") or raw.get("theme") or "blue").strip().lower()
+        if variant not in ("blue", "dark", "charcoal", "navy"):
+            result.add_error(
+                f"Slide {idx} (statement_pivot) variant must be 'blue' or 'dark', got '{variant}'."
+            )
+
+    @classmethod
+    def _validate_capability_matrix(
+        cls, slide: SlideSpec, idx: int, result: ValidationResult, strict: bool
+    ) -> None:
+        raw = slide.raw_content or {}
+        columns = raw.get("columns") or []
+        rows = raw.get("rows") or []
+        if not isinstance(columns, list) or len(columns) < 2 or len(columns) > 5:
+            result.add_error(
+                f"Slide {idx} (capability_matrix) requires 2 to 5 `columns`, found "
+                f"{len(columns) if isinstance(columns, list) else 0}."
+            )
+            return
+        if not isinstance(rows, list) or len(rows) < 1 or len(rows) > 7:
+            result.add_error(
+                f"Slide {idx} (capability_matrix) requires 1 to 7 `rows`, found "
+                f"{len(rows) if isinstance(rows, list) else 0}."
+            )
+            return
+        for r_idx, row in enumerate(rows, start=1):
+            if not isinstance(row, dict):
+                result.add_error(f"Slide {idx} (capability_matrix) row {r_idx} must be a mapping.")
+                continue
+            cells = row.get("cells") or row.get("values") or []
+            if len(cells) != len(columns):
+                result.add_error(
+                    f"Slide {idx} (capability_matrix) row {r_idx} has {len(cells)} cells, "
+                    f"expected {len(columns)} (matching columns)."
+                )
+
+    @classmethod
+    def _validate_kpi_spotlight(
+        cls, slide: SlideSpec, idx: int, result: ValidationResult, strict: bool
+    ) -> None:
+        raw = slide.raw_content or {}
+        stat_val = str(raw.get("stat_value") or raw.get("value") or raw.get("stat") or "").strip()
+        if not stat_val:
+            result.add_error(f"Slide {idx} (kpi_spotlight) requires `stat_value` (e.g. '100%', '3x').")
+        elif len(stat_val) > BUDGET_HERO_STAT:
+            msg = f"Slide {idx} (kpi_spotlight) stat_value '{stat_val}' exceeds {BUDGET_HERO_STAT} chars."
+            if strict:
+                result.add_error(msg)
+            else:
+                result.add_warning(msg)
+        measurements = raw.get("measurements") or raw.get("items")
+        if measurements is None and slide.metrics:
+            measurements = [m.to_dict() for m in slide.metrics]
+        if not measurements or not isinstance(measurements, list) or len(measurements) > 4:
+            result.add_error(
+                f"Slide {idx} (kpi_spotlight) requires 1 to 4 `measurements`, found "
+                f"{len(measurements) if isinstance(measurements, list) else 0}."
+            )
+
+    @classmethod
+    def _validate_horizon_staircase(
+        cls, slide: SlideSpec, idx: int, result: ValidationResult, strict: bool
+    ) -> None:
+        raw = slide.raw_content or {}
+        horizons = raw.get("horizons") or raw.get("stages") or []
+        if not isinstance(horizons, list) or len(horizons) < 2 or len(horizons) > 4:
+            result.add_error(
+                f"Slide {idx} (horizon_staircase) requires 2 to 4 `horizons`, found "
+                f"{len(horizons) if isinstance(horizons, list) else 0}."
+            )
+            return
+        for h_idx, h in enumerate(horizons, start=1):
+            if not isinstance(h, dict):
+                result.add_error(f"Slide {idx} (horizon_staircase) horizon {h_idx} must be a mapping.")
+                continue
+            tag = str(h.get("horizon") or h.get("tag") or h.get("phase") or "")
+            if AMBIGUOUS_HORIZON_RE.match(tag):
+                result.add_warning(
+                    f"Slide {idx} (horizon_staircase) horizon {h_idx} uses ambiguous label '{tag}'. "
+                    f"Prefer 'Agora (Curto Prazo)', 'Médio Prazo', 'Longo Prazo (Futuro)'."
+                )
+
+    @classmethod
+    def _validate_closing_ask(
+        cls, slide: SlideSpec, idx: int, result: ValidationResult, strict: bool
+    ) -> None:
+        raw = slide.raw_content or {}
+        if not slide.title:
+            result.add_error(f"Slide {idx} (closing_ask) requires `title`.")
+        asks = raw.get("asks") or raw.get("columns") or raw.get("items") or []
+        if not isinstance(asks, list) or len(asks) < 2 or len(asks) > 4:
+            result.add_error(
+                f"Slide {idx} (closing_ask) requires 2 to 4 `asks` columns, found "
+                f"{len(asks) if isinstance(asks, list) else 0}."
+            )

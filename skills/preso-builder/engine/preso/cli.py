@@ -177,7 +177,7 @@ def handle_build(args: argparse.Namespace) -> int:
     is_dry_run = getattr(args, "dry_run", False)
     client = GSlidesClient(dry_run=is_dry_run)
 
-    title = getattr(args, "title", None) or spec.metadata.title or "Blueprint Presentation"
+    title = getattr(args, "title", None) or spec.metadata.title or "Editorial Presentation"
     template_id = getattr(args, "template_id", None) or spec.metadata.template_id or DEFAULT_TEMPLATE_ID
 
     deck_id = getattr(args, "deck_id", None) or ""
@@ -198,9 +198,22 @@ def handle_build(args: argparse.Namespace) -> int:
                     sid = s.get("objectId") or s.get("id") or s.get("slide_id")
                     if sid:
                         initial_template_slide_ids.append(str(sid))
-        elif getattr(args, "blank", False):
+        elif getattr(args, "blank", False) or not template_id:
             print(f"📄 Creating blank presentation: '{title}'...")
             deck_id = client.create_presentation(title=title)
+            if not is_dry_run and client.runner is None:
+                try:
+                    info_data = client.info(deck_id)
+                    initial_slides = info_data.get("slides", [])
+                except Exception:
+                    try:
+                        initial_slides = client.list_slides(deck_id)
+                    except Exception:
+                        initial_slides = []
+                for s in initial_slides:
+                    sid = s.get("objectId") or s.get("id") or s.get("slide_id")
+                    if sid:
+                        initial_template_slide_ids.append(str(sid))
         else:
             print(f"📋 Cloning template presentation '{template_id}'...")
             deck_id = client.copy_presentation(template_id=template_id, title=title)

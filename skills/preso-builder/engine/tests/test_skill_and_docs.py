@@ -12,14 +12,24 @@ SKILL_PATH = ENGINE_ROOT.parent / "SKILL.md"
 README_PATH = ENGINE_ROOT / "README.md"
 
 ARCHETYPES = [
+    "cover",
     "chapter_divider",
+    "statement_pivot",
     "split_cards",
     "code_terminal",
     "hero_metrics",
+    "kpi_spotlight",
     "ladder_hierarchy",
+    "horizon_staircase",
     "executive_grid",
+    "capability_matrix",
     "dodont_checklist",
     "actionable_takeaways",
+    "closing_ask",
+    "demo_pivot",
+    "image_split",
+    "flow_diagram",
+    "workstream_card",
 ]
 
 
@@ -38,7 +48,7 @@ class TestSkillAndDocs(unittest.TestCase):
         for section in [
             "Architecture Flow",
             "Key Features",
-            "The 10 Blueprint Slide Archetypes",
+            "The 18 Editorial Slide Archetypes",
             "Design Tokens & Visual Standards",
             "Installation & Prerequisites",
             "Quickstart & CLI Reference",

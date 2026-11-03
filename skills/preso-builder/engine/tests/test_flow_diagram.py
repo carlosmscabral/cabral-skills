@@ -40,6 +40,14 @@ TIMELINE = {"stages": [{"title": f"S{i}", "status": s} for i, s in enumerate(["d
             "marker": {"text": "WE ARE HERE", "at": "stage:2"}}
 FUNNEL = {"active": 2, "steps": [{"label": n, "title": n, "body": ["a", "b"]}
                                  for n in ("Welcome", "Fit", "Offer", "Close")]}
+SWIMLANES = {
+    "lanes": [
+        {"label": "Canais & UX", "sublabel": "Fronteira", "cards": [{"title": "Web / App", "subtitle": "Omnichannel"}, {"title": "Voz", "subtitle": "URA"}]},
+        {"label": "Orquestração", "sublabel": "ADK", "cards": [{"title": "Router Agent", "subtitle": "Políticas"}, {"title": "Co-build Eval", "subtitle": "Diferencial", "highlight": True}]},
+        {"label": "Fundação", "sublabel": "Cloud", "cards": [{"title": "Vertex AI", "subtitle": "Modelos"}, {"title": "BigQuery", "subtitle": "Dados"}]},
+    ],
+    "note": "Arquitetura em raias horizontais com destaque co-build.",
+}
 
 
 def _all(reqs, kind):
@@ -103,6 +111,7 @@ class LayoutTest(unittest.TestCase):
         self.assertEqual(infer_layout(CYCLE), "cycle")
         self.assertEqual(infer_layout(TIMELINE), "timeline")
         self.assertEqual(infer_layout(FUNNEL), "funnel")
+        self.assertEqual(infer_layout(SWIMLANES), "swimlanes")
         self.assertEqual(infer_layout({"stages": []}, "funnel"), "funnel")
 
     def test_cycle_has_curved_glued_connectors(self):
@@ -139,7 +148,7 @@ class LayoutTest(unittest.TestCase):
         self.assertEqual(kinds.count("CHEVRON"), 3)
 
     def test_all_elements_inside_canvas(self):
-        for d in (CYCLE, TIMELINE, FUNNEL):
+        for d in (CYCLE, TIMELINE, FUNNEL, SWIMLANES):
             for s in _all(build_diagram_canvas("P", d, "dg05").requests, "createShape"):
                 ep = s["elementProperties"]
                 x, y = ep["transform"]["translateX"], ep["transform"]["translateY"]
@@ -153,7 +162,7 @@ class LayoutTest(unittest.TestCase):
 class ValidationTest(unittest.TestCase):
 
     def test_valid_diagrams(self):
-        for d in (CYCLE, TIMELINE, FUNNEL):
+        for d in (CYCLE, TIMELINE, FUNNEL, SWIMLANES):
             errors, _ = validate_diagram(d)
             self.assertEqual(errors, [])
 

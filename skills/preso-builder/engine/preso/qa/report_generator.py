@@ -298,24 +298,25 @@ class QAReportGenerator:
     <title>{html.escape(title)} — Blueprint Presentation Preview</title>
     <style>
         :root {{
-            --navy-primary: #1E2761;
-            --navy-surface: #2D3A8C;
-            --navy-deep: #141A3E;
+            --navy-primary: #202124;
+            --navy-surface: #303134;
+            --navy-deep: #17181B;
             --slate-dark: #202124;
             --slate-header: #2D3035;
-            --bg-light: #F8F9FA;
+            --bg-light: #FFFFFF;
             --card-white: #FFFFFF;
             --card-border: #DADCE0;
             --blue-accent: #1A73E8;
             --blue-light: #E8F0FE;
             --blue-text: #174EA6;
+            --blue-subtitle: #BDC1C6;
             --green-do: #1E8E3E;
             --green-light: #E6F4EA;
             --green-text: #137333;
             --red-dont: #D93025;
             --red-light: #FCE8E6;
             --red-text: #C5221F;
-            --amber-warn: #F9AB00;
+            --amber-warn: #FBBC04;
             --text-primary: #202124;
             --text-muted: #5F6368;
             --text-white: #FFFFFF;
@@ -598,31 +599,44 @@ class QAReportGenerator:
             color: var(--text-primary);
         }}
 
-        /* Common Slide Header */
+        /* Common Slide Header (Google Cloud Editorial) */
         .mockup-header {{
             position: absolute;
-            top: 28px;
+            top: 24px;
             left: 36px;
             width: 648px;
-            height: 60px;
+            height: 64px;
         }}
+
+        .mini-4bar {{
+            display: inline-flex;
+            width: 56px;
+            height: 3.5px;
+            border-radius: 2px;
+            overflow: hidden;
+            vertical-align: middle;
+            margin-right: 8px;
+        }}
+        .mini-4bar span {{ flex: 1; height: 100%; }}
 
         .mockup-kicker {{
             font-family: var(--font-heading);
-            font-size: 10px;
+            font-size: 9px;
             font-weight: 700;
-            color: var(--blue-text);
+            color: var(--text-muted);
             text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 2px;
+            letter-spacing: 0.8px;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
         }}
 
         .mockup-title {{
             font-family: var(--font-heading);
-            font-size: 24px;
-            font-weight: 700;
+            font-size: 22px;
+            font-weight: 400;
             color: var(--text-primary);
-            letter-spacing: -0.3px;
+            letter-spacing: -0.2px;
             line-height: 1.2;
         }}
 
@@ -965,7 +979,7 @@ class QAReportGenerator:
             line-height: 1.45;
         }}
 
-        /* Archetype 6: Executive Grid */
+        /* Archetype 6: Executive Grid (2x2 or 2x3) */
         .arch-executive-grid .grid-container {{
             position: absolute;
             top: 100px;
@@ -976,6 +990,9 @@ class QAReportGenerator:
             grid-template-columns: 1fr 1fr;
             grid-template-rows: 1fr 1fr;
             gap: 14px;
+        }}
+        .arch-executive-grid .grid-container.grid-6 {{
+            grid-template-columns: 1fr 1fr 1fr;
         }}
 
         .grid-quadrant-card {{
@@ -1356,29 +1373,115 @@ class QAReportGenerator:
         """Renders CSS mockup HTML for an individual SlideSpec."""
         arch = slide.archetype.lower().replace("-", "_")
 
-        # 1. Chapter Divider (Exact Blueprint Standard)
+        # 1. Chapter Divider (Google Cloud Editorial)
+        mini_4bar = (
+            '<span class="mini-4bar">'
+            '<span style="background:#1A73E8;"></span>'
+            '<span style="background:#EA4335;"></span>'
+            '<span style="background:#FBBC04;"></span>'
+            '<span style="background:#34A853;"></span>'
+            '</span>'
+        )
         if arch == "chapter_divider":
             num = slide.chapter_number or f"{index:02d}"
             num_str = f"{int(num):02d}" if str(num).isdigit() else str(num)
             return f"""
             <div class="mockup-slide arch-chapter-divider">
-                <div class="rainbow-bar">
-                    <div class="rainbow-segment" style="background:#EA4335;"></div>
-                    <div class="rainbow-segment" style="background:#FBBC04;"></div>
-                    <div class="rainbow-segment" style="background:#34A853;"></div>
-                    <div class="rainbow-segment" style="background:#4285F4;"></div>
-                </div>
-                <div class="chapter-number">{html.escape(num_str)}</div>
-                <div class="chapter-title">{html.escape(slide.title or "Chapter Title")}</div>
-                {f'<div class="chapter-subtitle">{html.escape(slide.subtitle)}</div>' if slide.subtitle else ''}
+                <div style="margin-bottom:28px;">{mini_4bar}<span style="font-size:9px;font-weight:700;color:#5F6368;letter-spacing:0.8px;">{html.escape((slide.kicker or 'CHAPTER').upper())}</span></div>
+                <div class="chapter-number" style="color:#1A73E8;font-size:56px;">{html.escape(num_str)}</div>
+                <div class="chapter-title" style="font-weight:400;font-size:34px;">{html.escape(slide.title or "Chapter Title")}</div>
+                {f'<div class="chapter-subtitle" style="color:#5F6368;">{html.escape(slide.subtitle)}</div>' if slide.subtitle else ''}
             </div>
             """
 
-        # Header markup for remaining archetypes
+        # Cover Archetype (Slide 1 Editorial)
+        if arch in ("cover", "title_cover", "opening"):
+            raw = slide.raw_content if isinstance(slide.raw_content, dict) else {}
+            crumbs = raw.get("breadcrumbs") or raw.get("evolution") or []
+            crumbs_html = ""
+            if isinstance(crumbs, list) and crumbs:
+                parts = []
+                for ci, c in enumerate(crumbs[:4]):
+                    lbl = c.get("label") or c.get("title") if isinstance(c, dict) else str(c)
+                    active = c.get("active", ci == len(crumbs) - 1) if isinstance(c, dict) else (ci == len(crumbs) - 1)
+                    style = ("background:#E8F0FE;color:#174EA6;border:1px solid #AECBFA;font-weight:700;"
+                             if active else "background:#F8F9FA;color:#5F6368;border:1px solid #DADCE0;")
+                    parts.append(f'<span style="padding:3px 10px;border-radius:6px;font-size:9.5px;{style}">{html.escape(str(lbl))}</span>')
+                crumbs_html = '<div style="display:flex;align-items:center;gap:6px;margin-top:16px;">' + '<span style="color:#5F6368;font-size:10px;">→</span>'.join(parts) + '</div>'
+            footer_date = str(raw.get("date") or raw.get("footer") or "")
+            return f"""
+            <div class="mockup-slide" style="background:#FFFFFF;padding:32px 36px;display:flex;flex-direction:column;justify-content:space-between;">
+                <div>
+                    <div>{mini_4bar}{f'<span style="font-size:9px;font-weight:700;color:#5F6368;">{html.escape(slide.kicker.upper())}</span>' if slide.kicker else ''}</div>
+                    {crumbs_html}
+                    <div style="font-family:var(--font-heading);font-size:32px;font-weight:400;color:#202124;line-height:1.15;margin-top:34px;max-width:620px;">{html.escape(slide.title or 'Presentation Title')}</div>
+                    {f'<div style="font-size:14px;color:#5F6368;margin-top:12px;max-width:600px;">{html.escape(slide.subtitle)}</div>' if slide.subtitle else ''}
+                </div>
+                {f'<div style="font-size:10px;color:#5F6368;">{html.escape(footer_date)}</div>' if footer_date else '<div></div>'}
+            </div>
+            """
+
+        # Statement Pivot Archetype (Blue or Dark Charcoal)
+        if arch in ("statement_pivot", "thesis", "short_answer", "provocation"):
+            raw = slide.raw_content if isinstance(slide.raw_content, dict) else {}
+            variant = str(raw.get("variant") or raw.get("theme") or "blue").lower()
+            is_dark = variant in ("dark", "charcoal", "navy")
+            bg = "#202124" if is_dark else "#1A73E8"
+            kicker_col = "#FBBC04" if is_dark else "#FFFFFF"
+            sub_col = "#BDC1C6" if is_dark else "#FFFFFF"
+            bar_html = mini_4bar if is_dark else (
+                '<span class="mini-4bar">'
+                '<span style="background:#FFFFFF;"></span>'
+                '<span style="background:#EA4335;"></span>'
+                '<span style="background:#FBBC04;"></span>'
+                '<span style="background:#34A853;"></span>'
+                '</span>'
+            )
+            stmt = slide.title or str(raw.get("statement") or raw.get("thesis") or "")
+            return f"""
+            <div class="mockup-slide" style="background:{bg};color:#FFFFFF;padding:34px 36px;">
+                <div>{bar_html}</div>
+                {f'<div style="font-size:10px;font-weight:700;color:{kicker_col};letter-spacing:0.8px;margin-top:52px;">{html.escape(slide.kicker.upper())}</div>' if slide.kicker else '<div style="margin-top:64px;"></div>'}
+                <div style="font-family:var(--font-heading);font-size:28px;font-weight:400;line-height:1.22;margin-top:12px;max-width:640px;">{html.escape(stmt)}</div>
+                {f'<div style="font-size:13.5px;color:{sub_col};margin-top:16px;max-width:620px;line-height:1.45;">{html.escape(slide.subtitle)}</div>' if slide.subtitle else ''}
+            </div>
+            """
+
+        # Closing Ask Archetype (Dark Charcoal + Colored Rule Columns)
+        if arch in ("closing_ask", "dark_closing", "the_ask", "executive_ask"):
+            raw = slide.raw_content if isinstance(slide.raw_content, dict) else {}
+            asks = raw.get("asks") or raw.get("columns") or raw.get("items") or []
+            sec_kicker = str(raw.get("section_kicker") or "THE ASK")
+            accents = ["#1A73E8", "#EA4335", "#FBBC04", "#34A853"]
+            cols_html = []
+            for ai, a in enumerate(asks[:4]):
+                atitle = a.get("title") or a.get("label") if isinstance(a, dict) else str(a)
+                adesc = a.get("description") or a.get("detail") if isinstance(a, dict) else ""
+                cols_html.append(
+                    f'<div style="flex:1;border-top:2.5px solid {accents[ai % 4]};padding-top:10px;">'
+                    f'<div style="font-size:12px;font-weight:700;color:#FFFFFF;">{html.escape(str(atitle))}</div>'
+                    f'<div style="font-size:10.5px;color:#BDC1C6;margin-top:4px;line-height:1.4;">{html.escape(str(adesc))}</div>'
+                    f'</div>'
+                )
+            return f"""
+            <div class="mockup-slide" style="background:#202124;color:#FFFFFF;padding:30px 36px;display:flex;flex-direction:column;justify-content:space-between;">
+                <div>
+                    <div>{mini_4bar}</div>
+                    <div style="font-family:var(--font-heading);font-size:24px;font-weight:400;margin-top:18px;line-height:1.22;">{html.escape(slide.title or 'Executive Ask')}</div>
+                    {f'<div style="font-size:12.5px;color:#BDC1C6;margin-top:8px;">{html.escape(slide.subtitle)}</div>' if slide.subtitle else ''}
+                </div>
+                <div>
+                    <div style="font-size:9.5px;font-weight:700;color:#FBBC04;letter-spacing:0.8px;margin-bottom:10px;">{html.escape(sec_kicker.upper())}</div>
+                    <div style="display:flex;gap:16px;">{''.join(cols_html)}</div>
+                </div>
+            </div>
+            """
+
+        # Header markup for remaining light-canvas archetypes
         header_html = f"""
         <div class="mockup-header">
-            {f'<div class="mockup-kicker">{html.escape(slide.kicker)}</div>' if slide.kicker else ''}
-            <div class="mockup-title">{html.escape(slide.title or 'Blueprint Architecture')}</div>
+            <div class="mockup-kicker">{mini_4bar}{html.escape(slide.kicker) if slide.kicker else ''}</div>
+            <div class="mockup-title">{html.escape(slide.title or 'Editorial Architecture')}</div>
             {f'<div class="mockup-subtitle">{html.escape(slide.subtitle)}</div>' if slide.subtitle else ''}
         </div>
         """
@@ -1536,27 +1639,29 @@ class QAReportGenerator:
             </div>
             """
 
-        # 6. Executive Grid
+        # 6. Executive Grid (2x2 or 2x3)
         elif arch in ("executive_grid", "exec_grid"):
             quads = slide.quadrants or []
             q_html = []
+            accents = ["#1A73E8", "#EA4335", "#FBBC04", "#34A853"]
             for i, q in enumerate(quads, start=1):
                 num = getattr(q, "number", i) or (q.get("number", i) if isinstance(q, dict) else i)
                 qtitle = getattr(q, "title", f"Quadrant {i}") or (q.get("title") if isinstance(q, dict) else f"Quadrant {i}")
                 narr = getattr(q, "narrative", "") or getattr(q, "description", "") or (q.get("narrative") or q.get("description") if isinstance(q, dict) else "")
 
                 q_html.append(f"""
-                <div class="grid-quadrant-card">
+                <div class="grid-quadrant-card" style="border-left:none;border-top:3.5px solid {accents[(i-1)%4]};">
                     <div class="quadrant-num">{int(num):02d}</div>
                     <div class="quadrant-title">{html.escape(qtitle)}</div>
                     <div class="quadrant-body">{html.escape(narr)}</div>
                 </div>
                 """)
 
+            grid_cls = "grid-container grid-6" if len(quads) > 4 else "grid-container"
             return f"""
             <div class="mockup-slide arch-executive-grid">
                 {header_html}
-                <div class="grid-container">
+                <div class="{grid_cls}">
                     {''.join(q_html)}
                 </div>
             </div>
@@ -1662,16 +1767,16 @@ class QAReportGenerator:
             if isinstance(watch, str):
                 watch = [watch]
             chips = "".join(
-                f'<span style="display:inline-block;background:#2D3A8C;color:#fff;padding:6px 12px;'
-                f'margin-right:8px;border-radius:4px;font-size:12px;">{html.escape(str(w))}</span>'
+                f'<span style="display:inline-block;background:#303134;border:1px solid #3C4043;color:#fff;padding:6px 12px;'
+                f'margin-right:8px;border-radius:6px;font-size:12px;">{html.escape(str(w))}</span>'
                 for w in watch[:3]
             )
             return f"""
-            <div class="mockup-slide" style="background:#1E2761;color:#fff;padding:40px 36px;">
-                <div style="display:inline-block;background:#C5221F;color:#fff;font-weight:700;font-size:12px;padding:5px 14px;border-radius:4px;">▶ {html.escape((slide.kicker or 'LIVE DEMO').upper())}</div>
-                <div style="font-size:30px;font-weight:700;margin-top:18px;">{html.escape(slide.title or 'Live demo')}</div>
-                {f'<div style="color:#CADCFC;font-size:15px;margin-top:10px;">{html.escape(slide.subtitle)}</div>' if slide.subtitle else ''}
-                {f'<div style="margin-top:22px;"><div style="color:#CADCFC;font-size:10px;font-weight:700;margin-bottom:6px;">WATCH FOR</div>{chips}</div>' if chips else ''}
+            <div class="mockup-slide" style="background:#202124;color:#fff;padding:36px 36px;">
+                <div style="display:inline-block;background:#C5221F;color:#fff;font-weight:700;font-size:11px;padding:5px 14px;border-radius:6px;">▶ {html.escape((slide.kicker or 'LIVE DEMO').upper())}</div>
+                <div style="font-size:30px;font-weight:400;margin-top:18px;">{html.escape(slide.title or 'Live demo')}</div>
+                {f'<div style="color:#BDC1C6;font-size:15px;margin-top:10px;">{html.escape(slide.subtitle)}</div>' if slide.subtitle else ''}
+                {f'<div style="margin-top:22px;"><div style="color:#BDC1C6;font-size:10px;font-weight:700;margin-bottom:6px;">WATCH FOR</div>{chips}</div>' if chips else ''}
             </div>
             """
 
@@ -1706,14 +1811,37 @@ class QAReportGenerator:
             </div>
             """
 
-        elif arch in ("flow_diagram", "flow", "native_diagram", "cycle", "timeline", "funnel"):
+        elif arch in ("flow_diagram", "flow", "native_diagram", "cycle", "timeline", "funnel", "layered_cake", "cake", "swimlanes", "swimlane", "layers_swimlane", "architecture_layers"):
             raw = slide.raw_content if isinstance(slide.raw_content, dict) else {}
             d = raw.get("diagram") if isinstance(raw.get("diagram"), dict) else {}
-            colors = ["#EA4335", "#FBBC04", "#4285F4", "#34A853"]
+            colors = ["#1A73E8", "#EA4335", "#FBBC04", "#34A853"]
+
+            lanes = [ln for ln in (d.get("lanes") or []) if isinstance(ln, dict)]
+            if lanes:
+                lanes_html = []
+                for li, ln in enumerate(lanes[:4]):
+                    cards = [c if isinstance(c, dict) else {"title": str(c)} for c in (ln.get("cards") or ln.get("items") or [])]
+                    cards_str = "".join(
+                        f'<div style="flex:1;background:#FFFFFF;border:1px solid #DADCE0;border-top:3px solid {colors[(li+ci)%4]};border-radius:6px;padding:6px 8px;">'
+                        f'<div style="font-size:10.5px;font-weight:700;color:#202124;">{html.escape(str(c.get("title", "")))}</div>'
+                        f'<div style="font-size:9px;color:#5F6368;">{html.escape(str(c.get("subtitle") or c.get("detail") or ""))}</div></div>'
+                        for ci, c in enumerate(cards[:4])
+                    )
+                    lanes_html.append(
+                        f'<div style="display:flex;gap:10px;align-items:center;margin-bottom:8px;">'
+                        f'<div style="width:128px;font-size:10px;font-weight:700;color:{colors[li%4]};">{html.escape(str(ln.get("label") or ln.get("title") or ""))}</div>'
+                        f'<div style="flex:1;display:flex;gap:8px;">{cards_str}</div></div>'
+                    )
+                return f"""
+                <div class="mockup-slide arch-flow-diagram">
+                    {header_html}
+                    <div style="position:absolute;top:102px;left:36px;width:648px;">{''.join(lanes_html)}</div>
+                </div>
+                """
 
             def chip(text: str, i: int, round_: bool = False) -> str:
-                return (f'<div style="flex:1;background:#fff;border:1px solid #DADCE0;'
-                        f'{"border-radius:10px;border-color:#4285F4" if round_ else "border-top:5px solid " + colors[i % 4]};'
+                return (f'<div style="flex:1;background:#fff;border:1px solid #DADCE0;border-radius:8px;'
+                        f'{"border-color:#4285F4" if round_ else "border-top:4px solid " + colors[i % 4]};'
                         f'padding:8px;font-size:11px;font-weight:600;color:#202124;">{html.escape(text)}</div>')
 
             stages = [s for s in (d.get("stages") or []) if isinstance(s, dict)]
@@ -1732,8 +1860,103 @@ class QAReportGenerator:
             return f"""
             <div class="mockup-slide arch-flow-diagram">
                 {header_html}
-                {marker_html}
-                <div style="display:flex;gap:12px;padding:0 36px;align-items:stretch;">{''.join(row)}</div>
+                <div style="position:absolute;top:104px;left:0;width:720px;">
+                    {marker_html}
+                    <div style="display:flex;gap:12px;padding:0 36px;align-items:stretch;">{''.join(row)}</div>
+                </div>
+            </div>
+            """
+
+        elif arch in ("capability_matrix", "matrix", "comparison_matrix"):
+            raw = slide.raw_content if isinstance(slide.raw_content, dict) else {}
+            cols = raw.get("columns") or []
+            rows_data = raw.get("rows") or []
+            hdr_cells = "".join(
+                f'<th style="padding:6px 8px;background:#E8F0FE;color:#174EA6;border-radius:6px;font-size:10px;">{html.escape(str(c.get("title", c) if isinstance(c, dict) else c))}</th>'
+                for c in cols
+            )
+            body_rows = []
+            for r in rows_data[:6]:
+                cap = r.get("capability") or r.get("label") if isinstance(r, dict) else ""
+                cells_html = []
+                for c in (r.get("cells") or [] if isinstance(r, dict) else []):
+                    txt = c.get("text") or c.get("label") if isinstance(c, dict) else str(c)
+                    st = str(c.get("status", "neutral")).lower() if isinstance(c, dict) else "neutral"
+                    bg_fg = {
+                        "native": "#E6F4EA;color:#137333",
+                        "partial": "#FEF7E0;color:#945200",
+                        "gap": "#FCE8E6;color:#C5221F",
+                        "building_blocks": "#E8F0FE;color:#174EA6",
+                    }.get(st, "#F8F9FA;color:#3C4043")
+                    cells_html.append(f'<td style="padding:5px 8px;background:{bg_fg};border-radius:6px;font-size:9.5px;text-align:center;">{html.escape(str(txt))}</td>')
+                body_rows.append(f'<tr><td style="font-size:10px;font-weight:600;padding:4px 6px;">{html.escape(str(cap))}</td>{"".join(cells_html)}</tr>')
+            return f"""
+            <div class="mockup-slide">
+                {header_html}
+                <table style="position:absolute;top:100px;left:36px;width:648px;border-collapse:separate;border-spacing:5px;">
+                    <thead><tr><th></th>{hdr_cells}</tr></thead>
+                    <tbody>{''.join(body_rows)}</tbody>
+                </table>
+            </div>
+            """
+
+        elif arch in ("kpi_spotlight", "big_number", "pilot_spotlight"):
+            raw = slide.raw_content if isinstance(slide.raw_content, dict) else {}
+            stat = str(raw.get("stat_value") or raw.get("value") or "100%")
+            lbl = str(raw.get("stat_label") or raw.get("unit") or "")
+            desc = str(raw.get("stat_description") or raw.get("description") or "")
+            meas = raw.get("measurements") or raw.get("items") or []
+            dots = ["#1A73E8", "#EA4335", "#FBBC04", "#34A853"]
+            m_rows = "".join(
+                f'<div style="border-top:1px solid #DADCE0;padding:8px 0;display:flex;gap:8px;align-items:flex-start;">'
+                f'<span style="width:8px;height:8px;border-radius:50%;background:{dots[i%4]};margin-top:4px;flex-shrink:0;"></span>'
+                f'<div><div style="font-size:11px;font-weight:700;color:#202124;">{html.escape(str(m.get("title", m) if isinstance(m, dict) else m))}</div>'
+                f'<div style="font-size:10px;color:#5F6368;">{html.escape(str(m.get("description", "") if isinstance(m, dict) else ""))}</div></div></div>'
+                for i, m in enumerate(meas[:4])
+            )
+            return f"""
+            <div class="mockup-slide">
+                {header_html}
+                <div style="position:absolute;top:104px;left:36px;width:648px;display:flex;gap:28px;">
+                    <div style="flex:0.95;">
+                        <div style="font-family:var(--font-heading);font-size:58px;font-weight:400;color:#1A73E8;line-height:1;">{html.escape(stat)}</div>
+                        <div style="font-size:13px;font-weight:700;color:#202124;margin-top:6px;">{html.escape(lbl)}</div>
+                        <div style="font-size:11px;color:#5F6368;margin-top:6px;line-height:1.4;">{html.escape(desc)}</div>
+                    </div>
+                    <div style="flex:1.15;">
+                        <div style="font-size:9px;font-weight:700;color:#5F6368;letter-spacing:0.8px;margin-bottom:6px;">MEASURED BY</div>
+                        {m_rows}
+                    </div>
+                </div>
+            </div>
+            """
+
+        elif arch in ("horizon_staircase", "staircase", "rising_horizons", "north_star"):
+            raw = slide.raw_content if isinstance(slide.raw_content, dict) else {}
+            horizons = raw.get("horizons") or raw.get("stages") or []
+            accents = ["#1A73E8", "#EA4335", "#FBBC04", "#34A853"]
+            n = max(1, len(horizons[:4]))
+            cards_h = []
+            for idx_h, h in enumerate(horizons[:4]):
+                is_last = idx_h == n - 1
+                ht = 175 + int((idx_h / max(1, n - 1)) * 90)
+                bg = "#E8F0FE" if is_last else "#FFFFFF"
+                tag = h.get("horizon") or h.get("tag") if isinstance(h, dict) else ""
+                htitle = h.get("title") if isinstance(h, dict) else str(h)
+                bullets = h.get("bullets") or [] if isinstance(h, dict) else []
+                bl = "".join(f"<li>{html.escape(str(b))}</li>" for b in bullets[:3])
+                cards_h.append(
+                    f'<div style="flex:1;height:{ht}px;background:{bg};border:1px solid #DADCE0;border-top:4px solid {accents[idx_h%4]};border-radius:8px;padding:10px 12px;">'
+                    f'<div style="font-size:9px;font-weight:700;color:#174EA6;">{html.escape(str(tag))}</div>'
+                    f'<div style="font-size:13px;font-weight:700;color:#202124;margin:4px 0;">{html.escape(str(htitle))}</div>'
+                    f'<ul class="card-bullet-list" style="font-size:10px;">{bl}</ul></div>'
+                )
+            return f"""
+            <div class="mockup-slide">
+                {header_html}
+                <div style="position:absolute;top:104px;left:36px;width:648px;height:270px;display:flex;gap:14px;align-items:flex-end;">
+                    {''.join(cards_h)}
+                </div>
             </div>
             """
 

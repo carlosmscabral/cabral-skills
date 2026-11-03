@@ -1,4 +1,4 @@
-"""The AI Factory Blueprint Presentation Builder Design Tokens.
+"""Google Cloud Editorial Presentation Builder Design Tokens.
 
 Defines canvas geometry, strict color palette tokens, typography scales,
 and WCAG-compliant color helper functions.
@@ -35,10 +35,16 @@ USABLE_HEIGHT: float = (CANVAS_HEIGHT - MARGIN_BOTTOM) - CONTENT_TOP  # 275.0 pt
 # =============================================================================
 # 2. Master Color Palette Tokens
 # =============================================================================
-# Navy Core
+# Navy Core (retained for backward-compatible token imports)
 COLOR_NAVY_PRIMARY: str = "#1E2761"
 COLOR_NAVY_SURFACE: str = "#2D3A8C"
 COLOR_NAVY_DEEP: str = "#141A3E"
+
+# Editorial Charcoal / Dark Canvas Surfaces
+COLOR_DARK_PRIMARY: str = "#202124"
+COLOR_DARK_SURFACE: str = "#303134"
+COLOR_DARK_BORDER: str = "#3C4043"
+COLOR_DARK_MUTED: str = "#BDC1C6"
 
 # Slate / Dark Terminal
 COLOR_SLATE_DARK: str = "#202124"
@@ -66,12 +72,16 @@ COLOR_RED_DONT: str = "#D93025"
 COLOR_RED_LIGHT: str = "#FCE8E6"
 COLOR_RED_BORDER: str = "#F6AEA9"
 
-# Semantic Status: Amber / Warning
-COLOR_AMBER_WARN: str = "#F9AB00"
+# Semantic Status: Amber / Warning & Orange Co-build
+COLOR_AMBER_WARN: str = "#FBBC04"
 COLOR_AMBER_LIGHT: str = "#FEF7E0"
+COLOR_AMBER_DARK: str = "#945200"  # WCAG AA >= 5.65:1 on #FEF7E0 and #FFFFFF
+COLOR_ORANGE_COBUILD: str = "#E37400"  # Shape outline / bar accent only
+COLOR_ORANGE_TINT: str = "#FFFBF5"
 
 # Text Colors
 COLOR_TEXT_PRIMARY: str = "#202124"
+COLOR_TEXT_BODY: str = "#3C4043"
 COLOR_TEXT_MUTED: str = "#5F6368"
 COLOR_TEXT_TERTIARY: str = "#80868B"
 COLOR_TEXT_WHITE: str = "#FFFFFF"
@@ -83,6 +93,19 @@ COLOR_BLUE_TEXT: str = "#174EA6"  # Google Blue 800 (CR > 5.5:1 on #E8F0FE, > 5.
 COLOR_GREEN_TEXT: str = "#137333"  # Google Green 800 (CR > 4.8:1 on #E6F4EA, white on #137333 > 5.3:1)
 COLOR_RED_TEXT: str = "#C5221F"  # Google Red 800 (CR > 4.8:1 on #FCE8E6, white on #C5221F > 5.4:1)
 COLOR_AMBER_TEXT: str = "#7A4100"  # Google Amber 900 (CR > 5.0:1 on #FEF7E0)
+
+# Google 4-Color Editorial Cycling System: (accent_bar_hex, accessible_text_hex, soft_tint_hex)
+GOOGLE_4_COLORS: tuple[tuple[str, str, str], ...] = (
+    ("#1A73E8", "#174EA6", "#E8F0FE"),  # Blue
+    ("#EA4335", "#C5221F", "#FCE8E6"),  # Red
+    ("#FBBC04", "#945200", "#FEF7E0"),  # Yellow / Amber
+    ("#34A853", "#137333", "#E6F4EA"),  # Green
+)
+
+
+def google_accent(index: int) -> tuple[str, str, str]:
+    """Returns (bar_hex, text_hex, tint_hex) cycling through Google's 4 brand colors."""
+    return GOOGLE_4_COLORS[index % len(GOOGLE_4_COLORS)]
 
 # Terminal Traffic Light Dots
 COLOR_DOT_RED: str = "#EA4335"

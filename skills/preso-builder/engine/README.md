@@ -1,11 +1,11 @@
-# The AI Factory Blueprint Presentation Builder (`preso-builder`)
+# Google Cloud Editorial Presentation Builder (`preso-builder`)
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/)
-[![Style: AI Factory Blueprint](https://img.shields.io/badge/style-AI_Factory_Blueprint-1E2761.svg)](https://github.com/)
+[![Style: Google Cloud Editorial](https://img.shields.io/badge/style-Google_Cloud_Editorial-1A73E8.svg)](https://github.com/)
 [![WCAG 2.1 AA Compliant](https://img.shields.io/badge/accessibility-WCAG_2.1_AA-1E8E3E.svg)](https://www.w3.org/WAI/standards-guidelines/wcag/)
 [![Tests: Passing](https://img.shields.io/badge/tests-passing-brightgreen.svg)](tests/)
 
-An automated, executive-grade Google Slides builder and agent skill engine that ingests heterogeneous technical sources (codebases, AST structures, existing slide decks, markdown docs, and engineering notes) and compiles them into pixel-perfect presentations matching the exact visual style, typography, color palette, and layout geometry of **"The AI Factory Blueprint"** (Master Template ID: `1FJ4wCMDlI1zW3XCbIXXn-ejOOjq5iQ1Mit_9MuGnO-U`).
+An automated, executive-grade Google Slides builder and agent skill engine that ingests heterogeneous technical sources (codebases, AST structures, existing slide decks, markdown docs, and engineering notes) and compiles them into pixel-perfect presentations in the clean **Google Cloud Editorial** design language (`#FFFFFF` light canvas, `#202124` charcoal dark canvas, `#1A73E8` Google Blue canvas, top mini 4-color bar, `ROUND_RECTANGLE` cards with `#DADCE0` hairline borders, and `Google Sans` Regular typography). By default it creates a clean blank Google Slides deck (no legacy template bloat), while retaining optional `--template-id` cloning.
 
 > 📖 **Looking for a comprehensive walkthrough?** Check out the [User Guide](USER_GUIDE.md) for activation prerequisites, sample inputs, CLI cookbook, YAML schemas, and best practices.
 
@@ -62,16 +62,17 @@ An automated, executive-grade Google Slides builder and agent skill engine that 
 
 ## Key Features
 
-- **Strict Blueprint Design System**: Standard 720x405 pt canvas (16:9 widescreen), custom typography (`Google Sans`, `Google Sans Text`, `Roboto Mono`), and official color palette (`#1E2761` Navy, `#1A73E8` Blue, `#1E8E3E` Green, `#D93025` Red).
-- **10 Standardized Layout Archetypes**: Mathematical coordinate generation for Chapter Dividers, Split Comparisons, Code Terminals, Hero Metrics, Ladder Flows, Executive 2x2 Grids, Do/Don't Checklists, Actionable Takeaways, Demo Pivots, and Image Splits (the escape hatch for rendered diagrams/screenshots).
+- **Google Cloud Editorial Design System**: Standard 720x405 pt canvas (16:9 widescreen), clean `#FFFFFF` light canvas, `#202124` charcoal dark canvas, `#1A73E8` Google Blue canvas, top mini 4-color bar (`#1A73E8`, `#EA4335`, `#FBBC04`, `#34A853`), `ROUND_RECTANGLE` cards with `#DADCE0` hairline borders, and `Google Sans` / `Google Sans Text` / `Roboto Mono` typography.
+- **18 Standardized Layout Archetypes**: Mathematical coordinate generation for Editorial Covers, Chapter Dividers, Blue/Dark Statement Pivots, Split Cards (with optional `flow_steps` strip or `foundation` banner), Code Terminals, Hero Metrics, KPI Spotlights, Ladder Flows, Rising Horizon Staircases, Executive `2×2` & `2×3` Grids, Capability Heat-Matrices, Do/Don't Checklists, Actionable Takeaways, Dark Closing Asks, Demo Pivots, Image Splits, Native Editable Diagrams (`cycle`, `timeline`, `funnel`, `layered_cake`, `swimlanes`), and Workstream Cards.
+- **Blank-Deck Default**: Creates clean blank presentations (`create_presentation`) and atomically prunes the initial default slide `p`, while supporting optional `--template-id` cloning.
 - **Duration tiers**: tag slides `core` / `explain` / `detail` / `appendix` (or `skip: true`) and build 5/15/45-minute cuts of one deck with `--duration`; hidden slides stay in the deck via `skip-slide`.
 - **Geometry-aware fit checks**: one shared `text_fit` heuristic powers the validator (`cut ~N chars` warnings), the QA verifier, and `preso budgets`.
 - **Render audit loop**: every live build exports fresh thumbnails and writes `audit_checklist.md` (rubric + predicted hotspots, max 2 fix rounds).
 - **Optional speaker notes**: authored notes are passed through verbatim; nothing is generated, placeholdered, or flagged when a slide has none.
-- **Atomic Single-Pass Batch Compiler**: Emits deterministic `gslides batch` payloads with placeholder IDs (`SLIDE_01`, `CARD_1`), removing default template artifacts and binding authored speaker notes when present.
+- **Atomic Single-Pass Batch Compiler**: Emits deterministic `gslides batch` payloads with placeholder IDs (`SLIDE_01`, `CARD_1`), removing default blank/template slides and binding authored speaker notes when present.
 - **Multi-Modal Ingestion Engine**:
   - **Codebase Ingestion**: AST-level symbol extraction (Python, TypeScript, Go, Java, Rust) and file-tree parsing.
-  - **Google Slides Ingestion**: Ingests existing decks via `gslides read-all <deck_id>` and classifies content into Blueprint archetypes.
+  - **Google Slides Ingestion**: Ingests existing decks via `gslides read-all <deck_id>` and classifies content into Editorial archetypes.
   - **Markdown Ingestion**: Parses headings, lists, code fences, and tables into structured presentation specifications.
 - **Automated Multimodal Visual QA**: Validates canvas bounding box clamping, detects improper overlaps, calculates WCAG 2.1 AA/AAA contrast ratios, checks text overflow budgets, and generates `qa_report.md` + `preview.html`.
 - **Dual-Agent Maker-Checker Protocol**: Enforces automated separation of concerns between creative specification authoring and adversarial QA auditing.
@@ -79,21 +80,28 @@ An automated, executive-grade Google Slides builder and agent skill engine that 
 
 ---
 
-## The 10 Blueprint Slide Archetypes
+## The 18 Editorial Slide Archetypes
 
 | # | Archetype Identifier | Visual Description & Layout | Typical Use Cases |
 |---|---|---|---|
-| 1 | `chapter_divider` | White background, 4-colour Google rainbow bar across the top, 56pt 2-digit chapter number, adaptive 56/46/38pt title, Google Blue subtitle. | Section transitions, agenda framing, thematic boundaries. |
-| 2 | `split_cards` (`card_split_2` / `card_split_3`) | 2 or 3 high-contrast white cards, category pills (`#E8F0FE`), 16pt bold headers, safe-bounded bullet points. | Architecture comparisons, before vs. after, alternative trade-offs. |
-| 3 | `code_terminal` | Slate dark terminal window (`#202124`), macOS traffic light dots, filename header, Roboto Mono syntax text, `✓ Do` / `✗ Don't` status badges. | Pre-commit hooks, ratchets, configuration manifests, code samples. |
-| 4 | `hero_metrics` (`hero_metric`) | Massive 54pt bold stat display, unit label, delta percentage pills (`+10x`, `-85%`), horizontal divider, context description. | ROI economics, benchmark performance, token cost savings. |
-| 5 | `ladder_hierarchy` (`ladder_flow`) | 4-step horizontal rung pipeline with directional chevron connectors (`→`), sequential step numbers, rung titles, and descriptions. | Maturity models, sequential engineering disciplines, phased roadmaps. |
-| 6 | `executive_grid` (`exec_grid_2x2`) | 2x2 numbered summary quadrant cards, vertical Google Blue accent bar (4pt), bold 1-liner takeaway headers and narratives. | Executive 1-line summaries, core operational pillars, strategic themes. |
-| 7 | `dodont_checklist` (`do_dont_checklist`) | Side-by-side anti-pattern (Red `#D93025`) vs. blueprint standard (Green `#1E8E3E`) cards, check/cross bullets, synthesis footer pill. | Best practices, adoption guidelines, governance policies. |
-| 8 | `actionable_takeaways` | Asymmetric split: 3 numbered action principles on left (58%), Dark Navy roadmap card + Blue CTA button on right (42%). | Closing summaries, 30-day execution roadmaps, leadership calls to action. |
-| 9 | `demo_pivot` (`demo`) | Dark Navy slide, red `▶ LIVE DEMO` pill, large white title, optional subtitle, up to 3 "watch for" chips. | Switching to a live demo; telling the audience what to notice. |
-| 10 | `image_split` (`image`, `diagram`) | Header + bullets card (≤4) beside a framed image, or `image_layout: full`. Local PNGs are uploaded after the batch; URLs go through `add-image`. | Mermaid/draw.io diagrams rendered to PNG, product screenshots, charts. |
-| 11 | `flow_diagram` (`cycle`, `timeline`, `funnel`) | Native editable diagram under the standard header: stage cards with status chips, a curved-connector loop with entry/feeder, or a chevron funnel; red "we are here" pill and honesty note. Drawn with one `gslides mutate raw-batch` after the deck batch. | "Where we are" status, roadmaps, continuous-improvement loops, staged journeys. |
+| 1 | `cover` (`title_cover`, `opening`) | Pure `#FFFFFF` canvas, mini 4-color bar, evolution pill trail (`A → B → [C]`), large `Google Sans` Regular `#202124` headline, `#5F6368` subtitle, bottom-left date/context. | Presentation opening, framing the strategic evolution. |
+| 2 | `chapter_divider` | White background, 4-colour Google rainbow bar across the top, 56pt 2-digit chapter number, adaptive 56/46/38pt Regular title, Google Blue subtitle. | Section transitions, agenda framing, thematic boundaries. |
+| 3 | `statement_pivot` (`thesis`, `short_answer`, `provocation`) | Full-bleed Google Blue (`variant: blue`, `#1A73E8`) or Charcoal (`variant: dark`, `#202124`) canvas, mini 4-color bar, kicker, large statement/question, supporting subtitle. | High-impact short answers, strategic theses, key executive questions. |
+| 4 | `split_cards` (`card_split_2` / `card_split_3`) | 2 or 3 rounded white cards with 4-color cycling top accent bars; supports optional top `flow_steps` process strip or bottom `foundation` banner. | Architecture comparisons, end-to-end delivery flow + role split. |
+| 5 | `code_terminal` | Slate dark terminal window (`#202124`), macOS traffic light dots, filename header, Roboto Mono syntax text, `✓ Do` / `✗ Don't` status badges. | Pre-commit hooks, ratchets, configuration manifests, code samples. |
+| 6 | `hero_metrics` (`hero_metric`) | 2 or 3 rounded metric cards with massive 54pt bold stat display, unit label, delta pills, hairline divider, and context description. | ROI economics, benchmark performance, token cost savings. |
+| 7 | `kpi_spotlight` (`big_number`, `pilot_spotlight`) | Asymmetric split: left has huge `#1A73E8` hero stat + label + description + status pill; right has `MEASURED BY` kicker + 2–4 rows separated by `#DADCE0` hairlines and 4-color dots. | Pilot targets, SLA commitments, north-star metric + leading indicators. |
+| 8 | `ladder_hierarchy` (`ladder_flow`) | 3 or 4 rounded horizontal rung cards with 4-color top bars and directional connectors (`→`). | Maturity models, sequential engineering disciplines, phased workflows. |
+| 9 | `horizon_staircase` (`staircase`, `rising_horizons`, `north_star`) | 2–4 ascending-height rounded cards bottom-aligned (`Agora (Curto Prazo)` → `Médio Prazo` → `Longo Prazo (Futuro)`), North Star card tinted `#E8F0FE`, bottom governance footer. | Multi-horizon operating model roadmaps and human-in-the-loop evolution. |
+| 10 | `executive_grid` (`exec_grid_2x2`, `exec_grid_2x3`) | `2×2` (4 cards) or `2×3` (6 cards) rounded summary cards, 4-color cycling top accent bars, colored `01..06` pill badges, takeaway headers and narratives. | 4- or 6-pillar operating models, executive summaries, strategic themes. |
+| 11 | `capability_matrix` (`matrix`, `comparison_matrix`) | Capability rows × option columns heat-matrix with column highlight (`outline` / `solid`), rounded semantic status cells (`native`, `partial`, `gap`, `building_blocks`), co-build `#E37400` outline, footnote. | Build vs. buy vs. co-build comparisons, platform capability matrices. |
+| 12 | `dodont_checklist` (`do_dont_checklist`) | Side-by-side anti-pattern (Red `#D93025`) vs. standard (Green `#1E8E3E`) rounded cards, check/cross bullets, synthesis footer pill. | Best practices, adoption guidelines, governance policies. |
+| 13 | `actionable_takeaways` | Asymmetric split: 3 numbered action principles on left (58%), Charcoal `#202124` roadmap card + Blue CTA button on right (42%). | 30-day execution roadmaps paired with guiding principles. |
+| 14 | `closing_ask` (`dark_closing`, `the_ask`, `executive_ask`) | `#202124` charcoal canvas, mini 4-color bar, large white takeaway headline, `#FBBC04` section kicker, 2–4 borderless columns under `2.5pt` colored rules. | Closing executive decisions, governance sign-off, next steps. |
+| 15 | `demo_pivot` (`demo`) | `#202124` charcoal slide, red `▶ LIVE DEMO` pill, large white title, optional subtitle, up to 3 `#303134` "watch for" chips. | Switching to a live demo; telling the audience what to notice. |
+| 16 | `image_split` (`image`, `diagram`) | Header + bullets card (≤4) beside a framed image (or placeholder drop-zone), or `image_layout: full`. | Dendrite/Mermaid/draw.io diagrams rendered to PNG, product screenshots. |
+| 17 | `flow_diagram` (`cycle`, `timeline`, `funnel`, `layered_cake`, `swimlanes`) | Native editable diagram under the standard header: rounded stage cards, curved-connector loop, chevron funnel, bottom-up layered cake, or horizontal capability swimlanes with `#E37400` co-build highlights. | "Where we are" status, roadmaps, continuous loops, layered & swimlane architectures. |
+| 18 | `workstream_card` (`initiative_card`, `frente_card`, `workstream`) | Left image/placeholder drop-zone + right KPI pills (`Tempo`, `Receita`), `Desafios` vs `Diferenciais` cards, and bottom `Ações` card. | Per-workstream / initiative deep-dive catalogue slides. |
 
 ---
 
