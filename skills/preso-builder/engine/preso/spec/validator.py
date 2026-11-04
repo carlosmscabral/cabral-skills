@@ -936,6 +936,14 @@ class SpecValidator:
                     result.add_error(msg)
                 else:
                     result.add_warning(msg)
+        callout = slide.raw_content.get("callout") or slide.raw_content.get("step_callout")
+        if callout is not None:
+            if not isinstance(callout, dict):
+                result.add_error(f"Slide {idx} (image_split) `callout` must be a mapping.")
+            elif layout != "full":
+                result.add_warning(
+                    f"Slide {idx} (image_split) `callout` is only rendered when `image_layout: full`."
+                )
 
     @classmethod
     def _validate_workstream_card(

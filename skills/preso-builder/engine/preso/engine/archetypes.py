@@ -79,6 +79,15 @@ from preso.engine.design_tokens import (
     FONT_SIZE_SLIDE_SUBTITLE,
     FONT_SIZE_SLIDE_TITLE,
     GOOGLE_4_COLORS,
+    ZEN_CLOSING_SECT_Y,
+    ZEN_GRID_2X2_TOP_Y,
+    ZEN_GRID_2X3_TOP_Y,
+    ZEN_SPLIT_CARDS_MA_TOP_Y,
+    ZEN_STAIRCASE_HIGHEST_TOP_Y,
+    ZEN_SUBTITLE_SIZE,
+    ZEN_TITLE_COMPACT,
+    ZEN_TITLE_LARGE,
+    ZEN_TITLE_MEDIUM,
     google_accent,
 )
 
@@ -154,7 +163,7 @@ class PrincipleSpec:
 # =============================================================================
 
 
-from preso.engine.diagrams import generate_flow_diagram  # noqa: E402
+from preso.engine.diagrams import RawCanvas, generate_flow_diagram  # noqa: E402
 
 
 def _format_bullets(bullets: list[str] | str) -> str:
@@ -207,33 +216,33 @@ def _build_header_ops(
     subtitle: str,
     kicker: str,
 ) -> list[dict[str, Any]]:
-    """Builds Google Cloud Editorial header operations for content slides."""
+    """Builds Zen Editorial header operations for content slides."""
     bounds = calculate_header_bounds()
     ops: list[dict[str, Any]] = []
 
-    # Editorial 4-color mini bar (36..108pt, y=26pt, h=3pt)
+    # Zen Editorial 4-color mini bar (36..116pt, y=25pt, h=3pt)
     ops.extend(
         _build_mini_4color_bar(
             slide_id=slide_id,
             prefix=f"MBAR_S{slide_idx_str}",
             x=bounds["title"].x,
-            y=26.0,
-            seg_w=18.0,
+            y=25.0,
+            seg_w=20.0,
             seg_h=3.0,
         )
     )
 
-    # Category Kicker inline next to mini bar
-    if kicker:
+    # Optional category kicker inline next to mini bar (omitted when empty for Zen restraint)
+    if kicker and kicker.strip():
         ops.append({
             "op": "add-textbox",
             "slide": slide_id,
-            "text": kicker.upper(),
-            "x": 116.0,
-            "y": 20.0,
+            "text": kicker.strip().upper(),
+            "x": 124.0,
+            "y": 19.0,
             "width": 360.0,
             "height": 16.0,
-            "font_size": 9.5,
+            "font_size": 9.0,
             "bold": True,
             "color": COLOR_TEXT_MUTED,
             "font_family": FONT_FAMILY_BODY,
@@ -241,18 +250,24 @@ def _build_header_ops(
             "id": f"HDR_S{slide_idx_str}_PILL",
         })
 
-    # Slide Main Title — Editorial Google Sans Regular #202124
+    # Slide Main Title — Zen Google Sans Regular #202124 with adaptive single-line scale
     if title:
         clean_t = title.strip()
-        t_font = 21.0 if len(clean_t) > 50 else FONT_SIZE_SLIDE_TITLE
+        if len(clean_t) <= 45:
+            t_font = ZEN_TITLE_LARGE
+        elif len(clean_t) <= 52:
+            t_font = ZEN_TITLE_MEDIUM
+        else:
+            t_font = ZEN_TITLE_COMPACT
+        t_height = 52.0 if (len(clean_t) > 60 and not subtitle) else 32.0
         ops.append({
             "op": "add-textbox",
             "slide": slide_id,
             "text": title,
             "x": bounds["title"].x,
-            "y": 42.0,
+            "y": 40.0,
             "width": bounds["title"].width,
-            "height": 30.0,
+            "height": t_height,
             "font_size": t_font,
             "bold": False,
             "color": COLOR_TEXT_PRIMARY,
@@ -261,8 +276,9 @@ def _build_header_ops(
             "id": f"HDR_S{slide_idx_str}_TITL",
         })
 
-    # Slide Subtitle / 1-Liner Takeaway
+    # Slide Subtitle / Supporting Line
     if subtitle:
+        s_font = 12.5 if len(subtitle.strip()) > 85 else ZEN_SUBTITLE_SIZE
         ops.append({
             "op": "add-textbox",
             "slide": slide_id,
@@ -270,8 +286,8 @@ def _build_header_ops(
             "x": bounds["subtitle"].x,
             "y": 74.0,
             "width": bounds["subtitle"].width,
-            "height": 18.0,
-            "font_size": FONT_SIZE_SLIDE_SUBTITLE,
+            "height": 20.0,
+            "font_size": s_font,
             "color": COLOR_TEXT_MUTED,
             "font_family": FONT_FAMILY_BODY,
             "alignment": "left",
@@ -464,48 +480,67 @@ def generate_split_cards(
 ) -> list[dict[str, Any]]:
     """Generates gslides batch operations for Archetype 2: Split Card Comparison.
 
-    Supports 2-card and 3-card variants with category pills, Google 4-color accent
-    bars, optional top `flow_steps` horizontal process strip, and optional bottom
-    `foundation` baseline banner.
+    Supports 2-card and 3-card Zen Editorial variants on a `#F8F9FA` soft canvas,
+    adaptive *Ma* vertical breathing room for concise cards, Regular semantic-colored
+    card titles, optional top `flow_steps` horizontal process strip, and optional
+    bottom `foundation` baseline banner.
     """
     slide_idx = _extract_slide_idx(slide_id)
     n = len(cards)
     if n < 1:
         raise ValueError("At least 1 card is required for split card archetype")
 
+    def _card_density(rc: Any) -> tuple[int, int]:
+        raw_b = rc.bullets if isinstance(rc, CardSpec) else rc.get("bullets", [])
+        if isinstance(raw_b, list):
+            return len(raw_b), sum(len(str(x)) for x in raw_b)
+        s = str(raw_b or "")
+        return max(1, s.count("\n") + 1), len(s)
+
+    densities = [_card_density(c) for c in cards]
+    max_bullets = max((d[0] for d in densities), default=0)
+    max_chars = max((d[1] for d in densities), default=0)
+
     has_flow = bool(flow_steps)
     compact = bool(foundation or has_flow)
     gap = 24.0 if n == 2 else 18.0
     if has_flow and foundation:
-        col_bounds = calculate_n_column_bounds(n=n, gap=gap, top_y=156.0, height=130.0)
+        step_y, step_h = 100.0, 44.0
+        col_bounds = calculate_n_column_bounds(n=n, gap=gap, top_y=154.0, height=132.0)
     elif has_flow:
-        col_bounds = calculate_n_column_bounds(n=n, gap=gap, top_y=158.0, height=218.0)
+        step_y, step_h = 114.0, 46.0
+        col_bounds = calculate_n_column_bounds(n=n, gap=gap, top_y=176.0, height=198.0)
     elif foundation:
-        col_bounds = calculate_n_column_bounds(n=n, gap=gap, top_y=98.0, height=184.0)
+        step_y, step_h = 100.0, 46.0
+        col_bounds = calculate_n_column_bounds(n=n, gap=gap, top_y=102.0, height=182.0)
+    elif max_bullets <= 3 and max_chars <= 185:
+        step_y, step_h = 100.0, 46.0
+        col_bounds = calculate_n_column_bounds(
+            n=n, gap=gap, top_y=ZEN_SPLIT_CARDS_MA_TOP_Y, height=232.0
+        )
     else:
+        step_y, step_h = 100.0, 46.0
         col_bounds = calculate_n_column_bounds(n=n, gap=gap)
 
     ops: list[dict[str, Any]] = [
         {"op": "add-slide", "layout": "BLANK", "id": slide_id},
-        {"op": "set-background", "slide": slide_id, "color": COLOR_CARD_WHITE},
+        {"op": "set-background", "slide": slide_id, "color": COLOR_BG_LIGHT},
     ]
 
     # Universal Header
     ops.extend(_build_header_ops(slide_id, slide_idx, title, subtitle, kicker))
 
-    # Optional Top Process Strip (Slide 10 Editorial pattern)
+    # Optional Top Process Strip (Slide 10 Zen Editorial pattern: white pills + semantic outlines)
     if flow_steps:
         steps_clean = list(flow_steps)[:5]
         m = len(steps_clean)
         step_gap = 20.0 if m <= 4 else 14.0
         step_w = (648.0 - (m - 1) * step_gap) / m
-        step_y = 100.0
-        step_h = 46.0
         for j, raw_step in enumerate(steps_clean):
             s_idx = j + 1
             sx = round(36.0 + j * (step_w + step_gap), 2)
             sw = round(step_w, 2)
-            solid_hex, text_hex, tint_hex = google_accent(j)
+            solid_hex, _, _ = google_accent(j)
             if isinstance(raw_step, dict):
                 st_title = str(raw_step.get("title") or raw_step.get("label") or f"Step {s_idx}")
                 st_sub = str(raw_step.get("subtitle") or raw_step.get("detail") or "")
@@ -524,27 +559,27 @@ def generate_split_cards(
                 "y": step_y,
                 "width": sw,
                 "height": step_h,
-                "background_color": tint_hex if st_hi else COLOR_CARD_WHITE,
+                "background_color": COLOR_ORANGE_TINT if st_hi else COLOR_CARD_WHITE,
                 "id": step_id,
             })
             ops.append({
                 "op": "style-shape",
                 "element": step_id,
-                "outline_color": solid_hex if st_hi else COLOR_CARD_BORDER,
-                "outline_weight": 1.5 if st_hi else 1.0,
+                "outline_color": COLOR_ORANGE_COBUILD if st_hi else solid_hex,
+                "outline_weight": 2.0 if st_hi else 1.5,
             })
             if st_sub:
                 ops.append({
                     "op": "add-textbox",
                     "slide": slide_id,
                     "text": st_title,
-                    "x": round(sx + 4.0, 2),
-                    "y": round(step_y + 4.0, 2),
-                    "width": round(sw - 8.0, 2),
+                    "x": round(sx + 6.0, 2),
+                    "y": round(step_y + 5.0, 2),
+                    "width": round(sw - 12.0, 2),
                     "height": 18.0,
                     "font_size": 10.0,
-                    "bold": True,
-                    "color": text_hex if st_hi else COLOR_TEXT_PRIMARY,
+                    "bold": False,
+                    "color": COLOR_TEXT_PRIMARY,
                     "font_family": FONT_FAMILY_HEADING,
                     "alignment": "center",
                     "id": f"FSTEP_TITL_S{slide_idx}_{s_idx}",
@@ -553,12 +588,12 @@ def generate_split_cards(
                     "op": "add-textbox",
                     "slide": slide_id,
                     "text": st_sub,
-                    "x": round(sx + 4.0, 2),
+                    "x": round(sx + 6.0, 2),
                     "y": round(step_y + 23.0, 2),
-                    "width": round(sw - 8.0, 2),
+                    "width": round(sw - 12.0, 2),
                     "height": 18.0,
                     "font_size": 8.5,
-                    "color": text_hex if st_hi else COLOR_TEXT_MUTED,
+                    "color": COLOR_TEXT_MUTED,
                     "font_family": FONT_FAMILY_BODY,
                     "alignment": "center",
                     "id": f"FSTEP_SUB_S{slide_idx}_{s_idx}",
@@ -568,13 +603,13 @@ def generate_split_cards(
                     "op": "add-textbox",
                     "slide": slide_id,
                     "text": st_title,
-                    "x": round(sx + 4.0, 2),
+                    "x": round(sx + 6.0, 2),
                     "y": round(step_y + 12.0, 2),
-                    "width": round(sw - 8.0, 2),
+                    "width": round(sw - 12.0, 2),
                     "height": 22.0,
                     "font_size": 10.5,
-                    "bold": True,
-                    "color": text_hex if st_hi else COLOR_TEXT_PRIMARY,
+                    "bold": False,
+                    "color": COLOR_TEXT_PRIMARY,
                     "font_family": FONT_FAMILY_HEADING,
                     "alignment": "center",
                     "id": f"FSTEP_TITL_S{slide_idx}_{s_idx}",
@@ -595,7 +630,7 @@ def generate_split_cards(
                     "id": f"FCONN_S{slide_idx}_{s_idx}_{s_idx + 1}",
                 })
 
-    # Process Cards
+    # Process Cards (Kanso: crisp white card, flush top bar, Regular semantic title, no inner divider)
     for i, raw_card in enumerate(cards):
         card_num = i + 1
         if isinstance(raw_card, CardSpec):
@@ -609,13 +644,12 @@ def generate_split_cards(
             c_cat = raw_card.get("category", "")
             raw_stripe = raw_card.get("stripe_color", "")
 
-        c_stripe, pill_bg, pill_fg = _resolve_card_accent(raw_stripe, i)
+        c_stripe, _, pill_fg = _resolve_card_accent(raw_stripe, i)
         box = col_bounds[i]
         card_id = f"CARD_S{slide_idx}_C{card_num}"
         stripe_id = f"STRIPE_S{slide_idx}_C{card_num}"
         pill_id = f"PILL_S{slide_idx}_C{card_num}"
         titl_id = f"TITL_S{slide_idx}_C{card_num}"
-        div_id = f"DIV_S{slide_idx}_C{card_num}"
         body_id = f"BODY_S{slide_idx}_C{card_num}"
 
         # Card Container Shape
@@ -646,86 +680,68 @@ def generate_split_cards(
             "x": bar_x,
             "y": box.y,
             "width": bar_w,
-            "height": 3.5,
+            "height": 3.0,
             "background_color": c_stripe,
             "id": stripe_id,
         })
 
-        # Category Pill (if present)
-        inner_w = box.width - 32.0
-        cur_y = box.y + (10.0 if compact else 14.0)
+        inner_w = box.width - 36.0
+        cur_y = box.y + (12.0 if compact else 16.0)
         if c_cat:
-            cat_text = c_cat.upper()
-            pill_w = min(inner_w, max(80.0, len(cat_text) * 7.5 + 24.0))
             ops.append({
                 "op": "add-textbox",
                 "slide": slide_id,
-                "text": cat_text,
-                "x": box.x + 16.0,
+                "text": c_cat.upper(),
+                "x": box.x + 18.0,
                 "y": cur_y,
-                "width": pill_w,
-                "height": 18.0,
-                "font_size": 9.5 if compact else 10.0,
+                "width": inner_w,
+                "height": 15.0,
+                "font_size": 8.5,
                 "bold": True,
                 "color": pill_fg,
-                "background_color": pill_bg,
                 "font_family": FONT_FAMILY_BODY,
-                "alignment": "center",
+                "alignment": "left",
                 "id": pill_id,
             })
-            cur_y += (22.0 if compact else 24.0)
+            cur_y += 18.0
         else:
-            cur_y += 6.0
+            cur_y += 2.0
 
-        # Card Title
+        # Card Title — Google Sans Regular in accessible semantic accent color
         titl_height = 24.0 if compact else 26.0
-        titl_font = 13.0 if compact else FONT_SIZE_CARD_HEADER
+        titl_font = 13.0 if (compact or n >= 3) else 15.0
         ops.append({
             "op": "add-textbox",
             "slide": slide_id,
             "text": c_title,
-            "x": box.x + 16.0,
+            "x": box.x + 18.0,
             "y": cur_y,
             "width": inner_w,
             "height": titl_height,
             "font_size": titl_font,
-            "bold": True,
-            "color": COLOR_TEXT_PRIMARY,
+            "bold": False,
+            "color": pill_fg,
             "font_family": FONT_FAMILY_HEADING,
             "alignment": "left",
             "id": titl_id,
         })
-        cur_y += (titl_height + (3.0 if compact else 4.0))
+        cur_y += (titl_height + (6.0 if compact else 10.0))
 
-        # Inner Divider
-        ops.append({
-            "op": "add-shape",
-            "slide": slide_id,
-            "shape_type": "RECTANGLE",
-            "x": box.x + 16.0,
-            "y": cur_y,
-            "width": inner_w,
-            "height": 1.0,
-            "background_color": COLOR_DIVIDER,
-            "id": div_id,
-        })
-        cur_y += (6.0 if compact else 10.0)
-
-        # Card Bullets Body
+        # Card Bullets Body (clean whitespace separation without inner divider line)
         body_text = _format_bullets(c_bullets)
-        body_height = max(44.0, (box.y + box.height) - cur_y - 8.0)
-        font_size = 10.5 if compact else FONT_SIZE_CARD_BODY
-        line_spacing = 130 if compact else 140
+        body_height = max(44.0, (box.y + box.height) - cur_y - 10.0)
+        font_size = 10.5 if compact else 11.5
+        line_spacing = 135 if compact else 145
         ops.append({
             "op": "add-textbox",
             "slide": slide_id,
             "text": body_text,
-            "x": box.x + 16.0,
+            "x": box.x + 18.0,
             "y": cur_y,
             "width": inner_w,
             "height": body_height,
             "font_size": font_size,
-            "color": COLOR_TEXT_MUTED,
+            "color": COLOR_TEXT_BODY,
             "font_family": FONT_FAMILY_BODY,
             "alignment": "left",
             "line_spacing": line_spacing,
@@ -743,19 +759,35 @@ def generate_split_cards(
         f_stripe_id = f"FSTRIPE_S{slide_idx}"
         f_pill_id = f"FPILL_S{slide_idx}"
         f_titl_id = f"FTITL_S{slide_idx}"
-        f_div_id = f"FDIV_S{slide_idx}"
         f_body_id = f"FBODY_S{slide_idx}"
 
         if isinstance(foundation, dict):
             f_title = foundation.get("title", "Fundação Enterprise")
-            f_cat = foundation.get("category", foundation.get("category_pill", "BASE CORPORATIVA"))
-            f_bullets = foundation.get("bullets", foundation.get("description", ""))
+            f_cat = (
+                foundation.get("category")
+                or foundation.get("category_pill")
+                or foundation.get("kicker")
+                or "BASE CORPORATIVA"
+            )
+            f_bullets = (
+                foundation.get("bullets")
+                or foundation.get("description")
+                or foundation.get("text")
+                or ""
+            )
             f_stripe = foundation.get("stripe_color", foundation.get("theme", COLOR_BLUE_ACCENT))
+        elif isinstance(foundation, CardSpec):
+            f_title = foundation.title
+            f_cat = foundation.category or "BASE CORPORATIVA"
+            f_bullets = foundation.bullets
+            f_stripe = foundation.stripe_color or COLOR_BLUE_ACCENT
         else:
             f_title = str(foundation)
             f_cat = "BASE CORPORATIVA"
             f_bullets = ""
             f_stripe = COLOR_BLUE_ACCENT
+
+        _, _, f_accent_fg = _resolve_card_accent(f_stripe, 0)
 
         # 1. Foundation Container Shape
         ops.append({
@@ -785,74 +817,58 @@ def generate_split_cards(
             "x": f_bar_x,
             "y": f_box_y,
             "width": f_bar_w,
-            "height": 3.5,
+            "height": 3.0,
             "background_color": f_stripe,
             "id": f_stripe_id,
         })
 
-        # 3. Category Pill
-        f_cur_y = f_box_y + 8.0
-        cat_text = f_cat.upper()
-        pill_w = min(170.0, max(80.0, len(cat_text) * 7.0 + 20.0))
+        # 3. Clean Micro-Kicker + Regular Foundation Title
+        f_cur_y = f_box_y + 10.0
+        cat_text = str(f_cat).upper()
+        pill_w = min(190.0, max(84.0, len(cat_text) * 6.8 + 16.0))
         ops.append({
             "op": "add-textbox",
             "slide": slide_id,
             "text": cat_text,
-            "x": f_box_x + 14.0,
-            "y": f_cur_y,
+            "x": f_box_x + 16.0,
+            "y": f_cur_y + 2.0,
             "width": pill_w,
-            "height": 18.0,
-            "font_size": 9.5,
+            "height": 16.0,
+            "font_size": 8.5,
             "bold": True,
-            "color": COLOR_BLUE_TEXT,
-            "background_color": COLOR_BLUE_LIGHT,
+            "color": f_accent_fg,
             "font_family": FONT_FAMILY_BODY,
-            "alignment": "center",
+            "alignment": "left",
             "id": f_pill_id,
         })
-
-        # 4. Foundation Title
         ops.append({
             "op": "add-textbox",
             "slide": slide_id,
             "text": f_title,
             "x": f_box_x + 20.0 + pill_w,
-            "y": f_cur_y - 1.0,
-            "width": f_box_w - pill_w - 34.0,
+            "y": f_cur_y,
+            "width": f_box_w - pill_w - 36.0,
             "height": 20.0,
             "font_size": 13.0,
-            "bold": True,
+            "bold": False,
             "color": COLOR_TEXT_PRIMARY,
             "font_family": FONT_FAMILY_HEADING,
             "alignment": "left",
             "id": f_titl_id,
         })
 
-        # 5. Inner Divider
-        ops.append({
-            "op": "add-shape",
-            "slide": slide_id,
-            "shape_type": "RECTANGLE",
-            "x": f_box_x + 14.0,
-            "y": f_cur_y + 22.0,
-            "width": f_box_w - 28.0,
-            "height": 1.0,
-            "background_color": COLOR_DIVIDER,
-            "id": f_div_id,
-        })
-
-        # 6. Bullets Body
+        # 4. Bullets Body
         body_text = _format_bullets(f_bullets) if isinstance(f_bullets, list) else str(f_bullets)
         ops.append({
             "op": "add-textbox",
             "slide": slide_id,
             "text": body_text,
-            "x": f_box_x + 14.0,
-            "y": f_cur_y + 26.0,
-            "width": f_box_w - 28.0,
+            "x": f_box_x + 16.0,
+            "y": f_cur_y + 24.0,
+            "width": f_box_w - 32.0,
             "height": 44.0,
             "font_size": 10.0,
-            "color": COLOR_TEXT_MUTED,
+            "color": COLOR_TEXT_BODY,
             "font_family": FONT_FAMILY_BODY,
             "alignment": "left",
             "line_spacing": 125,
@@ -1202,7 +1218,7 @@ def generate_hero_metrics(
             "id": stat_id,
         })
 
-        # Metric Unit / Title Label
+        # Metric Unit / Title Label (Google Sans Regular)
         ops.append({
             "op": "add-textbox",
             "slide": slide_id,
@@ -1212,7 +1228,7 @@ def generate_hero_metrics(
             "width": box.width - 32.0,
             "height": 22.0,
             "font_size": FONT_SIZE_HERO_UNIT,
-            "bold": True,
+            "bold": False,
             "color": unit_col,
             "font_family": FONT_FAMILY_HEADING,
             "alignment": "left",
@@ -1249,28 +1265,15 @@ def generate_hero_metrics(
                 "id": delta_id,
             })
 
-        # Divider Line
-        ops.append({
-            "op": "add-shape",
-            "slide": slide_id,
-            "shape_type": "RECTANGLE",
-            "x": box.x + 16.0,
-            "y": box.y + 154.0,
-            "width": box.width - 32.0,
-            "height": 1.0,
-            "background_color": div_col,
-            "id": div_id,
-        })
-
-        # Description / Context
+        # Description / Context (clean whitespace separation without inner divider)
         ops.append({
             "op": "add-textbox",
             "slide": slide_id,
             "text": desc,
             "x": box.x + 16.0,
-            "y": box.y + 162.0,
+            "y": box.y + 158.0,
             "width": box.width - 32.0,
-            "height": 98.0,
+            "height": 102.0,
             "font_size": 11.5,
             "color": desc_col,
             "font_family": FONT_FAMILY_BODY,
@@ -1391,7 +1394,7 @@ def generate_ladder_hierarchy(
             "id": badge_id,
         })
 
-        # 4. Step Title
+        # 4. Step Title (Google Sans Regular)
         ops.append({
             "op": "add-textbox",
             "slide": slide_id,
@@ -1401,35 +1404,22 @@ def generate_ladder_hierarchy(
             "width": box.width - 24.0,
             "height": 32.0,
             "font_size": 14.0,
-            "bold": True,
+            "bold": False,
             "color": COLOR_TEXT_PRIMARY,
             "font_family": FONT_FAMILY_HEADING,
             "alignment": "left",
             "id": titl_id,
         })
 
-        # 5. Step Divider
-        ops.append({
-            "op": "add-shape",
-            "slide": slide_id,
-            "shape_type": "RECTANGLE",
-            "x": box.x + 12.0,
-            "y": box.y + 86.0,
-            "width": box.width - 24.0,
-            "height": 1.0,
-            "background_color": COLOR_DIVIDER,
-            "id": div_id,
-        })
-
-        # 6. Step Description
+        # 5. Step Description (clean whitespace separation without inner divider)
         ops.append({
             "op": "add-textbox",
             "slide": slide_id,
             "text": s_desc,
             "x": box.x + 12.0,
-            "y": box.y + 94.0,
+            "y": box.y + 88.0,
             "width": box.width - 24.0,
-            "height": 168.0,
+            "height": 174.0,
             "font_size": 11.0,
             "color": COLOR_TEXT_MUTED,
             "font_family": FONT_FAMILY_BODY,
@@ -1477,16 +1467,38 @@ def generate_executive_grid(
 ) -> list[dict[str, Any]]:
     """Generates gslides batch operations for Archetype 6: Executive Grid.
 
-    Supports both 4-card (`2x2`) and 6-card (`2x3`, Itaú Slide 2 style) grids with
-    `ROUND_RECTANGLE` white cards, cycling Google 4-color top accent bars, colored
-    `01..06` number pills, bold headers, and concise narrative descriptions.
+    Supports both 4-card (`2x2`) and 6-card (`2x3`, Zen Slide 2 style) grids with
+    adaptive *Ma* negative space (anchoring concise grids in the lower half of the
+    canvas), `ROUND_RECTANGLE` white cards, cycling Google 4-color top accent bars,
+    clean colored `01..06` labels, Regular `#202124` titles, and muted descriptions.
     """
     slide_idx = _extract_slide_idx(slide_id)
     n_items = len(quadrants)
     if n_items not in (4, 6):
         raise ValueError(f"Archetype 6 requires 4 (2x2) or 6 (2x3) items, got {n_items}")
 
-    grid_bounds = calculate_grid_bounds(n=n_items)
+    max_desc_len = max(
+        (
+            len(
+                q.description
+                if isinstance(q, QuadrantSpec)
+                else str(q.get("description") or q.get("body") or q.get("text") or "")
+            )
+            for q in quadrants
+        ),
+        default=0,
+    )
+
+    if n_items == 6:
+        if max_desc_len <= 95:
+            grid_bounds = calculate_grid_bounds(n=6, top_y=ZEN_GRID_2X3_TOP_Y, gap_y=13.0)
+        else:
+            grid_bounds = calculate_grid_bounds(n=6, top_y=132.0, gap_y=13.0)
+    else:
+        if max_desc_len <= 135:
+            grid_bounds = calculate_grid_bounds(n=4, top_y=ZEN_GRID_2X2_TOP_Y, gap_y=15.0)
+        else:
+            grid_bounds = calculate_grid_bounds(n=4)
 
     ops: list[dict[str, Any]] = [
         {"op": "add-slide", "layout": "BLANK", "id": slide_id},
@@ -1509,7 +1521,7 @@ def generate_executive_grid(
             q_desc = raw_q.get("description") or raw_q.get("body") or raw_q.get("text") or ""
 
         box = grid_bounds[i]
-        solid_hex, text_hex, tint_hex = google_accent(i)
+        solid_hex, text_hex, _ = google_accent(i)
 
         quad_id = f"QUAD_S{slide_idx}_Q{q_num}"
         stripe_id = f"STRIPE_S{slide_idx}_Q{q_num}"
@@ -1545,27 +1557,26 @@ def generate_executive_grid(
             "x": q_bar_x,
             "y": box.y,
             "width": q_bar_w,
-            "height": 3.5,
+            "height": 3.0,
             "background_color": solid_hex,
             "id": stripe_id,
         })
 
         if n_items == 6:
-            # 2x3 Editorial Card Layout (number pill above full-width title)
+            # 2x3 Zen Editorial Card Layout (clean colored number label above Regular title)
             ops.append({
                 "op": "add-textbox",
                 "slide": slide_id,
                 "text": num_str,
                 "x": box.x + 14.0,
-                "y": box.y + 10.0,
-                "width": 32.0,
-                "height": 18.0,
-                "font_size": 10.0,
+                "y": box.y + 8.0,
+                "width": 36.0,
+                "height": 15.0,
+                "font_size": 9.0,
                 "bold": True,
                 "color": text_hex,
-                "background_color": tint_hex,
                 "font_family": FONT_FAMILY_BODY,
-                "alignment": "center",
+                "alignment": "left",
                 "id": pill_id,
             })
             ops.append({
@@ -1573,11 +1584,11 @@ def generate_executive_grid(
                 "slide": slide_id,
                 "text": q_title,
                 "x": box.x + 14.0,
-                "y": box.y + 32.0,
+                "y": box.y + 24.0,
                 "width": box.width - 28.0,
-                "height": 22.0,
+                "height": 20.0,
                 "font_size": 12.5,
-                "bold": True,
+                "bold": False,
                 "color": COLOR_TEXT_PRIMARY,
                 "font_family": FONT_FAMILY_HEADING,
                 "alignment": "left",
@@ -1588,44 +1599,43 @@ def generate_executive_grid(
                 "slide": slide_id,
                 "text": q_desc,
                 "x": box.x + 14.0,
-                "y": box.y + 56.0,
+                "y": box.y + 45.0,
                 "width": box.width - 28.0,
-                "height": 66.0,
-                "font_size": 10.5,
+                "height": round(max(36.0, box.height - 50.0), 2),
+                "font_size": 10.0,
                 "color": COLOR_TEXT_MUTED,
                 "font_family": FONT_FAMILY_BODY,
                 "alignment": "left",
-                "line_spacing": 130,
+                "line_spacing": 128,
                 "id": body_id,
             })
         else:
-            # 2x2 Quadrant Layout (number pill inline with title)
+            # 2x2 Zen Quadrant Layout (clean colored number label above Regular title)
             ops.append({
                 "op": "add-textbox",
                 "slide": slide_id,
                 "text": num_str,
                 "x": box.x + 16.0,
-                "y": box.y + 12.0,
-                "width": 38.0,
-                "height": 22.0,
-                "font_size": 11.0,
+                "y": box.y + 10.0,
+                "width": 40.0,
+                "height": 16.0,
+                "font_size": 9.5,
                 "bold": True,
                 "color": text_hex,
-                "background_color": tint_hex,
                 "font_family": FONT_FAMILY_BODY,
-                "alignment": "center",
+                "alignment": "left",
                 "id": pill_id,
             })
             ops.append({
                 "op": "add-textbox",
                 "slide": slide_id,
                 "text": q_title,
-                "x": box.x + 60.0,
-                "y": box.y + 12.0,
-                "width": box.width - 76.0,
-                "height": 24.0,
-                "font_size": 14.0,
-                "bold": True,
+                "x": box.x + 16.0,
+                "y": box.y + 28.0,
+                "width": box.width - 32.0,
+                "height": 22.0,
+                "font_size": 14.5,
+                "bold": False,
                 "color": COLOR_TEXT_PRIMARY,
                 "font_family": FONT_FAMILY_HEADING,
                 "alignment": "left",
@@ -1636,14 +1646,14 @@ def generate_executive_grid(
                 "slide": slide_id,
                 "text": q_desc,
                 "x": box.x + 16.0,
-                "y": box.y + 42.0,
+                "y": box.y + 52.0,
                 "width": box.width - 32.0,
-                "height": 76.0,
-                "font_size": 11.5,
+                "height": round(max(46.0, box.height - 59.0), 2),
+                "font_size": 11.0,
                 "color": COLOR_TEXT_MUTED,
                 "font_family": FONT_FAMILY_BODY,
                 "alignment": "left",
-                "line_spacing": 135,
+                "line_spacing": 132,
                 "id": body_id,
             })
 
@@ -2344,14 +2354,21 @@ def generate_image_split(
     bullets: Optional[list[str]] = None,
     image_side: str = "right",
     image_layout: str = "split",
+    callout: Optional[dict[str, Any]] = None,
     speaker_notes: str = "",
 ) -> list[dict[str, Any]]:
-    """Generates gslides batch operations for Archetype 10: Image Split."""
+    """Generates gslides batch operations for Archetype 10: Image Split.
+
+    Supports an optional bottom `callout` walkthrough strip on `image_layout: full`
+    (Slides 7–9 Zen architecture step-walkthrough pattern: circular step badge +
+    Regular step title + muted explanation + optional right-aligned pillar pill).
+    """
     slide_idx = _extract_slide_idx(slide_id)
     img = _normalize_image(image)
     layout = (image_layout or "split").strip().lower()
     side = (image_side or "right").strip().lower()
     caption = str(img.get("caption", "") or "").strip()
+    has_callout = layout == "full" and isinstance(callout, dict) and bool(callout)
 
     ops: list[dict[str, Any]] = [
         {"op": "add-slide", "layout": "BLANK", "id": slide_id},
@@ -2361,7 +2378,10 @@ def generate_image_split(
 
     top_y, height = 100.0, 275.0
     if layout == "full":
-        img_box = BoundingBox(x=36.0, y=top_y, width=648.0, height=height)
+        if has_callout:
+            img_box = BoundingBox(x=36.0, y=104.0, width=648.0, height=222.0)
+        else:
+            img_box = BoundingBox(x=36.0, y=top_y, width=648.0, height=height)
         text_box = None
     else:
         text_w, img_w, gap = 256.0, 368.0, 24.0
@@ -2420,9 +2440,10 @@ def generate_image_split(
                 "id": f"BODY_S{slide_idx}_TXT",
             })
 
-    # Image frame
+    # Image frame (borderless on full-bleed real images so vector diagrams sit cleanly on white)
     frame_id = f"FRAME_S{slide_idx}_IMG"
     has_real_image = bool(img.get("url") or img.get("path"))
+    borderless_full = layout == "full" and has_real_image
     ops.append({
         "op": "add-shape",
         "slide": slide_id,
@@ -2437,8 +2458,8 @@ def generate_image_split(
     ops.append({
         "op": "style-shape",
         "element": frame_id,
-        "outline_color": COLOR_CARD_BORDER,
-        "outline_weight": 1.0,
+        "outline_color": COLOR_CARD_WHITE if borderless_full else COLOR_CARD_BORDER,
+        "outline_weight": 0.5 if borderless_full else 1.0,
     })
 
     cap_h = IMAGE_CAPTION_HEIGHT if caption else 0.0
@@ -2504,6 +2525,162 @@ def generate_image_split(
             "alignment": "center",
             "id": f"CAPT_S{slide_idx}_IMG",
         })
+
+    if has_callout and isinstance(callout, dict):
+        step_raw = str(callout.get("step") or callout.get("number") or "1").strip()
+        c_title = str(callout.get("title") or callout.get("label") or "").strip()
+        c_desc = str(
+            callout.get("description") or callout.get("detail") or callout.get("subtitle") or ""
+        ).strip()
+        c_pill = str(callout.get("pill") or callout.get("pillar") or callout.get("tag") or "").strip()
+        accent_hint = str(callout.get("accent") or callout.get("color") or "").strip().lower()
+        accent_idx_map = {"blue": 0, "red": 1, "yellow": 2, "amber": 2, "green": 3}
+        if accent_hint in accent_idx_map:
+            c_idx = accent_idx_map[accent_hint]
+        elif step_raw.isdigit() and int(step_raw) >= 1:
+            c_idx = int(step_raw) - 1
+        else:
+            c_idx = 0
+        step_solid, step_fg, _ = google_accent(c_idx)
+        badge_fill = COLOR_BLUE_ACCENT if (c_idx % 4 == 0) else step_fg
+
+        call_bg_id = f"CALL_BG_S{slide_idx}"
+        ops.append({
+            "op": "add-shape",
+            "slide": slide_id,
+            "shape_type": "ROUND_RECTANGLE",
+            "x": 36.0,
+            "y": 336.0,
+            "width": 648.0,
+            "height": 42.0,
+            "background_color": COLOR_BG_LIGHT,
+            "id": call_bg_id,
+        })
+        ops.append({
+            "op": "style-shape",
+            "element": call_bg_id,
+            "outline_color": "#E8EAED",
+            "outline_weight": 1.0,
+        })
+
+        bdg_id = f"CALL_BDG_S{slide_idx}"
+        ops.append({
+            "op": "add-shape",
+            "slide": slide_id,
+            "shape_type": "ELLIPSE",
+            "x": 48.0,
+            "y": 346.0,
+            "width": 22.0,
+            "height": 22.0,
+            "background_color": badge_fill,
+            "id": bdg_id,
+        })
+        ops.append({
+            "op": "style-shape",
+            "element": bdg_id,
+            "outline_color": badge_fill,
+            "outline_weight": 0.5,
+        })
+        ops.append({
+            "op": "add-textbox",
+            "slide": slide_id,
+            "text": step_raw,
+            "x": 48.0,
+            "y": 347.0,
+            "width": 22.0,
+            "height": 20.0,
+            "font_size": 10.0,
+            "bold": True,
+            "color": COLOR_TEXT_WHITE,
+            "font_family": FONT_FAMILY_HEADING,
+            "alignment": "center",
+            "id": f"CALL_NUM_S{slide_idx}",
+        })
+
+        pill_w = round(min(156.0, max(92.0, len(c_pill) * 6.2 + 24.0)), 2) if c_pill else 0.0
+        txt_w = round(648.0 - 52.0 - (pill_w + 18.0 if c_pill else 12.0), 2)
+        if c_title and c_desc:
+            ops.append({
+                "op": "add-textbox",
+                "slide": slide_id,
+                "text": c_title,
+                "x": 78.0,
+                "y": 339.0,
+                "width": txt_w,
+                "height": 16.5,
+                "font_size": 11.0,
+                "bold": False,
+                "color": COLOR_TEXT_PRIMARY,
+                "font_family": FONT_FAMILY_HEADING,
+                "alignment": "left",
+                "id": f"CALL_TITL_S{slide_idx}",
+            })
+            ops.append({
+                "op": "add-textbox",
+                "slide": slide_id,
+                "text": c_desc,
+                "x": 78.0,
+                "y": 357.0,
+                "width": txt_w,
+                "height": 17.0,
+                "font_size": 9.0,
+                "color": COLOR_TEXT_MUTED,
+                "font_family": FONT_FAMILY_BODY,
+                "alignment": "left",
+                "id": f"CALL_DESC_S{slide_idx}",
+            })
+        elif c_title or c_desc:
+            ops.append({
+                "op": "add-textbox",
+                "slide": slide_id,
+                "text": c_title or c_desc,
+                "x": 78.0,
+                "y": 347.0,
+                "width": txt_w,
+                "height": 20.0,
+                "font_size": 11.0,
+                "bold": False,
+                "color": COLOR_TEXT_PRIMARY,
+                "font_family": FONT_FAMILY_HEADING,
+                "alignment": "left",
+                "id": f"CALL_TITL_S{slide_idx}",
+            })
+
+        if c_pill:
+            pill_x = round(684.0 - 12.0 - pill_w, 2)
+            call_pill_id = f"CALL_PILL_BG_S{slide_idx}"
+            ops.append({
+                "op": "add-shape",
+                "slide": slide_id,
+                "shape_type": "ROUND_RECTANGLE",
+                "x": pill_x,
+                "y": 346.0,
+                "width": pill_w,
+                "height": 22.0,
+                "background_color": COLOR_CARD_WHITE,
+                "id": call_pill_id,
+            })
+            ops.append({
+                "op": "style-shape",
+                "element": call_pill_id,
+                "outline_color": step_solid,
+                "outline_weight": 1.25,
+            })
+            ops.append({
+                "op": "add-textbox",
+                "slide": slide_id,
+                "text": c_pill,
+                "x": round(pill_x + 4.0, 2),
+                "y": 348.0,
+                "width": round(pill_w - 8.0, 2),
+                "height": 18.0,
+                "font_size": 8.5,
+                "bold": True,
+                "color": step_fg,
+                "font_family": FONT_FAMILY_BODY,
+                "alignment": "center",
+                "id": f"CALL_PILL_TXT_S{slide_idx}",
+            })
 
     if speaker_notes:
         ops.append({"op": "set-notes", "slide": slide_id, "text": speaker_notes})
@@ -2725,15 +2902,17 @@ def generate_cover(
 ) -> list[dict[str, Any]]:
     """Generates gslides batch operations for Archetype 13: Editorial Cover (Slide 1 style).
 
-    Features: Pure white canvas, Google 4-color mini bar, optional evolution breadcrumb
-    trail (`A → B → [C]` where the active pill is Google Blue tinted), large editorial
-    `Google Sans` Regular headline, muted subtitle, and bottom-left date/context line.
+    Zen Editorial Cover: Pure white canvas, crisp outlined evolution breadcrumb pills
+    (`A → B → [C]` where the active pill is `#FFFFFF` with `1.5pt #1A73E8` outline,
+    or a 4-color mini bar when `breadcrumbs` are omitted), large `Google Sans` Regular
+    headline, muted subtitle, and clean borderless bottom-left date/context line.
     """
     slide_idx = _extract_slide_idx(slide_id)
     clean_title = (title or "Presentation Title").strip()
     t_len = len(clean_title)
-    title_font = 42.0 if t_len <= 34 else 35.0 if t_len <= 62 else 28.0
+    title_font = 48.0 if t_len <= 28 else 40.0 if t_len <= 52 else 32.0
 
+    crumbs = list(breadcrumbs or [])[:4]
     ops: list[dict[str, Any]] = [
         {"op": "add-slide", "layout": "BLANK", "id": slide_id},
         {"op": "set-background", "slide": slide_id, "color": COLOR_CARD_WHITE},
@@ -2742,14 +2921,13 @@ def generate_cover(
             prefix=f"MBAR_S{slide_idx}",
             x=36.0,
             y=34.0,
-            seg_w=22.0,
+            seg_w=20.0,
             seg_h=3.5,
         ),
     ]
 
-    crumbs = list(breadcrumbs or [])[:4]
-    has_any_explicit_active = any(isinstance(c, dict) and "active" in c for c in crumbs)
     if crumbs:
+        has_any_explicit_active = any(isinstance(c, dict) and "active" in c for c in crumbs)
         cur_x = 36.0
         crumb_y = 56.0
         for idx, raw_c in enumerate(crumbs):
@@ -2773,14 +2951,14 @@ def generate_cover(
                 "y": crumb_y,
                 "width": cw,
                 "height": 26.0,
-                "background_color": COLOR_BLUE_LIGHT if is_active else "#F1F3F4",
+                "background_color": COLOR_CARD_WHITE,
                 "id": pill_id,
             })
             ops.append({
                 "op": "style-shape",
                 "element": pill_id,
                 "outline_color": COLOR_BLUE_ACCENT if is_active else COLOR_CARD_BORDER,
-                "outline_weight": 1.25 if is_active else 1.0,
+                "outline_weight": 1.5 if is_active else 1.0,
             })
             ops.append({
                 "op": "add-textbox",
@@ -2808,7 +2986,7 @@ def generate_cover(
                     "width": 18.0,
                     "height": 20.0,
                     "font_size": 11.0,
-                    "bold": True,
+                    "bold": False,
                     "color": COLOR_TEXT_MUTED,
                     "font_family": FONT_FAMILY_BODY,
                     "alignment": "center",
@@ -2816,39 +2994,39 @@ def generate_cover(
                 })
                 cur_x += 22.0
 
-    if kicker:
-        kick_y = 94.0 if crumbs else 58.0
+    if kicker and kicker.strip():
+        kick_y = 96.0 if crumbs else 64.0
         ops.append({
             "op": "add-textbox",
             "slide": slide_id,
-            "text": kicker.upper(),
+            "text": kicker.strip().upper(),
             "x": 36.0,
             "y": kick_y,
             "width": 520.0,
             "height": 18.0,
-            "font_size": 10.0,
+            "font_size": 9.5,
             "bold": True,
-            "color": COLOR_BLUE_ACCENT,
+            "color": COLOR_BLUE_TEXT,
             "font_family": FONT_FAMILY_BODY,
             "alignment": "left",
             "id": f"KICK_S{slide_idx}_COV",
         })
 
-    title_y = 120.0 if (crumbs or kicker) else 104.0
+    title_y = 132.0 if (crumbs or kicker) else 118.0
     ops.append({
         "op": "add-textbox",
         "slide": slide_id,
         "text": clean_title,
         "x": 36.0,
         "y": title_y,
-        "width": 620.0,
-        "height": 112.0,
+        "width": 636.0,
+        "height": 116.0,
         "font_size": title_font,
         "bold": False,
         "color": COLOR_TEXT_PRIMARY,
         "font_family": FONT_FAMILY_HEADING,
         "alignment": "left",
-        "line_spacing": 115,
+        "line_spacing": 114,
         "id": f"TITL_S{slide_idx}_COV",
     })
 
@@ -2858,10 +3036,10 @@ def generate_cover(
             "slide": slide_id,
             "text": subtitle,
             "x": 36.0,
-            "y": 240.0,
+            "y": 258.0,
             "width": 580.0,
-            "height": 68.0,
-            "font_size": 15.0,
+            "height": 64.0,
+            "font_size": 15.5,
             "color": COLOR_TEXT_MUTED,
             "font_family": FONT_FAMILY_BODY,
             "alignment": "left",
@@ -2871,25 +3049,14 @@ def generate_cover(
 
     if date:
         ops.append({
-            "op": "add-shape",
-            "slide": slide_id,
-            "shape_type": "RECTANGLE",
-            "x": 36.0,
-            "y": 334.0,
-            "width": 160.0,
-            "height": 1.0,
-            "background_color": COLOR_CARD_BORDER,
-            "id": f"DIV_S{slide_idx}_COV",
-        })
-        ops.append({
             "op": "add-textbox",
             "slide": slide_id,
             "text": date,
             "x": 36.0,
-            "y": 344.0,
+            "y": 352.0,
             "width": 520.0,
-            "height": 24.0,
-            "font_size": 11.0,
+            "height": 22.0,
+            "font_size": 10.5,
             "color": COLOR_TEXT_MUTED,
             "font_family": FONT_FAMILY_BODY,
             "alignment": "left",
@@ -2917,7 +3084,7 @@ def generate_statement_pivot(
 ) -> list[dict[str, Any]]:
     """Generates gslides batch operations for Archetype 14: Statement Pivot (Slides 3 & 13).
 
-    Supports two editorial variants:
+    Supports two Zen editorial variants:
       - `blue`: Google Blue (`#1A73E8`) full-bleed thesis ("THE SHORT ANSWER" style).
       - `dark`: Charcoal (`#202124`) full-bleed provocation / rhetorical question.
     """
@@ -2927,7 +3094,7 @@ def generate_statement_pivot(
 
     clean_title = (title or "").strip()
     t_len = len(clean_title)
-    title_font = 36.0 if t_len <= 65 else 30.0 if t_len <= 115 else 24.0
+    title_font = 38.0 if t_len <= 58 else 32.0 if t_len <= 100 else 26.0
 
     bg_color = COLOR_DARK_PRIMARY if is_dark else COLOR_BLUE_ACCENT
     bar_colors = (
@@ -2952,16 +3119,16 @@ def generate_statement_pivot(
         ),
     ]
 
-    if kicker:
+    if kicker and kicker.strip():
         ops.append({
             "op": "add-textbox",
             "slide": slide_id,
-            "text": kicker.upper(),
+            "text": kicker.strip().upper(),
             "x": 36.0,
             "y": 64.0,
             "width": 620.0,
             "height": 20.0,
-            "font_size": 10.5,
+            "font_size": 10.0,
             "bold": True,
             "color": kicker_color,
             "font_family": FONT_FAMILY_BODY,
@@ -2969,7 +3136,7 @@ def generate_statement_pivot(
             "id": f"KICK_S{slide_idx}_STMT",
         })
 
-    title_y = 102.0 if subtitle else 118.0
+    title_y = 114.0 if subtitle else 130.0
     ops.append({
         "op": "add-textbox",
         "slide": slide_id,
@@ -2993,9 +3160,9 @@ def generate_statement_pivot(
             "slide": slide_id,
             "text": subtitle,
             "x": 36.0,
-            "y": 272.0,
+            "y": 280.0,
             "width": 620.0,
-            "height": 76.0,
+            "height": 72.0,
             "font_size": 14.5,
             "color": sub_color,
             "font_family": FONT_FAMILY_BODY,
@@ -3055,10 +3222,13 @@ def generate_capability_matrix(
 ) -> list[dict[str, Any]]:
     """Generates gslides batch operations for Archetype 15: Capability Matrix (Slide 4 style).
 
-    Renders a clean editorial comparison matrix of capability rows × option columns
-    using semantic rounded pills (`native`, `partial`, `gap`, `building_blocks`),
-    optional column highlight (`outline` or `solid`), optional orange co-build outline
-    on individual cells, and an optional bottom footnote/legend.
+    Zen Editorial comparison matrix:
+      - Floating Regular `#202124` column headers for standard columns (no heavy gray boxes),
+        with a crisp `#FFFFFF` + `1.5pt #1A73E8` outline header for highlighted target columns.
+      - Regular `#202124` row labels (plus optional `sublabel`).
+      - Borderless pastel semantic cells (`native`, `partial`, `gap`, `building_blocks`) with
+        left-aligned status labels, optional 2nd-line `detail` subtext, and true vector
+        dashed `#E37400` co-build overlay (`dash="DASH"`) when `highlight: true`.
     """
     slide_idx = _extract_slide_idx(slide_id)
     cols_clean = list(columns or [])[:5]
@@ -3085,17 +3255,21 @@ def generate_capability_matrix(
     def _col_x(c: int) -> float:
         return round(36.0 + lbl_w + col_gap + c * (col_w + col_gap), 2)
 
+    has_col_sub = any(
+        isinstance(c, dict) and bool(str(c.get("subtitle") or c.get("sublabel") or "").strip())
+        for c in cols_clean
+    )
     hdr_y = 100.0
-    hdr_h = 28.0
+    hdr_h = 38.0 if has_col_sub else 28.0
     if row_label_header:
         ops.append({
             "op": "add-textbox",
             "slide": slide_id,
             "text": row_label_header.upper(),
             "x": 36.0,
-            "y": round(hdr_y + 4.0, 2),
+            "y": round(hdr_y + 5.0, 2),
             "width": round(lbl_w - 4.0, 2),
-            "height": 20.0,
+            "height": 18.0,
             "font_size": 8.5,
             "bold": True,
             "color": COLOR_TEXT_MUTED,
@@ -3109,58 +3283,96 @@ def generate_capability_matrix(
         cw = round(col_w, 2)
         if isinstance(raw_col, dict):
             c_label = str(raw_col.get("label") or raw_col.get("title") or f"Option {c_idx + 1}")
+            c_sub = str(raw_col.get("subtitle") or raw_col.get("sublabel") or "").strip()
             hi_raw = raw_col.get("highlight", "")
             hi_mode = "outline" if hi_raw is True else str(hi_raw or "").strip().lower()
         else:
             c_label = str(raw_col)
+            c_sub = ""
             hi_mode = ""
 
-        if hi_mode == "solid":
-            h_bg, h_fg, h_brd, h_wgt = COLOR_BLUE_ACCENT, COLOR_TEXT_WHITE, COLOR_BLUE_ACCENT, 1.5
-        elif hi_mode in ("outline", "target", "recommended", "true"):
-            h_bg, h_fg, h_brd, h_wgt = COLOR_BLUE_LIGHT, COLOR_BLUE_TEXT, COLOR_BLUE_ACCENT, 1.5
+        is_solid = hi_mode == "solid"
+        is_outline = hi_mode in ("outline", "target", "recommended", "true")
+        if is_solid or is_outline:
+            h_bg = COLOR_BLUE_ACCENT if is_solid else COLOR_CARD_WHITE
+            h_fg = COLOR_TEXT_WHITE if is_solid else COLOR_BLUE_TEXT
+            h_sub_fg = COLOR_TEXT_WHITE if is_solid else COLOR_TEXT_MUTED
+            hdr_bg_id = f"MHDR_BG_S{slide_idx}_C{c_idx + 1}"
+            ops.append({
+                "op": "add-shape",
+                "slide": slide_id,
+                "shape_type": "ROUND_RECTANGLE",
+                "x": cx,
+                "y": hdr_y,
+                "width": cw,
+                "height": hdr_h,
+                "background_color": h_bg,
+                "id": hdr_bg_id,
+            })
+            ops.append({
+                "op": "style-shape",
+                "element": hdr_bg_id,
+                "outline_color": COLOR_BLUE_ACCENT,
+                "outline_weight": 1.5,
+            })
         else:
-            h_bg, h_fg, h_brd, h_wgt = "#F1F3F4", COLOR_TEXT_PRIMARY, COLOR_CARD_BORDER, 1.0
+            h_fg = COLOR_TEXT_PRIMARY
+            h_sub_fg = COLOR_TEXT_MUTED
 
-        hdr_bg_id = f"MHDR_BG_S{slide_idx}_C{c_idx + 1}"
-        ops.append({
-            "op": "add-shape",
-            "slide": slide_id,
-            "shape_type": "ROUND_RECTANGLE",
-            "x": cx,
-            "y": hdr_y,
-            "width": cw,
-            "height": hdr_h,
-            "background_color": h_bg,
-            "id": hdr_bg_id,
-        })
-        ops.append({
-            "op": "style-shape",
-            "element": hdr_bg_id,
-            "outline_color": h_brd,
-            "outline_weight": h_wgt,
-        })
-        ops.append({
-            "op": "add-textbox",
-            "slide": slide_id,
-            "text": c_label,
-            "x": round(cx + 4.0, 2),
-            "y": round(hdr_y + 4.0, 2),
-            "width": round(cw - 8.0, 2),
-            "height": round(hdr_h - 8.0, 2),
-            "font_size": 9.5,
-            "bold": True,
-            "color": h_fg,
-            "font_family": FONT_FAMILY_HEADING,
-            "alignment": "center",
-            "id": f"MHDR_TXT_S{slide_idx}_C{c_idx + 1}",
-        })
+        if c_sub:
+            ops.append({
+                "op": "add-textbox",
+                "slide": slide_id,
+                "text": c_label,
+                "x": round(cx + 4.0, 2),
+                "y": round(hdr_y + 3.0, 2),
+                "width": round(cw - 8.0, 2),
+                "height": 15.0,
+                "font_size": 10.0,
+                "bold": False,
+                "color": h_fg,
+                "font_family": FONT_FAMILY_HEADING,
+                "alignment": "center",
+                "id": f"MHDR_TXT_S{slide_idx}_C{c_idx + 1}",
+            })
+            ops.append({
+                "op": "add-textbox",
+                "slide": slide_id,
+                "text": c_sub,
+                "x": round(cx + 4.0, 2),
+                "y": round(hdr_y + 19.0, 2),
+                "width": round(cw - 8.0, 2),
+                "height": 14.5,
+                "font_size": 8.0,
+                "color": h_sub_fg,
+                "font_family": FONT_FAMILY_BODY,
+                "alignment": "center",
+                "id": f"MHDR_SUB_S{slide_idx}_C{c_idx + 1}",
+            })
+        else:
+            ops.append({
+                "op": "add-textbox",
+                "slide": slide_id,
+                "text": c_label,
+                "x": round(cx + 4.0, 2),
+                "y": round(hdr_y + 4.0, 2),
+                "width": round(cw - 8.0, 2),
+                "height": round(hdr_h - 8.0, 2),
+                "font_size": 10.5,
+                "bold": False,
+                "color": h_fg,
+                "font_family": FONT_FAMILY_HEADING,
+                "alignment": "center",
+                "id": f"MHDR_TXT_S{slide_idx}_C{c_idx + 1}",
+            })
 
-    rows_top = 134.0
+    rows_top = hdr_y + hdr_h + 8.0
     rows_bottom = 350.0 if footnote else 374.0
     avail_h = rows_bottom - rows_top
     row_gap = 6.0 if n_rows <= 5 else 4.0
-    row_h = min(40.0, (avail_h - (n_rows - 1) * row_gap) / n_rows)
+    row_h = min(44.0, (avail_h - (n_rows - 1) * row_gap) / n_rows)
+
+    dash_canvas = RawCanvas(slide_id, f"MCELL_S{slide_idx}")
 
     for r_idx, raw_row in enumerate(rows_clean):
         ry = round(rows_top + r_idx * (row_h + row_gap), 2)
@@ -3171,21 +3383,53 @@ def generate_capability_matrix(
             or raw_row.get("title")
             or f"Capability {r_idx + 1}"
         )
-        ops.append({
-            "op": "add-textbox",
-            "slide": slide_id,
-            "text": cap_label,
-            "x": 36.0,
-            "y": round(ry + 3.0, 2),
-            "width": round(lbl_w - 4.0, 2),
-            "height": round(max(18.0, rh - 6.0), 2),
-            "font_size": 10.0 if n_rows <= 5 else 9.0,
-            "bold": True,
-            "color": COLOR_TEXT_PRIMARY,
-            "font_family": FONT_FAMILY_BODY,
-            "alignment": "left",
-            "id": f"MROW_LBL_S{slide_idx}_R{r_idx + 1}",
-        })
+        cap_sub = str(raw_row.get("sublabel") or raw_row.get("subtitle") or "").strip()
+        if cap_sub and rh >= 34.0:
+            ops.append({
+                "op": "add-textbox",
+                "slide": slide_id,
+                "text": cap_label,
+                "x": 36.0,
+                "y": round(ry + 3.0, 2),
+                "width": round(lbl_w - 4.0, 2),
+                "height": 15.0,
+                "font_size": 10.0 if n_rows <= 5 else 9.0,
+                "bold": False,
+                "color": COLOR_TEXT_PRIMARY,
+                "font_family": FONT_FAMILY_HEADING,
+                "alignment": "left",
+                "id": f"MROW_LBL_S{slide_idx}_R{r_idx + 1}",
+            })
+            ops.append({
+                "op": "add-textbox",
+                "slide": slide_id,
+                "text": cap_sub,
+                "x": 36.0,
+                "y": round(ry + 19.0, 2),
+                "width": round(lbl_w - 4.0, 2),
+                "height": round(max(14.0, rh - 21.0), 2),
+                "font_size": 8.0,
+                "color": COLOR_TEXT_MUTED,
+                "font_family": FONT_FAMILY_BODY,
+                "alignment": "left",
+                "id": f"MROW_SUB_S{slide_idx}_R{r_idx + 1}",
+            })
+        else:
+            ops.append({
+                "op": "add-textbox",
+                "slide": slide_id,
+                "text": cap_label,
+                "x": 36.0,
+                "y": round(ry + 4.0, 2),
+                "width": round(lbl_w - 4.0, 2),
+                "height": round(max(18.0, rh - 8.0), 2),
+                "font_size": 10.0 if n_rows <= 5 else 9.0,
+                "bold": False,
+                "color": COLOR_TEXT_PRIMARY,
+                "font_family": FONT_FAMILY_HEADING,
+                "alignment": "left",
+                "id": f"MROW_LBL_S{slide_idx}_R{r_idx + 1}",
+            })
 
         raw_cells = raw_row.get("cells") or raw_row.get("values") or []
         for c_idx in range(n_cols):
@@ -3194,18 +3438,16 @@ def generate_capability_matrix(
             raw_cell = raw_cells[c_idx] if c_idx < len(raw_cells) else ""
             if isinstance(raw_cell, dict):
                 c_txt = str(raw_cell.get("text") or raw_cell.get("label") or raw_cell.get("value") or "—")
+                c_det = str(raw_cell.get("detail") or raw_cell.get("subtext") or raw_cell.get("subtitle") or "").strip()
                 c_stat = str(raw_cell.get("status") or "")
                 c_hi = bool(raw_cell.get("highlight", False))
             else:
                 c_txt = str(raw_cell) if str(raw_cell).strip() else "—"
+                c_det = ""
                 c_stat = ""
                 c_hi = False
 
-            bg, fg, brd = _resolve_matrix_cell_palette(c_stat, c_txt)
-            wgt = 1.0
-            if c_hi:
-                brd = COLOR_ORANGE_COBUILD
-                wgt = 1.75
+            bg, fg, _ = _resolve_matrix_cell_palette(c_stat, c_txt)
 
             cell_bg_id = f"MCELL_BG_S{slide_idx}_R{r_idx + 1}_C{c_idx + 1}"
             ops.append({
@@ -3219,27 +3461,77 @@ def generate_capability_matrix(
                 "background_color": bg,
                 "id": cell_bg_id,
             })
+            # Borderless pastel fill (matching outline to fill suppresses Google Slides default border)
             ops.append({
                 "op": "style-shape",
                 "element": cell_bg_id,
-                "outline_color": brd,
-                "outline_weight": wgt,
+                "outline_color": bg,
+                "outline_weight": 0.5,
             })
-            ops.append({
-                "op": "add-textbox",
-                "slide": slide_id,
-                "text": c_txt,
-                "x": round(cx + 4.0, 2),
-                "y": round(ry + 3.0, 2),
-                "width": round(cw - 8.0, 2),
-                "height": round(max(16.0, rh - 6.0), 2),
-                "font_size": 9.0 if n_rows <= 5 else 8.5,
-                "bold": True,
-                "color": fg,
-                "font_family": FONT_FAMILY_BODY,
-                "alignment": "center",
-                "id": f"MCELL_TXT_S{slide_idx}_R{r_idx + 1}_C{c_idx + 1}",
-            })
+
+            if c_det and rh >= 32.0:
+                ops.append({
+                    "op": "add-textbox",
+                    "slide": slide_id,
+                    "text": c_txt,
+                    "x": round(cx + 8.0, 2),
+                    "y": round(ry + 3.0, 2),
+                    "width": round(cw - 16.0, 2),
+                    "height": 14.5,
+                    "font_size": 8.8 if n_rows <= 5 else 8.2,
+                    "bold": True,
+                    "color": fg,
+                    "font_family": FONT_FAMILY_BODY,
+                    "alignment": "left",
+                    "id": f"MCELL_TXT_S{slide_idx}_R{r_idx + 1}_C{c_idx + 1}",
+                })
+                ops.append({
+                    "op": "add-textbox",
+                    "slide": slide_id,
+                    "text": c_det,
+                    "x": round(cx + 8.0, 2),
+                    "y": round(ry + 18.0, 2),
+                    "width": round(cw - 16.0, 2),
+                    "height": round(max(13.0, rh - 20.0), 2),
+                    "font_size": 7.8,
+                    "color": COLOR_TEXT_BODY,
+                    "font_family": FONT_FAMILY_BODY,
+                    "alignment": "left",
+                    "id": f"MCELL_DET_S{slide_idx}_R{r_idx + 1}_C{c_idx + 1}",
+                })
+            else:
+                ops.append({
+                    "op": "add-textbox",
+                    "slide": slide_id,
+                    "text": c_txt,
+                    "x": round(cx + 8.0, 2),
+                    "y": round(ry + max(3.0, (rh - 20.0) / 2.0), 2),
+                    "width": round(cw - 16.0, 2),
+                    "height": 20.0,
+                    "font_size": 9.0 if n_rows <= 5 else 8.5,
+                    "bold": True,
+                    "color": fg,
+                    "font_family": FONT_FAMILY_BODY,
+                    "alignment": "left",
+                    "id": f"MCELL_TXT_S{slide_idx}_R{r_idx + 1}_C{c_idx + 1}",
+                })
+
+            if c_hi:
+                dash_canvas.shape(
+                    f"DASH_R{r_idx + 1}_C{c_idx + 1}",
+                    "ROUND_RECTANGLE",
+                    cx,
+                    ry,
+                    cw,
+                    rh,
+                    fill=None,
+                    outline=COLOR_ORANGE_COBUILD,
+                    weight=1.75,
+                    dash="DASH",
+                )
+
+    if dash_canvas.requests:
+        ops.append({"op": "_raw-requests", "slide": slide_id, "requests": dash_canvas.requests})
 
     if footnote:
         ops.append({
@@ -3283,14 +3575,15 @@ def generate_kpi_spotlight(
 ) -> list[dict[str, Any]]:
     """Generates gslides batch operations for Archetype 16: KPI Spotlight (Slide 11 style).
 
-    Left column: Huge Google Blue (`#1A73E8`) hero figure + framing description +
-    optional bottom green live status pill.
-    Right column: Uppercase `MEASURED BY` kicker + 2–4 rows separated by hairline
-    dividers with Google 4-color `ELLIPSE` dots.
+    Zen Editorial KPI Spotlight (pure negative space between columns — no vertical line):
+      - Left column: Huge `72pt` Google Blue (`#1A73E8`) Regular figure + Regular label +
+        muted description + optional borderless green live status pill.
+      - Right column: Uppercase `MEASURED BY` kicker + 2–4 rows separated by hairline
+        horizontal rules with Google 4-color `ELLIPSE` dots and Regular metric titles.
     """
     slide_idx = _extract_slide_idx(slide_id)
     val_clean = (stat_value or "0").strip()
-    stat_font = 62.0 if len(val_clean) <= 5 else 48.0 if len(val_clean) <= 8 else 36.0
+    stat_font = 72.0 if len(val_clean) <= 4 else 56.0 if len(val_clean) <= 8 else 40.0
 
     ops: list[dict[str, Any]] = [
         {"op": "add-slide", "layout": "BLANK", "id": slide_id},
@@ -3298,15 +3591,15 @@ def generate_kpi_spotlight(
     ]
     ops.extend(_build_header_ops(slide_id, slide_idx, title, subtitle, kicker))
 
-    # Left Column: Big Hero Stat + Narrative + Optional Live Pill
+    # Left Column: Big Hero Stat + Regular Framing + Optional Borderless Live Pill
     ops.append({
         "op": "add-textbox",
         "slide": slide_id,
         "text": val_clean,
         "x": 36.0,
-        "y": 106.0,
-        "width": 284.0,
-        "height": 74.0,
+        "y": 130.0,
+        "width": 292.0,
+        "height": 84.0,
         "font_size": stat_font,
         "bold": False,
         "color": COLOR_BLUE_ACCENT,
@@ -3315,7 +3608,7 @@ def generate_kpi_spotlight(
         "id": f"KSPOT_VAL_S{slide_idx}",
     })
 
-    cur_left_y = 186.0
+    cur_left_y = 220.0
     if stat_label:
         ops.append({
             "op": "add-textbox",
@@ -3323,10 +3616,10 @@ def generate_kpi_spotlight(
             "text": stat_label,
             "x": 36.0,
             "y": cur_left_y,
-            "width": 284.0,
+            "width": 292.0,
             "height": 24.0,
-            "font_size": 13.5,
-            "bold": True,
+            "font_size": 14.0,
+            "bold": False,
             "color": COLOR_TEXT_PRIMARY,
             "font_family": FONT_FAMILY_HEADING,
             "alignment": "left",
@@ -3335,17 +3628,17 @@ def generate_kpi_spotlight(
         cur_left_y += 28.0
 
     if stat_description:
-        desc_bottom = 322.0 if status_pill else 366.0
+        desc_bottom = 328.0 if status_pill else 368.0
         ops.append({
             "op": "add-textbox",
             "slide": slide_id,
             "text": stat_description,
             "x": 36.0,
             "y": cur_left_y,
-            "width": 284.0,
+            "width": 292.0,
             "height": max(48.0, desc_bottom - cur_left_y),
-            "font_size": 12.0,
-            "color": COLOR_TEXT_BODY,
+            "font_size": 11.5,
+            "color": COLOR_TEXT_MUTED,
             "font_family": FONT_FAMILY_BODY,
             "alignment": "left",
             "line_spacing": 140,
@@ -3356,32 +3649,33 @@ def generate_kpi_spotlight(
         pill_txt = status_pill.strip()
         if not pill_txt.startswith(("●", "✓", "▶")):
             pill_txt = f"● {pill_txt}"
+        pill_w = round(min(292.0, max(124.0, len(pill_txt) * 6.8 + 26.0)), 2)
         pill_bg_id = f"KSPOT_PILL_BG_S{slide_idx}"
         ops.append({
             "op": "add-shape",
             "slide": slide_id,
             "shape_type": "ROUND_RECTANGLE",
             "x": 36.0,
-            "y": 330.0,
-            "width": 284.0,
-            "height": 36.0,
+            "y": 338.0,
+            "width": pill_w,
+            "height": 30.0,
             "background_color": COLOR_GREEN_LIGHT,
             "id": pill_bg_id,
         })
         ops.append({
             "op": "style-shape",
             "element": pill_bg_id,
-            "outline_color": COLOR_GREEN_BORDER,
-            "outline_weight": 1.0,
+            "outline_color": COLOR_GREEN_LIGHT,
+            "outline_weight": 0.5,
         })
         ops.append({
             "op": "add-textbox",
             "slide": slide_id,
             "text": pill_txt,
-            "x": 44.0,
-            "y": 335.0,
-            "width": 268.0,
-            "height": 26.0,
+            "x": 46.0,
+            "y": 342.0,
+            "width": round(pill_w - 20.0, 2),
+            "height": 22.0,
             "font_size": 9.5,
             "bold": True,
             "color": COLOR_GREEN_TEXT,
@@ -3390,29 +3684,16 @@ def generate_kpi_spotlight(
             "id": f"KSPOT_PILL_TXT_S{slide_idx}",
         })
 
-    # Subtle Vertical Hairline Divider
-    ops.append({
-        "op": "add-shape",
-        "slide": slide_id,
-        "shape_type": "RECTANGLE",
-        "x": 340.0,
-        "y": 112.0,
-        "width": 1.0,
-        "height": 252.0,
-        "background_color": COLOR_CARD_BORDER,
-        "id": f"KSPOT_VDIV_S{slide_idx}",
-    })
-
-    # Right Column: Measured By List
+    # Right Column: Measured By List (separated from left column by pure negative space)
     ops.append({
         "op": "add-textbox",
         "slide": slide_id,
         "text": (measured_by_title or "MEASURED BY").upper(),
-        "x": 364.0,
-        "y": 112.0,
-        "width": 320.0,
+        "x": 372.0,
+        "y": 128.0,
+        "width": 312.0,
         "height": 18.0,
-        "font_size": 9.5,
+        "font_size": 9.0,
         "bold": True,
         "color": COLOR_TEXT_MUTED,
         "font_family": FONT_FAMILY_BODY,
@@ -3422,8 +3703,8 @@ def generate_kpi_spotlight(
 
     items = list(measurements or [])[:4]
     n_m = max(1, len(items))
-    row_top = 138.0
-    row_h = min(60.0, 228.0 / n_m)
+    row_top = 152.0
+    row_h = min(62.0, 218.0 / n_m)
 
     for idx, raw_m in enumerate(items):
         ry = round(row_top + idx * row_h, 2)
@@ -3443,9 +3724,9 @@ def generate_kpi_spotlight(
             "op": "add-shape",
             "slide": slide_id,
             "shape_type": "RECTANGLE",
-            "x": 364.0,
+            "x": 372.0,
             "y": ry,
-            "width": 320.0,
+            "width": 312.0,
             "height": 1.0,
             "background_color": COLOR_CARD_BORDER,
             "id": f"KSPOT_RULE_S{slide_idx}_{idx + 1}",
@@ -3454,8 +3735,8 @@ def generate_kpi_spotlight(
             "op": "add-shape",
             "slide": slide_id,
             "shape_type": "ELLIPSE",
-            "x": 364.0,
-            "y": round(ry + 13.0, 2),
+            "x": 372.0,
+            "y": round(ry + 14.0, 2),
             "width": 8.0,
             "height": 8.0,
             "background_color": dot_col,
@@ -3466,12 +3747,12 @@ def generate_kpi_spotlight(
                 "op": "add-textbox",
                 "slide": slide_id,
                 "text": m_title,
-                "x": 380.0,
+                "x": 388.0,
                 "y": round(ry + 7.0, 2),
-                "width": 304.0,
-                "height": 18.0,
-                "font_size": 11.5,
-                "bold": True,
+                "width": 296.0,
+                "height": 20.0,
+                "font_size": 12.5,
+                "bold": False,
                 "color": COLOR_TEXT_PRIMARY,
                 "font_family": FONT_FAMILY_HEADING,
                 "alignment": "left",
@@ -3481,10 +3762,10 @@ def generate_kpi_spotlight(
                 "op": "add-textbox",
                 "slide": slide_id,
                 "text": m_desc,
-                "x": 380.0,
-                "y": round(ry + 26.0, 2),
-                "width": 304.0,
-                "height": round(max(20.0, row_h - 30.0), 2),
+                "x": 388.0,
+                "y": round(ry + 28.0, 2),
+                "width": 296.0,
+                "height": round(max(20.0, row_h - 32.0), 2),
                 "font_size": 10.0,
                 "color": COLOR_TEXT_MUTED,
                 "font_family": FONT_FAMILY_BODY,
@@ -3497,13 +3778,14 @@ def generate_kpi_spotlight(
                 "op": "add-textbox",
                 "slide": slide_id,
                 "text": m_title,
-                "x": 380.0,
+                "x": 388.0,
                 "y": round(ry + 9.0, 2),
-                "width": 304.0,
+                "width": 296.0,
                 "height": round(max(24.0, row_h - 14.0), 2),
-                "font_size": 11.0,
+                "font_size": 12.0,
+                "bold": False,
                 "color": COLOR_TEXT_PRIMARY,
-                "font_family": FONT_FAMILY_BODY,
+                "font_family": FONT_FAMILY_HEADING,
                 "alignment": "left",
                 "id": f"KSPOT_MTITL_S{slide_idx}_{idx + 1}",
             })
@@ -3530,8 +3812,9 @@ def generate_horizon_staircase(
     """Generates gslides batch operations for Archetype 17: Horizon Staircase (Slide 12 style).
 
     Renders 2–4 ascending-height `ROUND_RECTANGLE` cards bottom-aligned at `Y=374`,
-    rising visually from `Agora (Curto Prazo)` → `Médio Prazo` → `Longo Prazo (Futuro)`,
-    with the final North Star card softly tinted in Google Blue (`#E8F0FE`).
+    with adaptive Zen *Ma* sky above concise staircases, rising visually from
+    `Agora (Curto Prazo)` → `Médio Prazo` → `Longo Prazo (Futuro)`, Regular titles,
+    and the final North Star card softly tinted in Google Blue (`#E8F0FE`).
     """
     slide_idx = _extract_slide_idx(slide_id)
     items = list(horizons or [])[:4]
@@ -3545,10 +3828,26 @@ def generate_horizon_staircase(
     ]
     ops.extend(_build_header_ops(slide_id, slide_idx, title, subtitle, kicker))
 
+    def _h_density(rh: dict[str, Any]) -> tuple[int, int]:
+        rb = rh.get("bullets") or rh.get("items") or rh.get("description") or []
+        if isinstance(rb, list):
+            return len(rb), sum(len(str(x)) for x in rb)
+        s = str(rb or "")
+        return max(1, s.count("\n") + 1), len(s)
+
+    h_densities = [_h_density(h) for h in items]
+    max_b = max((d[0] for d in h_densities), default=0)
+    max_c = max((d[1] for d in h_densities), default=0)
+
     gap = 18.0 if n <= 3 else 14.0
     col_w = (648.0 - (n - 1) * gap) / n
     bottom_y = 374.0
-    step_drop = 26.0 if n <= 3 else 20.0
+    if max_b <= 3 and max_c <= 130:
+        highest_top_y = 142.0
+        step_drop = 24.0 if n <= 3 else 18.0
+    else:
+        highest_top_y = 114.0
+        step_drop = 22.0 if n <= 3 else 16.0
 
     default_labels = [
         "Agora (Curto Prazo)",
@@ -3560,7 +3859,7 @@ def generate_horizon_staircase(
     for idx, raw_h in enumerate(items):
         cx = round(36.0 + idx * (col_w + gap), 2)
         cw = round(col_w, 2)
-        top_y = round(102.0 + (n - 1 - idx) * step_drop, 2)
+        top_y = round(highest_top_y + (n - 1 - idx) * step_drop, 2)
         ch = round(bottom_y - top_y, 2)
 
         is_final = bool(raw_h.get("highlight", idx == n - 1))
@@ -3601,7 +3900,7 @@ def generate_horizon_staircase(
             "x": st_bar_x,
             "y": top_y,
             "width": st_bar_w,
-            "height": 3.5,
+            "height": 3.0,
             "background_color": bar_col,
             "id": f"STAIR_BAR_S{slide_idx}_{idx + 1}",
         })
@@ -3610,9 +3909,9 @@ def generate_horizon_staircase(
             "slide": slide_id,
             "text": h_tag.upper(),
             "x": round(cx + 14.0, 2),
-            "y": round(top_y + 12.0, 2),
+            "y": round(top_y + 10.0, 2),
             "width": round(cw - 28.0, 2),
-            "height": 18.0,
+            "height": 16.0,
             "font_size": 8.5,
             "bold": True,
             "color": tag_fg,
@@ -3625,19 +3924,19 @@ def generate_horizon_staircase(
             "slide": slide_id,
             "text": h_title,
             "x": round(cx + 14.0, 2),
-            "y": round(top_y + 32.0, 2),
+            "y": round(top_y + 28.0, 2),
             "width": round(cw - 28.0, 2),
-            "height": 26.0,
-            "font_size": 13.0,
-            "bold": True,
+            "height": 24.0,
+            "font_size": 13.5,
+            "bold": False,
             "color": COLOR_TEXT_PRIMARY,
             "font_family": FONT_FAMILY_HEADING,
             "alignment": "left",
             "id": f"STAIR_TITL_S{slide_idx}_{idx + 1}",
         })
 
-        body_top = round(top_y + 62.0, 2)
-        body_bottom = 328.0 if h_footer else 364.0
+        body_top = round(top_y + 52.0, 2)
+        body_bottom = 336.0 if h_footer else 364.0
         body_txt = _format_bullets(raw_bullets) if isinstance(raw_bullets, list) else str(raw_bullets)
         ops.append({
             "op": "add-textbox",
@@ -3651,22 +3950,11 @@ def generate_horizon_staircase(
             "color": COLOR_TEXT_BODY,
             "font_family": FONT_FAMILY_BODY,
             "alignment": "left",
-            "line_spacing": 132,
+            "line_spacing": 128,
             "id": f"STAIR_BODY_S{slide_idx}_{idx + 1}",
         })
 
         if h_footer:
-            ops.append({
-                "op": "add-shape",
-                "slide": slide_id,
-                "shape_type": "RECTANGLE",
-                "x": round(cx + 14.0, 2),
-                "y": 334.0,
-                "width": round(cw - 28.0, 2),
-                "height": 1.0,
-                "background_color": "#AECBFA" if is_final else COLOR_DIVIDER,
-                "id": f"STAIR_DIV_S{slide_idx}_{idx + 1}",
-            })
             ops.append({
                 "op": "add-textbox",
                 "slide": slide_id,
@@ -3705,14 +3993,15 @@ def generate_closing_ask(
 ) -> list[dict[str, Any]]:
     """Generates gslides batch operations for Archetype 18: Closing Ask (Slide 18 style).
 
-    Charcoal (`#202124`) executive closing slide with mini 4-color bar, large white
-    takeaway headline, optional `#BDC1C6` subtitle, gold `#FBBC04` section kicker,
-    and 2–4 borderless columns under `2.5pt` Google-colored top rules.
+    Zen Charcoal (`#202124`) executive closing slide: mini 4-color bar, large Regular
+    white takeaway headline, optional `#BDC1C6` subtitle, generous dark *Ma* middle,
+    gold `#FBBC04` section kicker, and 2–4 borderless Regular columns under `2.5pt`
+    Google-colored top rules.
     """
     slide_idx = _extract_slide_idx(slide_id)
     clean_title = (title or "").strip()
     t_len = len(clean_title)
-    title_font = 28.0 if t_len <= 65 else 24.0 if t_len <= 105 else 20.0
+    title_font = 32.0 if t_len <= 58 else 26.0 if t_len <= 98 else 21.0
 
     ops: list[dict[str, Any]] = [
         {"op": "add-slide", "layout": "BLANK", "id": slide_id},
@@ -3727,16 +4016,16 @@ def generate_closing_ask(
         ),
     ]
 
-    if kicker:
+    if kicker and kicker.strip():
         ops.append({
             "op": "add-textbox",
             "slide": slide_id,
-            "text": kicker.upper(),
+            "text": kicker.strip().upper(),
             "x": 124.0,
             "y": 30.0,
             "width": 360.0,
             "height": 16.0,
-            "font_size": 9.5,
+            "font_size": 9.0,
             "bold": True,
             "color": COLOR_DARK_MUTED,
             "font_family": FONT_FAMILY_BODY,
@@ -3749,15 +4038,15 @@ def generate_closing_ask(
         "slide": slide_id,
         "text": clean_title,
         "x": 36.0,
-        "y": 58.0,
+        "y": 56.0,
         "width": 636.0,
-        "height": 88.0,
+        "height": 84.0,
         "font_size": title_font,
         "bold": False,
         "color": COLOR_TEXT_WHITE,
         "font_family": FONT_FAMILY_HEADING,
         "alignment": "left",
-        "line_spacing": 122,
+        "line_spacing": 120,
         "id": f"TITL_S{slide_idx}_ASK",
     })
 
@@ -3767,10 +4056,10 @@ def generate_closing_ask(
             "slide": slide_id,
             "text": subtitle,
             "x": 36.0,
-            "y": 150.0,
+            "y": 144.0,
             "width": 620.0,
-            "height": 36.0,
-            "font_size": 13.0,
+            "height": 38.0,
+            "font_size": 14.0,
             "color": COLOR_DARK_MUTED,
             "font_family": FONT_FAMILY_BODY,
             "alignment": "left",
@@ -3779,7 +4068,16 @@ def generate_closing_ask(
 
     items = list(asks or [])[:4]
     if items:
-        sect_y = 202.0 if subtitle else 182.0
+        max_desc = max(
+            (
+                len(str(a.get("description") or a.get("detail") or ""))
+                if isinstance(a, dict)
+                else len(str(a))
+                for a in items
+            ),
+            default=0,
+        )
+        sect_y = 212.0 if max_desc > 110 else ZEN_CLOSING_SECT_Y
         ops.append({
             "op": "add-textbox",
             "slide": slide_id,
@@ -3788,7 +4086,7 @@ def generate_closing_ask(
             "y": sect_y,
             "width": 648.0,
             "height": 18.0,
-            "font_size": 9.5,
+            "font_size": 9.0,
             "bold": True,
             "color": "#FBBC04",
             "font_family": FONT_FAMILY_BODY,
@@ -3797,7 +4095,7 @@ def generate_closing_ask(
         })
 
         n_a = len(items)
-        col_top = sect_y + 26.0
+        col_top = sect_y + 24.0
         gap = 24.0 if n_a <= 3 else 16.0
         col_w = (648.0 - (n_a - 1) * gap) / n_a
 
@@ -3834,9 +4132,9 @@ def generate_closing_ask(
                 "x": cx,
                 "y": round(col_top + 10.0, 2),
                 "width": cw,
-                "height": 26.0,
-                "font_size": 13.0,
-                "bold": True,
+                "height": 24.0,
+                "font_size": 14.0,
+                "bold": False,
                 "color": COLOR_TEXT_WHITE,
                 "font_family": FONT_FAMILY_HEADING,
                 "alignment": "left",
@@ -3848,9 +4146,9 @@ def generate_closing_ask(
                     "slide": slide_id,
                     "text": a_desc,
                     "x": cx,
-                    "y": round(col_top + 40.0, 2),
+                    "y": round(col_top + 38.0, 2),
                     "width": cw,
-                    "height": round(max(44.0, 374.0 - (col_top + 40.0)), 2),
+                    "height": round(max(44.0, 374.0 - (col_top + 38.0)), 2),
                     "font_size": 10.5,
                     "color": COLOR_DARK_MUTED,
                     "font_family": FONT_FAMILY_BODY,
@@ -4123,6 +4421,7 @@ class ArchetypeEngine:
                 bullets=data.get("bullets") or [],
                 image_side=str(data.get("image_side", "right")),
                 image_layout=str(data.get("image_layout", "split")),
+                callout=data.get("callout") or data.get("step_callout"),
                 speaker_notes=notes,
             )
 
@@ -4201,7 +4500,9 @@ class ArchetypeEngine:
                 stat_label=str(data.get("stat_label") or data.get("unit") or ""),
                 stat_description=str(data.get("stat_description") or data.get("description") or ""),
                 status_pill=str(data.get("status_pill") or data.get("live_status") or ""),
-                measured_by_title=str(data.get("measured_by_title") or "MEASURED BY"),
+                measured_by_title=str(
+                    data.get("measured_by_title") or data.get("measured_by_label") or "MEASURED BY"
+                ),
                 measurements=data.get("measurements") or data.get("measured_by") or [],
                 speaker_notes=notes,
             )

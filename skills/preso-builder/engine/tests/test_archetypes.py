@@ -93,6 +93,9 @@ class TestArchetypeGenerators(unittest.TestCase):
                     "style-shape",
                     "add-line",
                     "set-notes",
+                    "_raw-requests",
+                    "_pending-image",
+                    "add-image",
                 ],
             )
 
@@ -432,7 +435,7 @@ class TestArchetypeGenerators(unittest.TestCase):
         for i in range(1, 5):
             quad = next(op for op in ops if op.get("id") == f"QUAD_S08_Q{i}")
             self.assertEqual(quad["width"], 312.0)
-            self.assertEqual(quad["height"], 130.0)
+            self.assertEqual(quad["height"], 107.0)
 
     def test_generate_executive_grid_invalid_count_raises(self):
         with self.assertRaises(ValueError):
@@ -699,10 +702,11 @@ class TestGoogleEditorialArchetypesAndQA(unittest.TestCase):
                     "rows": [
                         {
                             "capability": "Identidade & IAM",
+                            "sublabel": "Controles de acesso",
                             "cells": [
-                                {"text": "Parcial", "status": "partial"},
-                                {"text": "Manual", "status": "gap"},
-                                {"text": "Nativo", "status": "native"},
+                                {"text": "Parcial", "detail": "SSO básico", "status": "partial"},
+                                {"text": "Manual", "detail": "Alto esforço", "status": "gap"},
+                                {"text": "Nativo", "detail": "IAM + VPC-SC", "status": "native"},
                             ],
                         },
                         {
@@ -710,11 +714,24 @@ class TestGoogleEditorialArchetypesAndQA(unittest.TestCase):
                             "cells": [
                                 {"text": "Ausente", "status": "gap"},
                                 {"text": "Custom", "status": "partial"},
-                                {"text": "Co-build", "status": "building_blocks", "highlight": True},
+                                {"text": "Co-build", "detail": "Rubricas domínio", "status": "building_blocks", "highlight": True},
                             ],
                         },
                     ],
                     "footnote": "Co-build focado apenas onde há diferencial de negócio.",
+                },
+                {
+                    "archetype": "image_split",
+                    "title": "Passo 1: Entrada Unificada pelo Gateway",
+                    "subtitle": "Toda requisição passa por autenticação e políticas antes do agente",
+                    "image_layout": "full",
+                    "image": {"placeholder": "Diagrama de arquitetura — Passo 1"},
+                    "callout": {
+                        "step": 1,
+                        "title": "Autenticação e roteamento determinístico",
+                        "description": "O gateway valida identidade, aplica cotas e encaminha ao agente especialista.",
+                        "pill": "Segurança & IAM",
+                    },
                 },
                 {
                     "archetype": "split_cards",
@@ -801,7 +818,21 @@ class TestGoogleEditorialArchetypesAndQA(unittest.TestCase):
         self.assertTrue(val.is_valid, f"Validation failed: {val.errors}")
 
         batch = BatchCompiler().compile(spec)
-        self.assertEqual(batch.slide_count, 9)
+        self.assertEqual(batch.slide_count, 10)
+        self.assertGreater(len(batch.raw_requests), 0, "Expected dashed co-build raw_requests")
+
+        # Verify Zen Ma lower-half anchor on 2x3 executive_grid (Slide 2)
+        q1 = next(op for op in batch.operations if op.get("id") == "QUAD_S02_Q1")
+        self.assertEqual(q1["y"], 186.0)
+        self.assertEqual(q1["height"], 88.0)
+        pill1 = next(op for op in batch.operations if op.get("id") == "PILL_S02_Q1")
+        self.assertNotIn("background_color", pill1)
+
+        # Verify image_split full walkthrough callout strip (Slide 5)
+        call_bg = next(op for op in batch.operations if op.get("id") == "CALL_BG_S05")
+        self.assertEqual(call_bg["y"], 336.0)
+        call_pill = next(op for op in batch.operations if op.get("id") == "CALL_PILL_TXT_S05")
+        self.assertEqual(call_pill["text"], "Segurança & IAM")
 
         qa = QAVerifier().verify(spec=spec, batch_result=batch)
         self.assertTrue(qa.is_passing, f"QA failed: {qa.summary()}")

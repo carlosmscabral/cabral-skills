@@ -586,6 +586,7 @@ class QAVerifier:
                             if s_bg and s_bg.lower() != "transparent":
                                 try:
                                     containing_bg = ensure_hex(s_bg)
+                                    break
                                 except ValueError:
                                     pass
                                 break

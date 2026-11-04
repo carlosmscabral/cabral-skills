@@ -411,7 +411,7 @@ def _stage_runs(stage: dict[str, Any], i: int, w: float) -> list[Run]:
     runs: list[Run] = []
     for txt, size, bold, color in (
         (_s(stage.get("kicker")), SZ_KICKER, True, accent_text),
-        (_s(stage.get("title")), title_size, True, C_DARK),
+        (_s(stage.get("title")), title_size, False, C_DARK),
         (_s(stage.get("lead")), SZ_LEAD, True, C_DARK),
         (_body_text(stage.get("body") or stage.get("bullets")), SZ_BODY, False, C_GREY),
     ):
@@ -602,7 +602,7 @@ def _funnel_runs(st: dict[str, Any], i: int) -> list[Run]:
     runs: list[Run] = []
     title = _s(st.get("title")) if st.get("label") else ""
     for txt, size, bold, color in (
-        (title, 11.0, True, C_DARK),
+        (title, 11.0, False, C_DARK),
         (_s(st.get("lead")), SZ_LEAD, True, accent_text),
         (_body_text(st.get("body") or st.get("bullets")), SZ_BODY, False, C_GREY),
     ):
@@ -814,66 +814,71 @@ def _normalize_lanes(d: dict[str, Any]) -> list[dict[str, Any]]:
 
 
 def _layout_swimlanes(c: RawCanvas, d: dict[str, Any], labels: dict[str, str]) -> None:
-    """Renders horizontal architecture swimlanes (left uppercase layer label + 1-4 rounded cards per row)."""
+    """Renders Zen Editorial horizontal architecture swimlanes (clean left label + semantic-outlined cards)."""
     del labels
     lanes = _normalize_lanes(d)
     num_lanes = max(1, len(lanes))
     raw_legend = d.get("legend") or []
-    legend_items: list[dict[str, str]] = []
+    legend_items: list[dict[str, Any]] = []
     if isinstance(raw_legend, list):
         for idx, lg in enumerate(raw_legend[:4]):
             if isinstance(lg, dict):
                 lbl = _s(lg.get("label") or lg.get("text"))
-                col = _s(lg.get("color") or "blue")
+                is_lg_hl = bool(lg.get("highlight"))
+                col = _s(lg.get("color")) or ("orange" if is_lg_hl else "blue")
             else:
                 lbl = _s(lg)
-                col = ("blue", "green", "orange", "grey")[idx % 4]
+                is_lg_hl = "co-build" in lbl.lower() or "cobuild" in lbl.lower()
+                col = "orange" if is_lg_hl else ("blue", "green", "orange", "grey")[idx % 4]
             if lbl:
-                legend_items.append({"label": lbl, "color": col})
+                legend_items.append({"label": lbl, "color": col, "highlight": is_lg_hl})
 
-    cards_x0 = 112.0
-    cards_w = X1 - cards_x0  # 572.0 pt
+    cards_x0 = 114.0
+    cards_w = X1 - cards_x0  # 570.0 pt
 
-    # Optional top legend row aligned with card column
+    # Optional top legend row: white pills with semantic colored outlines + Regular dark text
     if legend_items:
         lx = cards_x0
         for idx, lg in enumerate(legend_items):
-            outline_col, txt_col, fill_col = _swimlane_style(lg["color"], idx)
-            pw = min(180.0, max(82.0, len(lg["label"]) * 7.5 * 0.56 + 18.0))
+            outline_col, _txt_col, _fill_col = _swimlane_style(lg["color"], idx)
+            is_lg_hl = bool(lg.get("highlight"))
+            pw = min(184.0, max(82.0, len(lg["label"]) * 8.0 * 0.54 + 20.0))
             if lx + pw > X1:
                 break
+            c.shape(
+                f"lgd_{idx + 1}_bg", "ROUND_RECTANGLE",
+                lx, 104.0, pw, 20.0,
+                fill="#FFFBF5" if is_lg_hl else C_WHITE,
+                outline=outline_col,
+                weight=1.75 if is_lg_hl else 1.5,
+                dash="DASH" if is_lg_hl else None,
+            )
             c.box(
-                f"lgd_{idx + 1}", lx, 98.0, pw, 18.0,
-                [(lg["label"], 7.5, True, txt_col)],
-                align="CENTER", valign="MIDDLE", kind="ROUND_RECTANGLE",
-                fill=fill_col, outline=outline_col, weight=1.25,
+                f"lgd_{idx + 1}", lx, 104.0, pw, 20.0,
+                [(lg["label"], 8.0, False, "#945200" if is_lg_hl else C_DARK)],
+                align="CENTER", valign="MIDDLE",
                 label=f"legend pill {idx + 1}", single_line=True,
             )
             lx += pw + 8.0
 
-    lanes_top = 122.0 if legend_items else 102.0
-    lanes_bot = 362.0 if _s(d.get("note")) else 376.0
-    gap_y = 7.0 if num_lanes >= 5 else (8.0 if num_lanes == 4 else 10.0)
+    lanes_top = 132.0 if legend_items else 108.0
+    lanes_bot = 360.0 if _s(d.get("note")) else 374.0
+    gap_y = 8.0 if num_lanes >= 5 else (10.0 if num_lanes == 4 else 12.0)
     lane_h = round((lanes_bot - lanes_top - (num_lanes - 1) * gap_y) / num_lanes, 2)
 
-    title_sz = 9.0 if num_lanes >= 5 else 9.5
-    body_sz = 7.5 if num_lanes >= 5 else 8.0
+    title_sz = 9.5 if num_lanes >= 5 else 10.5
+    body_sz = 7.8 if num_lanes >= 5 else 8.2
 
     for r_idx, lane in enumerate(lanes):
         ly = round(lanes_top + r_idx * (lane_h + gap_y), 2)
-        lane_accent, lane_txt_col, _ = _swimlane_style(lane.get("color") or "", r_idx)
-        c.shape(
-            f"lane{r_idx + 1}_bar", "ROUND_RECTANGLE",
-            X0, round(ly + 10.0, 2), 3.0, max(16.0, round(lane_h - 20.0, 2)),
-            fill=lane_accent,
-        )
-        lbl_runs: list[Run] = [(lane["label"].upper(), 8.0, True, lane_txt_col)]
+        lane_color_key = lane.get("color") or ("blue", "orange", "green", "grey")[r_idx % 4]
+        lbl_runs: list[Run] = [(lane["label"].upper(), 8.5, False, C_GREY)]
         if lane.get("sublabel"):
-            lbl_runs.append(("\n" + lane["sublabel"], 7.2, False, C_GREY))
+            lbl_runs.append(("\n" + lane["sublabel"], 7.5, False, C_GREY))
         c.box(
-            f"lane{r_idx + 1}_lbl", X0 + 8.0, ly, 66.0, lane_h,
+            f"lane{r_idx + 1}_lbl", X0, ly, 72.0, lane_h,
             lbl_runs,
-            align="START", valign="MIDDLE", spacing=110,
+            align="START", valign="MIDDLE", spacing=115,
             label=f"lane {r_idx + 1} label",
         )
         items = lane["items"][:4]
@@ -884,39 +889,46 @@ def _layout_swimlanes(c: RawCanvas, d: dict[str, Any], labels: dict[str, str]) -
             ix = round(cards_x0 + j_idx * (iw + gap_x), 2)
             is_hl = bool(item.get("highlight"))
             explicit_col = _s(item.get("color"))
-            col_key = explicit_col or ("orange" if is_hl else "neutral")
+            it_status = _s(item.get("status")).lower()
+            if explicit_col:
+                col_key = explicit_col
+            elif is_hl:
+                col_key = "orange"
+            elif it_status in ("done", "native"):
+                col_key = "green"
+            elif it_status in ("active", "in_progress"):
+                col_key = "blue"
+            elif it_status in ("risk", "gap"):
+                col_key = "red"
+            elif it_status in ("next", "planned"):
+                col_key = "grey"
+            else:
+                col_key = lane_color_key
             outline_col, _txt_col, fill_col = _swimlane_style(col_key, j_idx)
+            card_fill = "#FFFBF5" if is_hl else (C_WHITE if col_key not in ("red",) else fill_col)
             c.shape(
                 f"lane{r_idx + 1}_c{j_idx + 1}", "ROUND_RECTANGLE",
                 ix, ly, iw, lane_h,
-                fill=fill_col, outline=outline_col, weight=1.75 if (is_hl or explicit_col) else 1.0,
+                fill=card_fill, outline=outline_col, weight=2.0 if is_hl else 1.5,
+                dash="DASH" if is_hl else None,
             )
             runs: list[Run] = []
-            it_status = _s(item.get("status")).lower()
             it_title = _s(item.get("title"))
             it_body = _body_text(item.get("body") or item.get("subtitle") or item.get("description") or item.get("bullets"))
             if is_hl:
-                runs.append(("★ CO-BUILD\n", 7.0, True, "#945200"))
-            elif it_status in ("done", "native"):
-                runs.append(("● ", 8.0, True, "#137333"))
-            elif it_status in ("active", "in_progress"):
-                runs.append(("● ", 8.0, True, "#174EA6"))
-            elif it_status in ("next", "planned"):
-                runs.append(("○ ", 8.0, True, C_GREY))
-            elif it_status in ("risk", "gap"):
-                runs.append(("● ", 8.0, True, "#C5221F"))
+                runs.append(("CO-BUILD\n", 7.0, True, "#945200"))
             if it_title:
-                runs.append((it_title + ("\n" if it_body else ""), title_sz if k <= 3 else 8.5, True, C_DARK))
+                runs.append((it_title + ("\n" if it_body else ""), title_sz if k <= 3 else 9.0, False, C_DARK))
             if it_body:
-                runs.append((it_body, body_sz if k <= 3 else 7.2, False, C_GREY))
+                runs.append((it_body, body_sz if k <= 3 else 7.5, False, C_GREY))
             c.box(
                 f"lane{r_idx + 1}_c{j_idx + 1}_txt",
-                ix + 8.0, ly + 4.0, iw - 16.0, max(16.0, lane_h - 8.0),
-                runs, align="START", valign="MIDDLE", spacing=110, space_below=1.5,
+                ix + 10.0, ly + 4.0, iw - 20.0, max(16.0, lane_h - 8.0),
+                runs, align="START", valign="MIDDLE", spacing=112, space_below=1.5,
                 label=f"lane {r_idx + 1} card {j_idx + 1}",
             )
 
-    _note(c, _s(d.get("note")), X0, min(364.0, lanes_bot + 2.0), X1 - X0)
+    _note(c, _s(d.get("note")), X0, min(364.0, lanes_bot + 4.0), X1 - X0)
 
 
 _LAYOUT_FN = {
@@ -1062,9 +1074,11 @@ def generate_flow_diagram(
     Emits the slide, background, standard header and notes as normal batch
     ops, plus one ``_raw-requests`` marker carrying the diagram body.
     """
+    resolved_layout = infer_layout(diagram or {}, layout_hint)
+    bg_hex = "#F8F9FA" if resolved_layout == "swimlanes" else C_WHITE
     ops: list[dict[str, Any]] = [
         {"op": "add-slide", "layout": "BLANK", "id": slide_id},
-        {"op": "set-background", "slide": slide_id, "color": C_WHITE},
+        {"op": "set-background", "slide": slide_id, "color": bg_hex},
     ]
     ops.extend(header_ops or [])
     canvas = build_diagram_canvas(slide_id, diagram or {}, prefix=f"dg{slide_idx}", layout_hint=layout_hint)

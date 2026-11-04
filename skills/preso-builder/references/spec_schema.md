@@ -50,7 +50,7 @@ chapters:
 
 #### 2. `split_cards` (`card_split_2` / `card_split_3`)
 * `flow_steps` / `process_strip`: `list[{title, subtitle, highlight}]` (Optional; 2–5 horizontal process steps connected by arrows above the cards)
-* `foundation`: `string | {category, title, description | bullets}` (Optional; full-width baseline card below the cards)
+* `foundation`: `string | {category | kicker, title, description | text | bullets}` (Optional; full-width baseline card below the cards)
 * `cards`: `list[CardSpec]` (Strictly 2 or 3 items)
   * `title` / `header`: `string` (Card heading, max 35 chars)
   * `category` / `category_pill`: `string` (Top pill text, max 20 chars)
@@ -118,6 +118,7 @@ chapters:
 * `bullets`: `list[string]` (Up to 4, used only when `image_layout: split`)
 * `image_side`: `left` | `right` (default `right`)
 * `image_layout`: `split` (bullets card + image) | `full` (image across the content area)
+* `callout` / `step_callout`: `{step, title, description | text, pill | badge, accent}` (Optional walkthrough strip below a full-bleed architecture diagram when `image_layout: full`)
 
 #### 11. `flow_diagram` (aliases `cycle`, `timeline`, `funnel`, `layered_cake`, `cake`, `swimlanes`, `swimlane`, `layers_swimlane`, `architecture_layers`, `flow`)
 * `diagram`: required block.
@@ -155,7 +156,7 @@ chapters:
 
 #### 15. `capability_matrix` (aliases `matrix`, `comparison_matrix`)
 * `columns`: `list[string | {title, subtitle, highlight}]` (2–4 columns; `highlight`: `"outline"` | `"solid"`)
-* `rows`: `list[{capability, sublabel, cells: list[string | {text, status, highlight}]}]` (2–6 rows; `status`: `native` | `done` | `partial` | `warn` | `gap` | `plugin` | `risk` | `building_blocks` | `blocks` | `platform`; `highlight: true` adds `#E37400` co-build border)
+* `rows`: `list[{capability, sublabel, cells: list[string | {text, detail | subtext, status, highlight}]}]` (2–6 rows; `status`: `native` | `done` | `partial` | `warn` | `gap` | `plugin` | `risk` | `building_blocks` | `blocks` | `platform`; `highlight: true` overlays a `1.75pt DASH #E37400` co-build border)
 * `footnote`: `string` (Optional bottom synthesis note)
 
 #### 16. `kpi_spotlight` (aliases `big_number`, `pilot_spotlight`)

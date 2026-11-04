@@ -58,21 +58,17 @@ Y=375pt└───────────────────────�
 ```
 
 #### Bounding Box & Coordinates
-* **Optional Top Process Strip (`flow_steps` / `process_strip`)**: 2–5 horizontal `ROUND_RECTANGLE` step boxes (`Y=100pt`, `H=44pt`) connected by `FILL_ARROW` lines (`highlight: true` tints a step `#E8F0FE`); shifts the cards below down to `Y=156pt` (`H=219pt`).
-* **Optional Bottom Banner (`foundation`)**: Full-width baseline card at `Y=335pt` (`H=40pt`); shortens cards above to `H=225pt`.
-* **2-Card Layout**:
-  * Card 1: `X=36pt`, `Y=100pt`, `W=312pt`, `H=275pt` (`ROUND_RECTANGLE`, `#FFFFFF` fill, `1pt #DADCE0` border)
-  * Card 2: `X=372pt`, `Y=100pt`, `W=312pt`, `H=275pt` (Gutter: `24pt`)
-* **3-Card Layout**:
-  * Card 1: `X=36pt`, `Y=100pt`, `W=202pt`, `H=275pt`
-  * Card 2: `X=254pt`, `Y=100pt`, `W=202pt`, `H=275pt`
-  * Card 3: `X=472pt`, `Y=100pt`, `W=202pt`, `H=275pt` (Gutter: `16pt`)
-* **Card Interior Geometry**:
+* **Canvas Fill**: `#F8F9FA` soft off-white canvas so `#FFFFFF` cards pop cleanly without inner decorative divider lines.
+* **Optional Top Process Strip (`flow_steps` / `process_strip`)**: 2–5 horizontal `ROUND_RECTANGLE` step boxes (`Y=102pt`, `H=44pt`) connected by `FILL_ARROW` lines (`highlight: true` tints a step `#E8F0FE`); shifts the cards below down to `Y=158pt`.
+* **Optional Bottom Banner (`foundation`)**: Full-width baseline card at `Y=335pt` (`H=40pt`); supports string or `{category | kicker, title, description | text | bullets}`.
+* **Adaptive *Ma* Vertical Placement**: When `flow_steps` and `foundation` are absent and cards are concise (`<= 3` short bullets), cards start at `Y=142pt` (`H=230pt`) for generous Zen breathing room; denser cards expand from `Y=108pt` (`H=264pt`).
+* **2-Card Layout**: `X=36pt` and `X=372pt`, `W=312pt` (Gutter: `24pt`).
+* **3-Card Layout**: `X=36pt`, `X=254pt`, `X=472pt`, `W=202pt` (Gutter: `16pt`).
+* **Card Interior Geometry (*Kanso* restraint)**:
   * Top Accent Stripe: `Height=3pt`, 4-color Google cycle (`#1A73E8`, `#EA4335`, `#FBBC04`, `#34A853`) or custom card theme
-  * Pill Badge: `X=CardX+16pt`, `Y=116pt`, `W=Auto`, `H=18pt`, tinted fill + WCAG AA text
-  * Card Header: `X=CardX+16pt`, `Y=142pt`, `W=CardW-32pt`, `H=24pt`
-  * Divider Rule: `X=CardX+16pt`, `Y=172pt`, `W=CardW-32pt`, `H=1pt`, Fill: `#DADCE0`
-  * Bullets Box: `X=CardX+16pt`, `Y=182pt`, `W=CardW-32pt`, `H=180pt`
+  * Category Micro-Kicker: Clean uppercase colored text (`8.5pt` Bold, semantic `#174EA6` / `#C5221F` / `#945200` / `#137333`) with no pill background box
+  * Card Header: `16.5pt` (2-card) / `14.5pt` (3-card) `Google Sans` Regular (`bold: False`) colored with the card's semantic accent
+  * Bullets Box: `11.5pt` / `10.5pt` `Google Sans Text` (`#3C4043`), separated from the title by clean whitespace (no gray horizontal rule)
 
 #### Character Capacity & Budget
 * `card.title`: Max 35 characters (2-card), Max 25 characters (3-card).
@@ -195,9 +191,10 @@ Y=375pt└───────────────────┴───�
 ```
 
 #### Bounding Box & Coordinates
-* **`2×2` Layout (4 items)**: `W=316pt`, `H=129pt` (`X=36, 368`, `Y=100, 245`)
-* **`2×3` Layout (6 items)**: `W=205.3pt`, `H=129pt` (`X=36, 257.3, 478.7`, `Y=100, 245`)
-* **Card Styling**: `ROUND_RECTANGLE` white card with `1pt #DADCE0` border, top `3pt` 4-color cycling bar (`#1A73E8`, `#EA4335`, `#FBBC04`, `#34A853`), and matching tinted `01..06` pill badge.
+* **Adaptive *Ma* Placement**: Sparse executive grids anchor in the lower portion of the canvas so the top whitespace breathes (`Y=186pt, H=87pt` for concise `2×3`; `Y=146pt, H=107pt` for concise `2×2`), expanding up toward `Y=112–148pt` only when card descriptions are long (`>85` chars).
+* **`2×2` Layout (4 items)**: `W=314pt` (`X=36, 370`, `20pt` gutter).
+* **`2×3` Layout (6 items)**: `W=204pt` (`X=36, 258, 480`, `18pt` gutter).
+* **Card Styling**: `ROUND_RECTANGLE` `#FFFFFF` card with `1pt #DADCE0` border, top `3pt` 4-color cycling bar (`#1A73E8`, `#EA4335`, `#FBBC04`, `#34A853`), clean colored `01..06` label (no pill box), and `14.5pt` / `13.5pt` `Google Sans` Regular (`#202124`) title.
 
 ---
 
@@ -294,11 +291,11 @@ Y=100pt├──────────────────────┬�
 Y=375pt└──────────────────────┴──────────────────────────────────────┘
 ```
 
-* **The escape hatch.** Use it for Mermaid or draw.io diagrams rendered to PNG, product
-  screenshots, and charts that no archetype can express.
+* **The escape hatch & architecture walkthrough frame.** Use it for Dendrite/Mermaid/draw.io diagrams rendered to PNG (`scripts/svg_to_slide_png.py`), product screenshots, and charts that no native archetype can express.
 * `image_layout: split` puts the bullets card (256pt, 4 bullets or fewer) next to a framed image
   panel (368pt) with 8pt padding. `image_side: left|right` controls which side the image is on.
-* `image_layout: full` frames the image across the whole content area (648×275pt).
+* `image_layout: full` frames the image across the whole content area (`648×275pt`, or `648×212pt` when `callout` is present).
+* **Optional Walkthrough Bar (`callout` / `step_callout` on `image_layout: full`)**: Renders a `#F8F9FA` bottom walkthrough card (`Y=322pt, H=52pt`) with a left `3.5pt` accent bar, numbered circular `step` badge (`ELLIPSE`), `Google Sans` Regular `title`, `description`, and right-aligned semantic `pill` — ideal for multi-slide progressive architecture walkthroughs.
 * `image.caption` is optional. It takes a 22pt italic strip inside the frame.
 * `image.url` goes through batch `add-image`. `image.path` is uploaded after the batch with
   `gslides mutate insert-image-from-file` and targets the resolved slide ID.
@@ -380,49 +377,49 @@ Y=370pt└───────────────────────�
 ### Archetype 13: `cover` (aliases `title_cover`, `opening`)
 
 * **Canvas Fill**: `#FFFFFF` with top mini 4-color bar (`X=36pt, Y=36pt, W=88pt, H=4pt`).
-* **Evolution Breadcrumbs (`breadcrumbs`)**: Optional horizontal pill trail `A → B → [C]` at `Y=104pt`, with the final destination pill highlighted in `#E8F0FE` (`#174EA6` bold text).
-* **Editorial Title**: `36–44pt` `Google Sans` Regular (`#202124`) at `Y=144pt`, followed by `15pt` `#5F6368` `subtitle` and bottom-left `date` / confidentiality metadata at `Y=354pt`.
+* **Evolution Breadcrumbs (`breadcrumbs`)**: Optional horizontal pill trail `A → B → [C]` at `Y=118pt` (`#FFFFFF` pills with `1pt #DADCE0` outline; final destination pill highlighted in `#E8F0FE` with `#1A73E8` outline and `#174EA6` text).
+* **Zen Editorial Title**: Adaptive `48 / 40 / 32pt` `Google Sans` Regular (`#202124`), followed by `15.5pt` `#5F6368` `subtitle` and clean borderless bottom-left `date` metadata at `Y=356pt`.
 * Exempt from the 4-word assertion-subtitle lint.
 
 ---
 
 ### Archetype 14: `statement_pivot` (aliases `thesis`, `short_answer`, `provocation`)
 
-* **`variant: "blue"` (default)**: Full-bleed Google Blue (`#1A73E8`) canvas, white-first mini 4-color bar, `#FFFFFF` uppercase kicker, large `28–36pt` white statement headline, and `#E8F0FE` supporting subtitle.
-* **`variant: "dark"`**: Full-bleed Google Charcoal (`#202124`) canvas, standard mini 4-color bar, `#FBBC04` uppercase kicker, large `28–36pt` white provocation/question, and `#BDC1C6` subtitle.
+* **`variant: "blue"` (default)**: Full-bleed Google Blue (`#1A73E8`) canvas, white-first mini 4-color bar, `#FFFFFF` uppercase kicker, large `38 / 32 / 27pt` `Google Sans` Regular white statement headline, and `#E8F0FE` supporting subtitle.
+* **`variant: "dark"`**: Full-bleed Google Charcoal (`#202124`) canvas, standard mini 4-color bar, `#FBBC04` uppercase kicker, large `38 / 32 / 27pt` `Google Sans` Regular white provocation/question, and `#BDC1C6` subtitle.
 * Exempt from the 4-word assertion-subtitle lint.
 
 ---
 
 ### Archetype 15: `capability_matrix` (aliases `matrix`, `comparison_matrix`)
 
-* **Columns (`columns[]`, 2–4)**: Column headers across `X=216..684pt`, with optional `highlight: "outline"` (`2pt #1A73E8` frame) or `highlight: "solid"` (`#1A73E8` header).
-* **Rows (`rows[]`, 2–6)**: Left capability label (`X=36..208pt`) + `ROUND_RECTANGLE` semantic status cells:
+* **Columns (`columns[]`, 2–4)**: Floating borderless `Google Sans` Regular column headers across `X=216..684pt`, with optional `highlight: "outline"` (`1.75pt #1A73E8` column frame) or `highlight: "solid"`.
+* **Rows (`rows[]`, 2–6)**: Left capability label + optional muted `sublabel` (`X=36..208pt`) + borderless `ROUND_RECTANGLE` pastel status cells (`text` + optional 2nd-line `detail`):
   * `native` / `done` (`#E6F4EA` fill, `#137333` text)
   * `partial` / `warn` (`#FEF7E0` fill, `#945200` text)
   * `gap` / `plugin` / `risk` (`#FCE8E6` fill, `#C5221F` text)
   * `building_blocks` / `blocks` / `platform` (`#E8F0FE` fill, `#174EA6` text)
-  * Optional `highlight: true` on any cell adds a `1.5pt #E37400` co-build accent border.
+  * Optional `highlight: true` on any cell overlays a true vector `1.75pt DASH #E37400` co-build frame via raw-batch.
 * **Footnote (`footnote`)**: Optional bottom synthesis line (`Y=362pt`).
 
 ---
 
 ### Archetype 16: `kpi_spotlight` (aliases `big_number`, `pilot_spotlight`)
 
-* **Left Spotlight (`X=36..308pt`)**: Rounded `#F8F9FA` spotlight panel with huge `60pt` `#1A73E8` `stat_value`, bold `stat_label`, muted `stat_description`, and optional green `status_pill` (`#E6F4EA` / `#137333`).
-* **Right Measurements (`X=336..684pt`)**: Uppercase `measured_by_label` (`MEASURED BY`) + 2–4 leading-indicator rows separated by `1pt #DADCE0` hairline rules, each prefixed with a 4-color `ELLIPSE` dot.
+* **Left Spotlight (`X=36..308pt`)**: Pure white negative space (no gray container box or vertical center divider) with huge `72pt` `Google Sans` Regular `#1A73E8` `stat_value`, `15.5pt` `#202124` `stat_label`, muted `stat_description`, and borderless green `status_pill` (`#E6F4EA` / `#137333`).
+* **Right Measurements (`X=338..684pt`)**: Uppercase `measured_by_label` (`MEASURED BY`) + 2–4 leading-indicator rows separated by `0.75pt #DADCE0` hairline rules, each prefixed with a 4-color `ELLIPSE` dot.
 
 ---
 
 ### Archetype 17: `horizon_staircase` (aliases `staircase`, `rising_horizons`, `north_star`)
 
-* **2–4 Ascending Cards**: Bottom-aligned at `Y=374pt` with progressively taller heights from left to right (`Agora (Curto Prazo)` → `Médio Prazo` → `Longo Prazo (Futuro)`). Never use ambiguous `H1/H2/H3` labels.
-* **North Star Highlight**: Final (or `highlight: true`) horizon uses `#E8F0FE` tint fill with `#AECBFA` border; each card carries a cycling 4-color top bar, horizon pill, title, bullets, and optional bottom human-governance `footer` strip.
+* **2–4 Ascending Cards**: Bottom-aligned at `Y=374pt` with adaptive *Ma* top headroom (`Y=158pt` for concise bullets, `Y=116pt` when dense) and progressively taller heights from left to right (`Agora (Curto Prazo)` → `Médio Prazo` → `Longo Prazo (Futuro)`). Never use ambiguous `H1/H2/H3` labels.
+* **North Star Highlight**: Final (or `highlight: true`) horizon uses `#E8F0FE` tint fill with `#1A73E8` border; each card carries a cycling 4-color top bar, clean colored horizon label, `Google Sans` Regular title, bullets, and optional bottom human-governance `footer` line.
 
 ---
 
 ### Archetype 18: `closing_ask` (aliases `dark_closing`, `the_ask`, `executive_ask`)
 
-* **Canvas Fill**: `#202124` Google Charcoal with top mini 4-color bar, large `28pt` white takeaway `title`, optional `#BDC1C6` `subtitle`, and `#FBBC04` `section_kicker` (`THE ASK` / `DECISÕES`).
-* **Decision Columns (`asks[]` / `columns[]`, 2–4)**: Borderless dark columns (`Y=224..365pt`) topped by crisp `2.5pt` colored rules (`#1A73E8`, `#EA4335`, `#FBBC04`, `#34A853`) with bold white headers and `#E8EAED` descriptions.
+* **Canvas Fill**: `#202124` Google Charcoal with top mini 4-color bar, `32 / 28pt` `Google Sans` Regular white takeaway `title`, optional `#BDC1C6` `subtitle`, generous dark *Ma* middle space, and `#FBBC04` `section_kicker` (`THE ASK` / `DECISÕES`) at `Y=244pt`.
+* **Decision Columns (`asks[]` / `columns[]`, 2–4)**: Borderless dark columns (`Y=264..372pt`) topped by crisp `2.5pt` colored rules (`#1A73E8`, `#EA4335`, `#FBBC04`, `#34A853`) with `Google Sans` Regular white headers and `#BDC1C6` descriptions.
 * Exempt from the 4-word assertion-subtitle lint.

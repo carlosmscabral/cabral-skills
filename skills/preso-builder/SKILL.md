@@ -23,7 +23,7 @@ Slides deck (or clones `--template-id` when requested), prunes the default blank
 
 ## When to use
 
-- Design clean Google Cloud Editorial slides (`#FFFFFF` white, `#202124` charcoal, and `#1A73E8` blue canvases, top mini 4-color bar, `ROUND_RECTANGLE` hairline cards, `Google Sans` Regular titles) for any domain, audience, or deck structure.
+- Design clean Google Cloud Editorial slides (`#FFFFFF` white, `#F8F9FA` soft diagram/card canvases, `#202124` charcoal, and `#1A73E8` blue canvases, top mini 4-color bar, Zen *Ma* adaptive negative space, `ROUND_RECTANGLE` hairline cards, and `Google Sans` Regular titles) for any domain, audience, or deck structure.
 - Restyle an existing Google Slides deck (`ingest --slides <deck_id>`).
 - Cut one deck to several talk lengths (`--duration 5|15|45|full`).
 - Redesign one slide, or visually QA/audit a built deck.
@@ -95,7 +95,8 @@ preso spec --preset minimal --title "<Title>" --output preso_spec.yaml   # minim
 
 Visual authoring rules:
 
-- **Concise headers.** Keep `title` to a clean single-line headline (`<= 50–60` chars on content slides) and `subtitle` (optional) to a single supporting line (`<= 94` chars). Keep `kicker` short (`<= 20` chars) so it never wraps.
+- **Zen Editorial headers & optional kickers.** Keep `title` to a crisp single-line `Google Sans` Regular headline (`<= 45` chars renders at `26.5pt`, `46–62` chars at `23.5pt`) and `subtitle` (optional) to a single supporting line (`13.5pt`, `<= 90` chars). Omit `kicker` on standard content slides when you want pure Zen breathing room below the mini 4-color bar; use `kicker` (`<= 20` chars) selectively on pivots or multi-section decks.
+- **Adaptive *Ma* negative space.** Sparse slides (`executive_grid`, concise `split_cards`, `horizon_staircase`, `kpi_spotlight`, `closing_ask`) automatically anchor content lower on the canvas to preserve generous whitespace above; keep card bullets short (2–3 concise lines) so this breathing room stays intact.
 - **Visual variety.** Avoid more than 2 consecutive slides with the exact same archetype (the validator warns so the deck doesn't look repetitive; intentional catalogues like `workstream_card` series are fine when requested).
 - **Tier slides when building multi-length decks:** `core` (always shown), `explain` (15 min+), `detail` (45 min+), or `appendix` (built but hidden via `skip-slide`). Use `skip: true` to hide an individual slide.
 - **Native diagrams (`flow_diagram`):** Choose `layered_cake` for bottom-up stacked architectures (foundation at base → platforms → top tier), `swimlanes` for top-to-bottom horizontal bands, `cycle` for continuous loops, `timeline` for milestone cards, and `funnel` for stage-by-stage chevrons.
@@ -182,10 +183,13 @@ Try these in order:
    - archetype: image_split
      title: Request path
      subtitle: One gateway fronts all three regional backends
-     image: {path: diagrams/request_path.png, alt: "Gateway → 3 regions", caption: "Figure 2"}
-     bullets: [Single ingress policy, Regional failover, mTLS end to end]
-     image_side: right        # or left
-     image_layout: split      # or full (no bullets)
+     image: {path: diagrams/request_path.slide.png, alt: "Gateway → 3 regions", caption: "Figure 2"}
+     image_layout: full       # or split (with bullets on left/right)
+     callout:                 # optional step-walkthrough bar under full-bleed architecture diagrams
+       step: 1
+       title: "Unified API Ingress"
+       description: "Apigee enforces mTLS, quota, and schema contracts before routing to regional Cloud Run."
+       pill: "mTLS + IAM"
    ```
    Relative paths resolve against the spec file. URLs go through batch `add-image`.
    Local files are uploaded after the batch.

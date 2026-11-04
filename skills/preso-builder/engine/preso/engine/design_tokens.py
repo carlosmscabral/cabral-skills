@@ -135,6 +135,17 @@ FONT_SIZE_CODE_FILENAME: float = 11.0
 FONT_SIZE_BADGE: float = 10.5
 FONT_SIZE_FOOTER: float = 9.5
 
+# Zen Editorial Scale & Spacing Tokens (Ma negative space & Kanso restraint)
+ZEN_TITLE_LARGE: float = 26.5
+ZEN_TITLE_MEDIUM: float = 23.5
+ZEN_TITLE_COMPACT: float = 20.5
+ZEN_SUBTITLE_SIZE: float = 13.5
+ZEN_GRID_2X3_TOP_Y: float = 186.0
+ZEN_GRID_2X2_TOP_Y: float = 146.0
+ZEN_SPLIT_CARDS_MA_TOP_Y: float = 142.0
+ZEN_STAIRCASE_HIGHEST_TOP_Y: float = 158.0
+ZEN_CLOSING_SECT_Y: float = 244.0
+
 # =============================================================================
 # 4. Color Helper Functions & WCAG Contrast Math
 # =============================================================================
