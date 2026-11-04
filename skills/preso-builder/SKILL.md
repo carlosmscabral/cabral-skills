@@ -215,7 +215,10 @@ Try these in order:
 - In raw `gslides` batch edits (Pathway C), note these quirks: `style-text` ignores `line_spacing`,
   `resize-element` takes a scale factor rather than points, `move-element` resets scale,
   `skip-slide`/`unskip-slide` exist even though `--help` doesn't list them, and
-  `--json` returns `resolved_ids` (placeholder → real object ID).
+  `--json` returns `resolved_ids` (placeholder → real object ID). Always pass `"content_alignment": "MIDDLE"`
+  with matching `y`/`height` on compact chip, pill, and circular-badge textboxes (`TEXT_BOX` defaults to
+  `"TOP"` with ~`7.2pt` top inset, which shifts single-line labels visibly downward; `QAVerifier` flags this via
+  `chip_vertical_alignment`).
 - The chapter divider and `cover` are **pure white (`#FFFFFF`)**, not dark. Dark pivots (`demo_pivot`, `statement_pivot` with `variant: dark`, and `closing_ask`) use **Google Charcoal (`#202124`)**; `statement_pivot` with `variant: blue` uses **Google Blue (`#1A73E8`)**.
 - The validator blocks the build on errors (unknown archetype or tier, missing
   required content, budget overruns in strict mode). Everything else is a warning. Use

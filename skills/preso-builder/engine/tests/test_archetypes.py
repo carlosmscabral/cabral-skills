@@ -831,12 +831,80 @@ class TestGoogleEditorialArchetypesAndQA(unittest.TestCase):
         # Verify image_split full walkthrough callout strip (Slide 5)
         call_bg = next(op for op in batch.operations if op.get("id") == "CALL_BG_S05")
         self.assertEqual(call_bg["y"], 336.0)
+        call_bdg = next(op for op in batch.operations if op.get("id") == "CALL_BDG_S05")
+        call_num = next(op for op in batch.operations if op.get("id") == "CALL_NUM_S05")
+        self.assertEqual(call_num.get("content_alignment"), "MIDDLE")
+        self.assertAlmostEqual(
+            call_num["y"] + call_num["height"] / 2.0,
+            call_bdg["y"] + call_bdg["height"] / 2.0,
+            places=2,
+        )
+        call_pill_bg = next(op for op in batch.operations if op.get("id") == "CALL_PILL_BG_S05")
         call_pill = next(op for op in batch.operations if op.get("id") == "CALL_PILL_TXT_S05")
         self.assertEqual(call_pill["text"], "Segurança & IAM")
+        self.assertEqual(call_pill.get("content_alignment"), "MIDDLE")
+        self.assertAlmostEqual(
+            call_pill["y"] + call_pill["height"] / 2.0,
+            call_pill_bg["y"] + call_pill_bg["height"] / 2.0,
+            places=2,
+        )
+
+        # Verify cover breadcrumb & kpi_spotlight pill vertical centering
+        crumb_txt = next(op for op in batch.operations if op.get("id") == "CRUMB_TXT_S01_1")
+        self.assertEqual(crumb_txt.get("content_alignment"), "MIDDLE")
+        kspot_pill = next(op for op in batch.operations if op.get("id") == "KSPOT_PILL_TXT_S07")
+        self.assertEqual(kspot_pill.get("content_alignment"), "MIDDLE")
 
         qa = QAVerifier().verify(spec=spec, batch_result=batch)
         self.assertTrue(qa.is_passing, f"QA failed: {qa.summary()}")
         self.assertEqual(qa.error_count, 0)
+        chip_warns = [w for w in qa.warnings if w.get("check_type") == "chip_vertical_alignment"]
+        self.assertEqual(chip_warns, [], f"Unexpected chip vertical alignment warnings: {chip_warns}")
+
+    def test_verifier_flags_misaligned_chips_and_pills(self) -> None:
+        """Verifies QAVerifier catches top-aligned or downward-shifted chip/badge textboxes."""
+        from preso.qa.verifier import QAVerifier
+
+        bad_ops = [
+            {"op": "add-slide", "layout": "BLANK", "id": "SLIDE_01"},
+            {
+                "op": "add-shape",
+                "slide": "SLIDE_01",
+                "shape_type": "ELLIPSE",
+                "x": 48.0,
+                "y": 346.0,
+                "width": 22.0,
+                "height": 22.0,
+                "background_color": "#1A73E8",
+                "id": "BAD_BDG",
+            },
+            {
+                "op": "add-textbox",
+                "slide": "SLIDE_01",
+                "text": "1",
+                "x": 48.0,
+                "y": 347.0,
+                "width": 22.0,
+                "height": 20.0,
+                "id": "BAD_NUM",
+            },
+            {
+                "op": "add-textbox",
+                "slide": "SLIDE_01",
+                "text": "▶ LIVE DEMO",
+                "x": 36.0,
+                "y": 90.0,
+                "width": 154.0,
+                "height": 26.0,
+                "background_color": "#C5221F",
+                "id": "BAD_SELF_PILL",
+            },
+        ]
+        _, warnings, _, _ = QAVerifier().verify_batch_geometry(bad_ops)
+        flagged_ids = {
+            w["element_id"] for w in warnings if w.get("check_type") == "chip_vertical_alignment"
+        }
+        self.assertEqual(flagged_ids, {"BAD_NUM", "BAD_SELF_PILL"})
 
 
 if __name__ == "__main__":

@@ -469,6 +469,95 @@ class QAVerifier:
                     else:
                         passed_geom_checks += 1
 
+            # Check 3: Vertical centering inside compact chips, pills, circular badges, and banners
+            # Google Slides TEXT_BOX defaults to contentAlignment="TOP" with ~7.2pt top inset,
+            # which shifts single-line text visibly downward unless content_alignment="MIDDLE"
+            # and the textbox midpoint matches its backing shape's vertical midpoint.
+            slide_shapes = sorted(
+                [e for e in visual_elements if e["op"] == "add-shape" and e["width"] < 700.0],
+                key=lambda s: s["width"] * s["height"],
+            )
+            slide_textboxes = [e for e in visual_elements if e["op"] == "add-textbox"]
+            innermost_parent: dict[str, dict[str, Any]] = {}
+            for tb in slide_textboxes:
+                tb_cx = tb["x"] + tb["width"] / 2.0
+                tb_cy = tb["y"] + tb["height"] / 2.0
+                for sh in slide_shapes:
+                    if sh["height"] < 16.0:
+                        continue
+                    if sh["x"] <= tb_cx <= sh["x_max"] and sh["y"] <= tb_cy <= sh["y_max"]:
+                        innermost_parent[tb["id"]] = sh
+                        break
+
+            for tb in slide_textboxes:
+                raw_op = tb["raw_op"]
+                tb_text = str(raw_op.get("text", ""))
+                if "\n" in tb_text or not tb_text.strip():
+                    continue
+                valign = str(raw_op.get("content_alignment", "")).strip().upper()
+                has_self_fill = bool(raw_op.get("background_color"))
+
+                if has_self_fill and tb["height"] <= 36.0:
+                    total_geom_checks += 1
+                    if valign != "MIDDLE":
+                        warnings.append({
+                            "check_type": "chip_vertical_alignment",
+                            "severity": "warning",
+                            "slide_index": slide_idx,
+                            "element_id": tb["id"],
+                            "message": (
+                                f"Self-filled pill '{tb['id']}' on Slide {slide_idx} lacks "
+                                f"content_alignment='MIDDLE' (got '{valign or 'TOP'}')"
+                            ),
+                            "details": {"element_id": tb["id"], "height": tb["height"]},
+                        })
+                    else:
+                        passed_geom_checks += 1
+                    continue
+
+                parent_sh = innermost_parent.get(tb["id"])
+                if not parent_sh or parent_sh["height"] > 42.0 or tb["height"] > parent_sh["height"] + 2.0:
+                    continue
+
+                # Skip 2-line vertically stacked pairs inside the same compact shape
+                has_stacked_sibling = False
+                for other_tb in slide_textboxes:
+                    if other_tb["id"] == tb["id"]:
+                        continue
+                    if innermost_parent.get(other_tb["id"]) is not parent_sh:
+                        continue
+                    horiz_overlap = min(tb["x_max"], other_tb["x_max"]) - max(tb["x"], other_tb["x"])
+                    if horiz_overlap > 5.0:
+                        has_stacked_sibling = True
+                        break
+                if has_stacked_sibling:
+                    continue
+
+                total_geom_checks += 1
+                tb_cy = tb["y"] + tb["height"] / 2.0
+                sh_cy = parent_sh["y"] + parent_sh["height"] / 2.0
+                cy_drift = abs(tb_cy - sh_cy)
+                if valign != "MIDDLE" or cy_drift > 1.5:
+                    warnings.append({
+                        "check_type": "chip_vertical_alignment",
+                        "severity": "warning",
+                        "slide_index": slide_idx,
+                        "element_id": tb["id"],
+                        "message": (
+                            f"Chip/badge textbox '{tb['id']}' inside '{parent_sh['id']}' on Slide {slide_idx} "
+                            f"is not vertically centered (content_alignment='{valign or 'TOP'}', "
+                            f"centerline drift={cy_drift:.1f}pt)"
+                        ),
+                        "details": {
+                            "element_id": tb["id"],
+                            "parent_shape_id": parent_sh["id"],
+                            "content_alignment": valign or "TOP",
+                            "centerline_drift_pt": round(cy_drift, 2),
+                        },
+                    })
+                else:
+                    passed_geom_checks += 1
+
         metrics = {
             "geometry_checks_total": total_geom_checks,
             "geometry_checks_passed": passed_geom_checks,
