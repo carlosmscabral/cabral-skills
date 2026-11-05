@@ -29,8 +29,18 @@ server (from this plugin's `mcp_config.json`) is available, use its read-only to
 real-time classes, schemas, and SDK specs. Consider also searching for examples under python samples that are related to the agent in scope to find best-practices. If still unclear/unsure, ground your implementation/decisions on the ADK Code itself (you should have it locally as a lib). 
 
 ### 3. Pre-flight validation before deploy
-Before any long-running Cloud Run / Agent Runtime deployment, validate locally: parse and assert
-Pydantic models, agent manifests, and tool definitions with a fast local dry-run. Do not push to
-the cloud if local validation fails.
+Before any long-running Cloud Run, GKE, BYOC container, or Agent Runtime deployment, validate locally: verify clean package imports across the module DAG, assert Pydantic models and `FunctionTool` JSON schema declarations, and run deterministic callback/unit smoke checks in seconds. Do not build or push to the cloud if local validation fails.
+
+### 4. Modular Package Architecture (Anti-Monolith)
+Keep Python ADK agents structured as clean, runtime-agnostic packages that deploy identically across Docker/BYOC containers (Cloud Run, GKE), `adk web` / `agents-cli`, or managed Agent Runtime:
+- **`agent.py` is strictly a thin composition root (`<= 150-200` lines):** It wires `root_agent` (`LlmAgent` / workflow agents) and `App`/plugins, while `__init__.py` exports the public entrypoint (`root_agent` / `agent`). Never accumulate prompts, regex banks, HTTP clients, or business logic inside `agent.py`.
+- **Split proactively once total agent code exceeds `~250` lines or spans `>= 3` concerns:** Partition into single-responsibility modules/subpackages instead of growing `agent.py` + `tools.py` into monoliths during eval/hardening iterations:
+  - `config.py` — typed env/settings, constants, canonical fallback strings.
+  - `prompts.py` — system instructions and prompt templates.
+  - `tools/` — cohesive domain tool modules; keep `FunctionTool` parameter types (`ToolContext`, Pydantic schemas) imported at module top level (never hidden behind `TYPE_CHECKING`) so `typing.get_type_hints()` resolves cleanly under `from __future__ import annotations`.
+  - `guardrails/` — deterministic `before_model_callback` / `after_model_callback` / `before_tool_callback`, patterns, and sanitizers.
+  - `model_router.py`, `memory.py`, `telemetry.py`, `sub_agents/` — dedicated modules added only when those capabilities exist.
+- **Strict acyclic import DAG & lazy I/O:** Enforce one-way imports (`config` -> `telemetry`/`prompts` -> `tools`/`guardrails`/`model_router` -> `agent`) with explicit relative or package-qualified imports, zero circular imports, and zero `sys.path` hacks. Instantiate network/SDK/DB clients lazily (never at module `import` time) so container healthchecks, schema introspection, and unit tests run deterministically offline.
+
 
 
