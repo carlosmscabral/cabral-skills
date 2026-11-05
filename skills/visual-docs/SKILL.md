@@ -66,6 +66,11 @@ ASCII equivalent) for each are in
 | How a piece of code executes | **Annotated code + call graph/trace** | See [`references/code-explanation.md`](./references/code-explanation.md) |
 | Cloud / system architecture, Bento, or Draw.io export | **`dendrite` skill** | Produces 16:9 Bento SVG, interactive studio widget, and `.drawio` |
 
+### Architectural Purity Rule (Applies to `dendrite` and Technical Diagrams)
+- **Technical entities only:** Nodes (`[Card]`) MUST represent real deployable runtimes, cloud/network services, AI models, data stores, client apps/modules, actors, or database tables/entities (when drawing `sequence`, `dataflow`, or `ER`/schema diagrams). Zones (`Zone`) MUST represent real technical boundaries (cloud project, region, VPC/subnet, client vs. backend, security perimeter, or technical runtime layer).
+- **Protocol & state edges:** Connectors and `animation` packet walks MUST show real protocols, endpoints, data payloads, auth tokens, or explicit allow/deny network behaviors (e.g., `WSS PCM 16kHz`, `HTTPS POST :search`, `HTTP 403`). Sparse technical callouts (`shape: "callout"`, 1–2 max) are allowed only for inline wire gates/blocks.
+- **Never mix product slides into architecture diagrams:** NEVER create zones or cards for implementation phases/timelines (`Wave 1/2`, `Short/Medium Term`), qualitative value-props/guarantees (`Zero Quota Contention`), benchmark KPIs (`-92% Tokens`), "Why we chose X" rationales, or loose UI/prompt features disguised as microservices. Route timelines, features, comparisons, and KPIs to slides (`preso-builder`) or Markdown tables.
+
 ## 3. Pick the format & author cleanly
 
 | Need | Use | Why |
