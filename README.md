@@ -46,6 +46,15 @@ material with kept-updated upstream skills, all bundled inside the plugin so
   [`vendored.json`](vendored.json), refreshed via `scripts/vendor-agents-cli.sh`.
 - **MCP:** `adk-docs-mcp` (read-only ADK docs), via `mcp_config.json`.
 
+### `architecture-walkthrough` plugin
+
+One vendored skill, [`cloud-architecture-diagram`](plugins/architecture-walkthrough/skills/cloud-architecture-diagram/),
+synced from [duboc/agy-skills](https://github.com/duboc/agy-skills) (Apache-2.0). The skill builds one
+offline `.html` file: hand-placed Google Cloud product cards, hover explanations, and a stepped slideshow
+of the request flow. A local patch narrows the trigger to **HTML walkthroughs**. Editable architecture
+diagrams stay with Dendrite, and Mermaid/ASCII docs stay with `visual-docs`. The pin is a commit SHA in
+[`vendored.json`](vendored.json), refreshed via `scripts/vendor-agy-skills.sh`.
+
 ### Develop ADK in a project
 
 Two ways, both work — pick by scope.
@@ -92,8 +101,9 @@ need to pin or blend it into a plugin.
 ```
 skills/            # standalone, npx-installable
 plugins/
-  adk-developer/   # the one self-contained plugin (skills + rules + MCP bundled)
-scripts/           # vendor-agents-cli.sh (syncs the vendored ADK skills)
+  adk-developer/   # ADK plugin (skills + rules + MCP bundled)
+  architecture-walkthrough/  # vendored HTML architecture walkthrough skill
+scripts/           # vendor-*.sh (sync the vendored skills) + patches/ (local deltas)
 vendored.json      # provenance/pin for vendored upstreams
 SOURCES.md         # external pointers (install commands)
 archive/           # retired scaffolding, kept in-tree but inactive (see archive/README.md)

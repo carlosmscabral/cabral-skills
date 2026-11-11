@@ -1,0 +1,8 @@
+{
+  "name": "architecture-walkthrough",
+  "description": "Self-contained interactive HTML walkthroughs of Google Cloud architectures — bundles the cloud-architecture-diagram skill vendored from duboc/agy-skills, with its trigger narrowed to HTML walkthroughs so it complements Dendrite.",
+  "version": "0.1.0",
+  "skills": [
+    "cloud-architecture-diagram"
+  ]
+}
