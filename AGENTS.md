@@ -109,6 +109,24 @@ rewrites `vendored.json`. Then: review the diff, update the README if descriptio
 [validation checklist](#validation-checklist), and cut a new release tag (a sync is at least a
 **minor** bump).
 
+### duboc/agy-skills → `plugins/architecture-walkthrough/skills/`
+
+The `cloud-architecture-diagram` skill is vendored from
+[duboc/agy-skills](https://github.com/duboc/agy-skills) (Apache-2.0). Upstream publishes no tags, so
+the pin is a **commit SHA** (`vendored.json` → `duboc-agy-skills.commit`, with `tag: null`).
+
+```bash
+scripts/vendor-agy-skills.sh <commit-sha|branch>   # e.g. main
+```
+
+The script replaces the vendored dir, applies `scripts/patches/duboc-agy-skills/*.patch`, and rewrites
+`vendored.json`. The patch `0001-narrow-trigger-to-html-walkthrough.patch` rewrites the `description`
+so that the skill triggers only for HTML walkthroughs and does not collide with Dendrite. If a patch
+does not apply after an upstream change, regenerate the patch. Do not hand-edit the vendored dir.
+
+This upstream is **not** in the drift workflow matrix, because the workflow compares tags. Sync it
+manually. Send generic improvements upstream as PRs to `duboc/agy-skills`.
+
 ## Consuming this repo
 
 - **A standalone skill:** `npx skills add carlosmscabral/cabral-skills --skill <name>` (or omit

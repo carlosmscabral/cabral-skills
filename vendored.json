@@ -24,5 +24,19 @@
       "google-agents-cli-scaffold": "5686eb4a6e929ad634e7b94b58f4e3d3922eaa46bffcb4400c3b756c9612656f",
       "google-agents-cli-workflow": "5a555d7d21d1012191ed879995f2d7e26469ebe7c2c0ea46f36b0562f9b6c3dd"
     }
+  },
+  "duboc-agy-skills": {
+    "repo": "duboc/agy-skills",
+    "tag": null,
+    "commit": "2249461f6cf785e1f7cd7d0ed792c6cb548a60d5",
+    "license": "Apache-2.0",
+    "synced": "2026-11-11",
+    "note": "Third-party vendored skill, patched by scripts/patches/duboc-agy-skills/. Do not hand-edit; re-run scripts/vendor-agy-skills.sh.",
+    "skills": [
+      "cloud-architecture-diagram"
+    ],
+    "digests": {
+      "cloud-architecture-diagram": "08542cf06f69789a889af410170392c94988abe8ff1faf48a8a91bc39806b842"
+    }
   }
 }

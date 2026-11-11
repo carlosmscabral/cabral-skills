@@ -1,0 +1,587 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Architecture</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Mono:wght@400;500;700&display=swap">
+
+<style>
+  /*
+   * The page chrome commits to one dark surface; the drawing keeps a white
+   * sheet, because the product icons are drawn for paper and a tinted
+   * group loses its meaning on a dark fill.
+   */
+  :root {
+    color-scheme: dark;
+
+    --blue: #4285F4; --red: #EA4335; --yellow: #FBBC04; --green: #34A853;
+
+    --ground: #0C0E12;
+    --panel: #171B22;
+    --panel-2: #1F242D;
+    --rim: #2C323C;
+
+    --ink: #EDEFF3; --ink-2: #A2A9B4; --ink-3: #6F7784;
+
+    --sheet: #FFFFFF;
+    --sheet-ink: #202124; --sheet-ink-2: #5F6368; --sheet-line: #C8CCD1;
+    --wire: #9AA0A6; --disc: #1A73E8;
+
+    --body: "Google Sans Text", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --mono: "Roboto Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
+    --accent: #8AB4F8;        /* reads on the dark chrome */
+    --accent-paper: #1A73E8;  /* reads on the white sheet */
+  }
+
+  * { box-sizing: border-box; }
+  :root:not([data-theme="dark"]) {
+    color-scheme: light;
+    --ground: #F5F7FA; --panel: #FFFFFF; --panel-2: #EAF0F8;
+    --rim: #DCE2EA; --ink: #202124; --ink-2: #526071; --ink-3: #657184;
+  }
+  :root:not([data-theme="dark"]) .sheet { box-shadow: 0 8px 32px #24334A0D; border: 1px solid var(--rim); }
+  .context { flex: none; font-size: 12px; color: var(--ink-2); padding-bottom: 8px; }
+  .context p { margin: 3px 0; }
+  .component-picker { font: inherit; color: var(--ink); background: var(--panel); border: 1px solid var(--rim); border-radius: 6px; max-width: 100%; padding: 7px; margin-top: 5px; }
+  .notes-toggle { color: var(--ink); background: var(--panel); border: 1px solid var(--rim); border-radius: 6px; padding: 7px 10px; cursor: pointer; }
+  .notes { position: absolute; z-index: 8; inset: auto 16px 16px; padding: 16px; max-height: 40%; overflow: auto; color: var(--ink); background: var(--panel); border: 1px solid var(--rim); border-radius: 10px; white-space: pre-wrap; }
+  [data-mode="diagram"] .caption, [data-mode="diagram"] .rail { display: none; }
+  [data-mode="diagram"] .screen { grid-template-columns: 1fr; grid-template-rows: 1fr; }
+  @media print {
+    :root { color-scheme: light; }
+    body { background: white !important; color: #202124 !important; }
+    .caption, .rail, .tip, .notes, .notes-toggle, .component-picker { display: none !important; }
+    .screen { display: block !important; }
+    .stagewrap { height: 75vh; }
+    .sheet { box-shadow: none !important; }
+    #stage { transform: none !important; }
+    .dim { opacity: 1 !important; }
+    .sheet::after { display: none; }
+  }
+  /* .tip sets display:flex, and a class beats the user agent's
+     [hidden] rule — without this the tooltip never hides. */
+  [hidden] { display: none !important; }
+  html, body { height: 100%; }
+  body {
+    margin: 0; overflow: hidden;
+    background: var(--ground); color: var(--ink);
+    font: 15px/1.55 var(--body);
+    -webkit-font-smoothing: antialiased;
+  }
+  :focus-visible { outline: 3px solid var(--yellow); outline-offset: 2px; border-radius: 4px; }
+
+  .shell { height: 100%; display: flex; flex-direction: column; padding: 0 clamp(14px, 2.4vw, 30px); }
+
+  .topbar { flex: none; display: flex; align-items: center; gap: 14px; padding-block: 14px 12px; }
+  .topbar h1 { margin: 0; font-size: 15px; font-weight: 500; }
+  .counter { margin-left: auto; font: 12px var(--mono); color: var(--ink-3); }
+
+  .screen {
+    flex: 1; min-height: 0;
+    display: grid; grid-template-columns: minmax(260px, 24vw) 1fr;
+    gap: clamp(14px, 2vw, 26px);
+    padding-block: clamp(14px, 2.4vh, 26px);
+  }
+
+  .caption { min-width: 0; min-height: 0; display: flex; flex-direction: column; justify-content: center; gap: 12px; }
+  .stepno { font: 400 clamp(56px, 8vw, 104px)/.8 var(--mono); color: var(--accent); }
+  .caption h2 { margin: 0; font-size: clamp(24px, 2.6vw, 34px); font-weight: 500; line-height: 1.1; text-wrap: balance; }
+  .caption .line { margin: 0; color: var(--ink-2); font-size: clamp(14px, 1.15vw, 17px); max-width: 42ch; }
+
+  .chips { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 7px; }
+  .chips li {
+    display: flex; flex-direction: column; gap: 1px; min-width: 0;
+    padding: 7px 11px; background: var(--panel);
+    border: 1px solid var(--rim); border-left: 3px solid var(--accent);
+    border-radius: 3px 8px 8px 3px;
+  }
+  .chips b { font: 500 12.5px var(--mono); color: var(--ink); overflow-wrap: anywhere; }
+  .chips span { font-size: 11px; color: var(--ink-3); }
+
+  .stagewrap { position: relative; min-width: 0; min-height: 0; }
+  .sheet {
+    position: absolute; inset: 0; padding: 14px;
+    background: var(--sheet); border-radius: 16px;
+    box-shadow: 0 1px 2px rgba(0,0,0,.5), 0 14px 40px rgba(0,0,0,.35);
+  }
+  /* a hard crop lands mid-word; fade instead, and only while zoomed */
+  .sheet::after {
+    content: ""; position: absolute; inset: 14px; border-radius: 10px;
+    pointer-events: none; opacity: 0; transition: opacity .35s;
+    background:
+      linear-gradient(to right, #FFF, rgba(255,255,255,0) 46px),
+      linear-gradient(to left, #FFF, rgba(255,255,255,0) 46px),
+      linear-gradient(to bottom, #FFF, rgba(255,255,255,0) 32px),
+      linear-gradient(to top, #FFF, rgba(255,255,255,0) 32px);
+  }
+  .sheet.zoomed::after { opacity: 1; }
+
+  .diagram { display: block; width: 100%; height: 100%; }
+  #stage { transition: transform .55s cubic-bezier(.22,.61,.36,1); }
+
+  .box { fill: var(--sheet); stroke: var(--sheet-line); stroke-width: 1.2; rx: 6; }
+  .box-title { fill: var(--sheet-ink); font-size: 13px; font-weight: 500; }
+  .box-sub { fill: var(--sheet-ink-2); font-size: 11px; font-family: var(--mono); }
+  .grp { fill: var(--tint); stroke: var(--edge); stroke-width: 1.2; rx: 8; }
+  .grp-title { fill: var(--sheet-ink); font-size: 12.5px; font-weight: 500; }
+  .card { fill: var(--sheet); stroke: var(--edge); stroke-width: 1.2; rx: 5; }
+  .card-title { fill: var(--sheet-ink); font-size: 12.5px; font-weight: 500; }
+  .card-sub { fill: var(--sheet-ink-2); font-size: 10.5px; font-family: var(--mono); }
+  .gc-frame { fill: none; stroke: var(--sheet-line); stroke-width: 1.2; rx: 8; }
+  .gc-label { fill: var(--sheet-ink-2); font-size: 12.5px; font-weight: 500; }
+  .zone-label { fill: var(--sheet-ink-2); font-size: 11px; font-family: var(--mono); letter-spacing: .05em; }
+
+  .wire { stroke: var(--wire); stroke-width: 1.3; fill: none; }
+  .wire.dash { stroke-dasharray: 5 4; }
+  .wire-head { fill: var(--wire); }
+  .wire-label {
+    fill: var(--sheet-ink-2); font-size: 10px; font-family: var(--mono);
+    paint-order: stroke; stroke: var(--sheet); stroke-width: 3.5px; stroke-linejoin: round;
+  }
+  .disc { fill: var(--disc); stroke: var(--sheet); stroke-width: 2; }
+  .disc-n { fill: #FFF; font: 700 10px var(--mono); }
+
+  .unit, .wirepart { transition: opacity .4s, stroke .2s, fill .2s; }
+  .unit { cursor: pointer; }
+  .dim { opacity: .14; }
+  .unit.lit rect, .unit:hover rect { stroke: var(--accent-paper); stroke-width: 2.4; }
+  .wire.lit { stroke: var(--accent-paper); stroke-width: 2.4; }
+  .wire-head.lit { fill: var(--accent-paper); }
+  .wire-label.lit { fill: var(--sheet-ink); }
+  .disc.lit { fill: var(--accent-paper); }
+  .unit:hover { opacity: 1; }
+
+  @media (prefers-reduced-motion: reduce) { #stage, .unit, .wirepart, .sheet::after { transition: none; } }
+
+  .tip {
+    position: absolute; z-index: 6; width: 262px; max-width: calc(100% - 20px);
+    padding: 11px 13px 13px; background: var(--panel);
+    border: 1px solid var(--rim); border-left: 3px solid var(--accent);
+    border-radius: 9px; box-shadow: 0 8px 26px rgba(0,0,0,.55);
+    pointer-events: none; display: flex; flex-direction: column; gap: 2px;
+  }
+  .tip b { font-size: 13.5px; font-weight: 500; color: var(--ink); overflow-wrap: anywhere; }
+  .tip .tip-sub { font: 11px var(--mono); color: var(--ink-3); overflow-wrap: anywhere; }
+  .tip p { margin: 5px 0 0; font-size: 12.5px; line-height: 1.45; color: var(--ink-2); }
+
+  .rail { flex: none; display: flex; align-items: center; gap: 10px; padding-block: 10px 14px; }
+  .nav {
+    flex: none; width: 38px; height: 34px; display: grid; place-items: center;
+    background: var(--panel); border: 1px solid var(--rim); border-radius: 8px;
+    color: var(--ink-2); font: 15px var(--mono); cursor: pointer;
+  }
+  .nav:hover { background: var(--panel-2); color: var(--ink); }
+  .dots { flex: 1; min-width: 0; display: flex; gap: 5px; overflow-x: auto; scrollbar-width: none; }
+  .dots::-webkit-scrollbar { display: none; }
+  .dot {
+    flex: 1 1 0; min-width: 26px; height: 34px; display: grid; place-items: center;
+    background: var(--panel); border: 1px solid var(--rim); border-bottom: 3px solid var(--rim);
+    border-radius: 4px 4px 7px 7px; color: var(--ink-3);
+    font: 500 13px var(--mono); cursor: pointer;
+  }
+  .dot:hover { background: var(--panel-2); color: var(--ink); }
+  .dot[aria-current="true"] { color: var(--dot); border-bottom-color: var(--dot); background: var(--panel-2); }
+
+  @media (max-width: 900px), (max-height: 520px) {
+    .screen { grid-template-columns: 1fr; grid-template-rows: auto minmax(0, 1fr); gap: 12px; }
+    .caption { justify-content: flex-start; gap: 8px; }
+    .stepno { font-size: 48px; }
+    .caption h2 { font-size: 24px; }
+  }
+  @media (max-width: 560px) {
+    .chips li:nth-child(n + 3) { display: none; }
+    .dots { gap: 3px; }
+    .dot { min-width: 19px; font-size: 11px; }
+    .nav { width: 30px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <header class="topbar">
+    <h1 id="doc-title">Architecture</h1>
+    <span class="counter" id="counter"></span>
+    <button class="notes-toggle" id="notes-toggle" type="button" aria-expanded="false" aria-controls="notes" hidden>Notes</button>
+  </header>
+
+  <main class="screen">
+    <aside class="caption" aria-live="polite">
+      <span class="stepno" id="stepno" hidden></span>
+      <h2 id="title"></h2>
+      <p class="line" id="line"></p>
+      <ul class="chips" id="chips" hidden></ul>
+    </aside>
+
+    <div class="stagewrap" id="stagewrap">
+      <div class="sheet" id="sheet">
+        <svg class="diagram" id="diagram" viewBox="0 0 1025 745"
+             preserveAspectRatio="xMidYMid meet" role="img" aria-label="Architecture diagram">
+          <g id="stage">
+            <g id="layer-frames"></g>
+            <g id="layer-wires"></g>
+            <g id="layer-units"></g>
+          </g>
+        </svg>
+      </div>
+      <div class="tip" id="tip" hidden>
+        <b id="tip-title"></b>
+        <span class="tip-sub" id="tip-sub"></span>
+        <p id="tip-what"></p>
+        <p id="tip-why" hidden></p>
+      </div>
+      <div class="notes" id="notes" hidden></div>
+    </div>
+  </main>
+  <div class="context"><p id="notice" hidden></p><p id="legend" hidden></p><select class="component-picker" id="component-picker" aria-label="Explore a component"><option value="">Explore a component…</option></select></div>
+
+  <footer class="rail">
+    <button class="nav" id="prev" type="button" aria-label="Previous step">&#9664;</button>
+    <div class="dots" id="dots" role="group" aria-label="Steps"></div>
+    <button class="nav" id="next" type="button" aria-label="Next step">&#9654;</button>
+  </footer>
+</div>
+
+<script>
+/*__ICONS__*/
+/*__DATA__*/
+
+const NS = "http://www.w3.org/2000/svg";
+const mk = (n, a) => { const e = document.createElementNS(NS, n); for (const k in a) e.setAttribute(k, a[k]); return e; };
+
+/* Two tints per hue for the group, plus one accent per surface. */
+const TONES = {
+  dash:   { tint: "#F8F9FA", edge: "#BDC1C6", paper: "#5F6368", screen: "#BDC1C6", dashed: true },
+  blue:   { tint: "#E8F0FE", edge: "#A8C7FA", paper: "#1A73E8", screen: "#8AB4F8" },
+  red:    { tint: "#FCE8E6", edge: "#F2B8B5", paper: "#C5221F", screen: "#F28B82" },
+  yellow: { tint: "#FEF7E0", edge: "#FDE293", paper: "#B06000", screen: "#FDD663" },
+  green:  { tint: "#E6F4EA", edge: "#A8DAB5", paper: "#137333", screen: "#81C995" },
+  grey:   { tint: "#F1F3F4", edge: "#C8CCD1", paper: "#5F6368", screen: "#BDC1C6" }
+};
+
+document.getElementById("doc-title").textContent = DIAGRAM.title;
+document.title = DIAGRAM.title;
+document.documentElement.dataset.theme = DIAGRAM.theme || "light";
+document.documentElement.dataset.mode = DIAGRAM.mode || "slides";
+document.getElementById("diagram").setAttribute("viewBox", `0 0 ${DIAGRAM.viewBox.join(" ")}`);
+for (const [id, value] of [["notice", DIAGRAM.notice], ["legend", (DIAGRAM.legend || []).join(" · ")]]) {
+  const el = document.getElementById(id); el.textContent = value || ""; el.hidden = !value;
+}
+
+/** A product icon, top-left at (x, y), drawn at `size`. */
+function icon(name, x, y, size) {
+  const ic = ICONS[name];
+  if (!ic) return null;
+  const [vx, vy, vw, vh] = ic.vb.split(/\s+/).map(Number);
+  const scale = size / Math.max(vw, vh);
+  const g = mk("g", { transform: `translate(${x + (size - vw * scale) / 2} ${y + (size - vh * scale) / 2}) scale(${scale}) translate(${-vx} ${-vy})` });
+  g.innerHTML = ic.d;
+  return g;
+}
+
+/* --------------------------------------------------------------- frames -- */
+
+const frames = document.getElementById("layer-frames");
+const cloud = DIAGRAM.cloud;
+
+frames.append(mk("rect", { class: "gc-frame", x: cloud.x, y: cloud.y, width: cloud.w, height: cloud.h }));
+const mark = cloud.icon && icon(cloud.icon, cloud.x + 16, cloud.y + 10, 20);
+if (mark) frames.append(mark);
+const cloudLabel = mk("text", { class: "gc-label", x: cloud.x + (mark ? 44 : 16), y: cloud.y + 25 });
+cloudLabel.textContent = cloud.label;
+frames.append(cloudLabel);
+
+if (DIAGRAM.outsideLabel) {
+  const t = mk("text", { class: "zone-label", x: 16, y: 26 });
+  t.textContent = DIAGRAM.outsideLabel;
+  frames.append(t);
+}
+
+for (const g of GROUPS) {
+  const tone = TONES[g.tone];
+  frames.append(mk("rect", {
+    class: "grp", x: g.x, y: g.y, width: g.w, height: g.h,
+    style: `--tint:${tone.tint};--edge:${tone.edge}` + (tone.dashed ? ";stroke-dasharray:5 4" : "")
+  }));
+  const t = mk("text", { class: "grp-title", x: g.x + 14, y: g.y + 21 });
+  t.textContent = g.title;
+  frames.append(t);
+}
+
+/* ---------------------------------------------------------------- wires -- */
+
+const wires = document.getElementById("layer-wires");
+const wireParts = {};
+const edgeById = Object.fromEntries(EDGES.map((e) => [e.id, e]));
+
+for (const e of EDGES) {
+  const d = e.pts.map((p, i) => (i ? `L ${p[0]} ${p[1]}` : `M ${p[0]} ${p[1]}`)).join(" ");
+  const parts = [mk("path", { class: "wirepart wire" + (e.dash ? " dash" : ""), d })];
+
+  const [px, py] = e.pts[e.pts.length - 2];
+  const [qx, qy] = e.pts[e.pts.length - 1];
+  if (py === qy) {
+    const s = qx > px ? 1 : -1;
+    parts.push(mk("polygon", { class: "wirepart wire-head", points: `${qx - 7 * s},${qy - 4} ${qx - 7 * s},${qy + 4} ${qx},${qy}` }));
+  } else {
+    const s = qy > py ? 1 : -1;
+    parts.push(mk("polygon", { class: "wirepart wire-head", points: `${qx - 4},${qy - 7 * s} ${qx + 4},${qy - 7 * s} ${qx},${qy}` }));
+  }
+
+  if (e.label) {
+    const label = mk("text", { class: "wirepart wire-label", x: e.lx, y: e.ly, "text-anchor": e.anchor || "middle" });
+    label.textContent = e.label;
+    parts.push(label);
+  }
+  if (e.disc) {
+    parts.push(mk("circle", { class: "wirepart disc", cx: e.disc[0], cy: e.disc[1], r: 9 }));
+    const n = mk("text", { class: "wirepart disc-n", x: e.disc[0], y: e.disc[1] + 3.5, "text-anchor": "middle" });
+    n.textContent = e.n;
+    parts.push(n);
+  }
+
+  wires.append(...parts);
+  wireParts[e.id] = parts;
+}
+
+/* ---------------------------------------------------------------- units -- */
+
+const units = document.getElementById("layer-units");
+const unitG = {};
+const ALL = [];
+
+/** Line-art glyphs for actors. Actors never get a product icon. */
+function glyph(kind, x, y) {
+  const g = mk("g", {
+    transform: `translate(${x} ${y})`, fill: "none", stroke: "#5F6368",
+    "stroke-width": "1.6", "stroke-linecap": "round", "stroke-linejoin": "round"
+  });
+  const paths = {
+    person: ["M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z", "M4 21a8 8 0 0 1 16 0"],
+    browser: ["M3 5h18v14H3z", "M3 9h18"],
+    phone: ["M8 3h8a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z", "M11 18h2"],
+    printer: ["M7 9V4h10v5", "M5 9h14a2 2 0 0 1 2 2v5h-4v4H7v-4H3v-5a2 2 0 0 1 2-2Z"],
+    server: ["M4 5h16v6H4z", "M4 13h16v6H4z", "M8 8h.01", "M8 16h.01"]
+  }[kind] || [];
+  for (const d of paths) g.append(mk("path", { d }));
+  return g;
+}
+
+function addUnit(u) {
+  const g = mk("g", {
+    class: "unit", id: "u-" + u.id, role: "button", tabindex: "0",
+    "aria-label": u.title + ", " + u.sub + ". " + u.what
+  });
+
+  if (u.kind === "outside") {
+    g.append(mk("rect", { class: "box", x: u.x, y: u.y, width: u.w, height: u.h }));
+    g.append(glyph(u.glyph, u.x + 13, u.y + 12));
+    const t = mk("text", { class: "box-title", x: u.x + 45, y: u.y + 25 });
+    t.textContent = u.title;
+    const s = mk("text", { class: "box-sub", x: u.x + 45, y: u.y + 40 });
+    s.textContent = u.sub;
+    g.append(t, s);
+    (u.rows || []).forEach((r, i) => {
+      const row = mk("text", { class: "box-sub", x: u.x + 14, y: u.y + 70 + i * 22 });
+      row.textContent = "· " + r;
+      g.append(row);
+    });
+  } else {
+    g.append(mk("rect", { class: "card", x: u.x, y: u.y, width: u.w, height: u.h, style: `--edge:${TONES[u.tone].edge}` }));
+    const ic = u.icon && icon(u.icon, u.x + 11, u.y + (u.h - 20) / 2, 20);
+    if (ic) g.append(ic);
+    const tx = u.icon ? u.x + 40 : u.x + 13;
+    const two = u.h >= 50;
+    const t = mk("text", { class: "card-title", x: tx, y: u.y + (two ? 22 : 18) });
+    t.textContent = u.title;
+    const s = mk("text", { class: "card-sub", x: tx, y: u.y + (two ? 38 : 32) });
+    s.textContent = u.sub;
+    g.append(t, s);
+  }
+
+  g.addEventListener("mouseenter", () => showTip(u.id));
+  g.addEventListener("focus", () => showTip(u.id));
+  g.addEventListener("mouseleave", hideTip);
+  g.addEventListener("blur", hideTip);
+  g.addEventListener("click", (ev) => { ev.stopPropagation(); showTip(u.id); });
+  g.addEventListener("keydown", (ev) => {
+    if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); ev.stopPropagation(); showTip(u.id); }
+  });
+
+  units.append(g);
+  unitG[u.id] = g;
+  ALL.push(u);
+}
+
+for (const o of OUTSIDE) { o.kind = "outside"; addUnit(o); }
+for (const c of CARDS) {
+  const grp = GROUPS.find((g) => g.id === c.group);
+  c.tone = grp.tone;
+  c.kind = "card";
+  c.groupTitle = grp.title;
+  addUnit(c);
+}
+
+const byId = Object.fromEntries(ALL.map((u) => [u.id, u]));
+const componentPicker = document.getElementById("component-picker");
+for (const u of ALL) { const option = document.createElement("option"); option.value = u.id; option.textContent = u.title; componentPicker.append(option); }
+componentPicker.addEventListener("change", () => { if (componentPicker.value) showTip(componentPicker.value); else hideTip(); });
+
+/* ------------------------------------------------------------- the tip -- */
+
+const stagewrap = document.getElementById("stagewrap");
+const tip = document.getElementById("tip");
+
+function showTip(id) {
+  const u = byId[id];
+  document.getElementById("tip-title").textContent = u.title;
+  document.getElementById("tip-sub").textContent = u.groupTitle ? u.groupTitle + " · " + u.sub : u.sub;
+  document.getElementById("tip-what").textContent = u.what;
+  const why = document.getElementById("tip-why"); why.textContent = u.why || ""; why.hidden = !u.why;
+  tip.hidden = false;
+
+  const box = unitG[id].getBoundingClientRect();
+  const frame = stagewrap.getBoundingClientRect();
+  const left = box.left - frame.left, top = box.top - frame.top;
+  const w = tip.offsetWidth, h = tip.offsetHeight;
+  let x = frame.width - (left + box.width) > w + 20 ? left + box.width + 12 : left - w - 12;
+  x = Math.max(10, Math.min(x, frame.width - w - 10));
+  let y = top + box.height / 2 - h / 2;
+  y = Math.max(10, Math.min(y, frame.height - h - 10));
+  tip.style.left = x + "px";
+  tip.style.top = y + "px";
+}
+
+function hideTip() { tip.hidden = true; }
+document.addEventListener("click", (ev) => { if (ev.target !== componentPicker) hideTip(); });
+
+/* ----------------------------------------------------------- the slides -- */
+
+const VW = DIAGRAM.viewBox[0], VH = DIAGRAM.viewBox[1];
+const stage = document.getElementById("stage");
+const sheet = document.getElementById("sheet");
+
+/** The frame a slide zooms to: everything it lights, plus room to breathe. */
+function focusBox(slide) {
+  let x1 = Infinity, y1 = Infinity, x2 = -Infinity, y2 = -Infinity;
+  const grow = (ax, ay, bx, by) => {
+    x1 = Math.min(x1, ax); y1 = Math.min(y1, ay);
+    x2 = Math.max(x2, bx); y2 = Math.max(y2, by);
+  };
+  for (const id of slide.units) { const u = byId[id]; if (u) grow(u.x, u.y, u.x + u.w, u.y + u.h); }
+  for (const id of slide.edges) { const e = edgeById[id]; if (e) for (const [px, py] of e.pts) grow(px, py, px, py); }
+  if (x1 === Infinity) return { x: 0, y: 0, w: VW, h: VH };
+  const pad = 46;
+  return { x: x1 - pad, y: y1 - pad, w: x2 - x1 + pad * 2, h: y2 - y1 + pad * 2 };
+}
+
+function frameStage(slide) {
+  const f = focusBox(slide);
+  const s = Math.max(1, Math.min(VW / f.w, VH / f.h, 2.3));
+  const cx = f.x + f.w / 2, cy = f.y + f.h / 2;
+  let tx = VW / 2 - s * cx, ty = VH / 2 - s * cy;
+  tx = Math.min(0, Math.max(VW * (1 - s), tx));
+  ty = Math.min(0, Math.max(VH * (1 - s), ty));
+  stage.setAttribute("transform", `translate(${tx.toFixed(2)} ${ty.toFixed(2)}) scale(${s.toFixed(4)})`);
+  sheet.classList.toggle("zoomed", s > 1.02);
+}
+
+const elStepNo = document.getElementById("stepno");
+const elTitle = document.getElementById("title");
+const elLine = document.getElementById("line");
+const elChips = document.getElementById("chips");
+const elCounter = document.getElementById("counter");
+const notes = document.getElementById("notes"), notesToggle = document.getElementById("notes-toggle");
+notesToggle.addEventListener("click", () => { notes.hidden = !notes.hidden; notesToggle.setAttribute("aria-expanded", String(!notes.hidden)); });
+
+const dotBtn = SLIDES.map((s, i) => {
+  const b = document.createElement("button");
+  b.type = "button";
+  b.className = "dot";
+  b.textContent = s.n || "◆";
+  b.setAttribute("aria-label", "Step " + (i + 1) + ": " + s.title);
+  b.style.setProperty("--dot", TONES[s.tone || "blue"][DIAGRAM.theme === "dark" ? "screen" : "paper"]);
+  b.addEventListener("click", () => go(i));
+  document.getElementById("dots").append(b);
+  return b;
+});
+
+let at = 0;
+
+function go(i) {
+  if (DIAGRAM.mode === "diagram") i = 0;
+  at = (i + SLIDES.length) % SLIDES.length;
+  const s = SLIDES[at];
+  const tone = TONES[s.tone || "blue"];
+
+  document.documentElement.style.setProperty("--accent", DIAGRAM.theme === "dark" ? tone.screen : tone.paper);
+  document.documentElement.style.setProperty("--accent-paper", tone.paper);
+
+  elStepNo.hidden = !s.n;
+  if (s.n) elStepNo.textContent = s.n;
+  elTitle.textContent = s.title;
+  elLine.textContent = s.line;
+  notes.textContent = s.notes || ""; notes.hidden = true; notesToggle.hidden = !s.notes || DIAGRAM.mode === "diagram";
+  notesToggle.setAttribute("aria-expanded", "false");
+
+  elChips.hidden = !s.facts;
+  elChips.textContent = "";
+  for (const [k, v] of s.facts || []) {
+    const li = document.createElement("li");
+    const b = document.createElement("b"); b.textContent = v;
+    const sp = document.createElement("span"); sp.textContent = k;
+    li.append(b, sp);
+    elChips.append(li);
+  }
+
+  const showAll = !s.edges.length && !s.units.length;
+  for (const u of ALL) {
+    const lit = s.units.includes(u.id);
+    unitG[u.id].classList.toggle("lit", lit);
+    unitG[u.id].classList.toggle("dim", !showAll && !lit);
+  }
+  for (const e of EDGES) {
+    const lit = s.edges.includes(e.id);
+    for (const part of wireParts[e.id]) {
+      part.classList.toggle("lit", lit);
+      part.classList.toggle("dim", !showAll && !lit);
+    }
+  }
+
+  frameStage(s);
+  hideTip();
+  dotBtn.forEach((b, j) => b.setAttribute("aria-current", String(j === at)));
+  elCounter.textContent = (at + 1) + " / " + SLIDES.length;
+  dotBtn[at].scrollIntoView({ block: "nearest", inline: "nearest" });
+}
+
+document.getElementById("prev").addEventListener("click", () => go(at - 1));
+document.getElementById("next").addEventListener("click", () => go(at + 1));
+
+addEventListener("keydown", (ev) => {
+  if (ev.key === "Escape") { hideTip(); notes.hidden = true; notesToggle.setAttribute("aria-expanded", "false"); return; }
+  if (ev.target.closest('button, input, textarea, select, [contenteditable="true"]')) return;
+  if (ev.key === "ArrowRight" || ev.key === "PageDown" || ev.key === " ") { ev.preventDefault(); go(at + 1); }
+  else if (ev.key === "ArrowLeft" || ev.key === "PageUp") { ev.preventDefault(); go(at - 1); }
+  else if (ev.key === "Home") go(0);
+  else if (ev.key === "End") go(SLIDES.length - 1);
+});
+
+let downX = null;
+stagewrap.addEventListener("pointerdown", (ev) => { downX = ev.clientX; });
+stagewrap.addEventListener("pointerup", (ev) => {
+  if (downX === null) return;
+  const dx = ev.clientX - downX;
+  downX = null;
+  if (Math.abs(dx) > 55) go(at + (dx < 0 ? 1 : -1));
+});
+
+addEventListener("resize", () => frameStage(SLIDES[at]));
+go(0);
+</script>
+</body>
+</html>

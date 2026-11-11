@@ -1,0 +1,26 @@
+--- a/cloud-architecture-diagram/SKILL.md
++++ b/cloud-architecture-diagram/SKILL.md
+@@ -1,14 +1,15 @@
+ ---
+ name: cloud-architecture-diagram
+ description: >-
+-  Create polished Google Cloud architecture diagrams and slide walkthroughs,
+-  with interactive HTML and guidance for editable Google Slides or PowerPoint
+-  decks, product icons, clear boundaries and traceable request/event flows. Use
+-  whenever someone asks for an architecture diagram, a system drawing, a
+-  "desenho de arquitetura", a component map, or a page that explains how a
+-  deployed system works. Trigger even without those words, for example "show
+-  me how this app is wired", "draw the GCP components", "diagrama dos
+-  serviços", or when a reference-architecture image is shared as the target.
++  Create a self-contained interactive HTML walkthrough of a Google Cloud
++  architecture: one offline .html file with hand-placed product cards, hover
++  explanations and a stepped slideshow that traces the request/event flow. Use
++  only when someone asks for an HTML walkthrough, an interactive or
++  step-by-step architecture page, a browser presentation that explains how a
++  deployed system works, or says "walkthrough HTML", "página interativa da
++  arquitetura", "passo a passo da arquitetura em HTML". Don't use for editable
++  architecture diagrams, Draw.io or SVG exports, or in-chat diagram cards (use
++  dendrite), or for Mermaid/ASCII didactic Markdown (use visual-docs).
+ ---
+ 
+ # Cloud architecture diagram
