@@ -1,6 +1,8 @@
 ---
 name: aws-lambda-fleet-to-cloud-run
 description: Migrates large estates of AWS Lambda functions (10–100+ Lambdas in monorepos) to Google Cloud Run. Provides fleet-level discovery, grouping strategy (1:1 vs. consolidation), dependency-graph-based migration wave sequencing, and a consolidated Migration Program Document. Designed to complement the aws-lambda-to-cloud-run-migration skill for per-function deep analysis.
+metadata:
+  icon: 🚢
 ---
 
 # AWS Lambda Fleet → Google Cloud Run Migration Skill

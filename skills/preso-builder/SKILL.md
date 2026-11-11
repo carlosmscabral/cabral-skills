@@ -10,6 +10,8 @@ description: >-
   Use when asked to create, restyle, or QA a Google Slides deck, convert a repo or doc
   into slides, draw a roadmap / process / layered / swimlane diagram slide, cut a
   5/15/45-minute version of a deck, or redesign a single slide.
+metadata:
+  icon: 📽️
 ---
 
 # preso-builder: Google Cloud Editorial slide design engine

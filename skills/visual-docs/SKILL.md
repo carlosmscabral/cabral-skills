@@ -10,6 +10,8 @@ description: >
   system architecture diagrams, C4 models, interactive architecture studios, or
   Draw.io (.drawio) exports (use `dendrite` or a dedicated architecture diagramming
   tool instead), or for data charts/plots (use `dataviz`).
+metadata:
+  icon: 🎓
 ---
 
 # Visual documentation that teaches — and actually renders

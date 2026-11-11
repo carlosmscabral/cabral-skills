@@ -1,6 +1,8 @@
 ---
 name: aws-lambda-to-cloud-run-migration
 description: Migrates AWS Lambda functions to Google Cloud Run. Analyzes AWS lock-ins (SNS, SQS, SDKs, IAM, Cold Starts), build/trigger mechanisms (API Gateway vs direct), and service integrations to provide a detailed migration report, containerization tips, and GCP service mapping.
+metadata:
+  icon: ⛵
 ---
 
 # AWS Lambda to Google Cloud Run Migration Skill

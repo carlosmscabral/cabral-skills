@@ -7,6 +7,7 @@ description: >
   or needs client-side parsing and routing gotchas for GCP Agent Runtime.
   It compiles the exact schemas, parsing pathways, headers, and FastAPI proxy gotchas.
 metadata:
+  icon: 🖥️
   author: carlosmscabral
   license: Apache-2.0
   version: 1.0.0

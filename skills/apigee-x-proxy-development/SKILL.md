@@ -4,6 +4,8 @@ description: >
   Use when developing, reviewing, debugging, or explaining Apigee X API proxy
   configurations — proxy bundles, policies, flows, endpoints, shared flows,
   fault handling, and JavaScript callouts.
+metadata:
+  icon: 🚦
 ---
 
 # Apigee X API Proxy Development

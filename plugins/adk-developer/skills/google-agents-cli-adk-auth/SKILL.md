@@ -5,6 +5,7 @@ description: >
   "build a custom UI proxy handling ADK credentials", "intercept adk_request_credential",
   "implement agent identity auth manager", or "set up OAuth credentials:retrieve or credentials:finalize".
 metadata:
+  icon: 🔐
   author: carlosmscabral
   license: Apache-2.0
   version: 1.0.0
