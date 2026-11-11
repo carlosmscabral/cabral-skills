@@ -7,6 +7,11 @@ import sys
 import os
 from pathlib import Path
 
+# The agent runs this script in place, inside the skill directory.
+# Python must not write `__pycache__` there, because `scripts/validate_repo.py`
+# rejects bytecode in the repository tree. Set the flag before the `preso` import.
+sys.dont_write_bytecode = True
+
 # Add project root and standard preso-builder workspace paths to sys.path
 workspace_paths = [
     Path(__file__).resolve().parents[3],
